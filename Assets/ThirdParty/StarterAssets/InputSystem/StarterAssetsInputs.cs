@@ -1,9 +1,7 @@
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
 
-namespace StarterAssets
+namespace ThirdParty.StarterAssets.InputSystem
 {
 	public class StarterAssetsInputs : MonoBehaviour
 	{
@@ -65,6 +63,7 @@ namespace StarterAssets
 		{
 			sprint = newSprintState;
 		}
+		
 
 		private void OnApplicationFocus(bool hasFocus)
 		{
