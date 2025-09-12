@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 8c096f69cfb4967429f67c65b413dedd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - velocityMat: {fileID: 2100000, guid: 77b711f9f85f4f24096f799eeec8d275, type: 2}
+  - velocityRT: {fileID: 8400000, guid: f17985deccd62bf49995f0c62cecf1f3, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

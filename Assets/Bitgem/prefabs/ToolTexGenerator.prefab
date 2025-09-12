@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3987920344708684534
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3376323764747991264}
+  - component: {fileID: 6656098752396307035}
+  m_Layer: 0
+  m_Name: ToolTexGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3376323764747991264
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3987920344708684534}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.0028994358, z: -0, w: 0.9999958}
+  m_LocalPosition: {x: 0, y: 2.1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6656098752396307035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3987920344708684534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b4784608935de84c8b8dabe7b095e6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  metallicTexture: {fileID: 2800000, guid: 0da5bf4afc42b6b41bf4d0f5cf68cf37, type: 3}
+  aoTexture: {fileID: 2800000, guid: 25afb9c3a3c8cc74d99cf566d3186eb8, type: 3}
+  detailMaskTexture: {fileID: 0}
+  smoothingTexture: {fileID: 0}
+  metallicAdjustment: 1
+  aoAdjustment: 1
+  detailMaskAdjustment: 1
+  smoothingAdjustment: 1
