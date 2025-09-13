@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using ExampleScripts;
+using Platform;
 
 namespace ThirdParty.StarterAssets.ThirdPersonController.Scripts
 {

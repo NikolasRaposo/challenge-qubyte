@@ -1,201 +1,228 @@
+using System;
 using UnityEngine;
 using DG.Tweening;
 
-public class ThrowableObject : MonoBehaviour
-{
-    public enum Alvo { Jogador, PontoFixo, Direcao }
-
-        public interface ITriggeravel
-    {
-        void Ativar();
+/// <summary>
+/// Controls a versatile throwable object. It can be thrown in an arc towards a target,
+/// with optional behaviors like homing, boomerang return, ricochet, and impact effects.
+/// </summary>
+public class ThrowableObject : MonoBehaviour {
+    /// <summary>
+    /// Defines the type of target the object will be thrown towards.
+    /// </summary>
+    public enum TargetType { Player, FixedPoint, Direction }
+    /// <summary>
+    /// An interface for objects that can be activated by this throwable object on impact.
+    /// </summary>
+    private interface ITriggerable {
+        void Activate();
     }
 
-    [Header("Destino")]
-    public Alvo tipoDeAlvo = Alvo.PontoFixo;
-    public Transform alvoTransform;
-    public Vector3 pontoFixo;
-    public Vector3 direcao = Vector3.forward;
+    [Header("Destination")]
+    [Tooltip("The type of target to aim for.")]
+    public TargetType targetType = TargetType.FixedPoint;
+    [Tooltip("The transform to follow (used for Player or dynamic FixedPoint targeting).")]
+    public Transform targetTransform;
+    [Tooltip("A fixed world-space coordinate to throw towards.")]
+    public Vector3 fixedPoint;
+    [Tooltip("A direction to throw the object in (relative to its starting orientation).")]
+    public Vector3 direction = Vector3.forward;
 
-    [Header("Arremesso")]
-    public float alturaDoArco = 3f;
-    public float tempoBaseNoAr = 1f;
-    public bool tempoDinamico = true;
-    public float tempoPorUnidade = 0.15f;
+    [Header("Throw Trajectory")]
+    [Tooltip("The peak height of the arc during the throw.")]
+    public float arcHeight = 3f;
+    [Tooltip("The base time the object spends in the air.")]
+    public float baseAirTime = 1f;
+    [Tooltip("If true, air time is calculated based on distance.")]
+    public bool dynamicAirTime = true;
+    [Tooltip("The amount of time per unit of distance for dynamic air time calculation.")]
+    public float timePerUnit = 0.15f;
 
-    [Header("Curva do Arco")]
-    public bool usarCurvaCustomizada = false;
-    public AnimationCurve curvaDeAltura;
+    [Header("Arc Curve")]
+    [Tooltip("If true, use a custom AnimationCurve to define the arc's height over time.")]
+    public bool useCustomCurve;
+    [Tooltip("The curve defining the arc's height (X-axis is time [0,1], Y-axis is height multiplier).")]
+    public AnimationCurve heightCurve;
 
-    [Header("Rotação")]
-    public bool girar = true;
-    public Vector3 eixosDeRotacao = new Vector3(0, 360, 0);
+    [Header("Rotation")]
+    [Tooltip("Should the object spin while in the air?")]
+    public bool rotateInAir = true;
+    [Tooltip("The rotation to apply over the course of the throw (e.g., 360 on Y for a spin).")]
+    public Vector3 rotationAxes = new Vector3(0, 360, 0);
 
-    [Header("Bumerangue")]
-    public bool retornarAposImpacto = false;
-    public Transform pontoRetorno;
+    [Header("Boomerang")]
+    [Tooltip("If true, the object will return after hitting its target.")]
+    public bool returnAfterImpact;
+    [Tooltip("The transform the object will return to.")]
+    public Transform returnPoint;
 
-    [Header("Teleguiado")]
-    public bool teleguiado = false;
-    public float anguloMaximoPorSegundo = 60f; // limite de curva por segundo
+    [Header("Homing")]
+    [Tooltip("If true, the object will adjust its trajectory mid-flight to follow a moving target.")]
+    public bool isHoming;
+    [Tooltip("The maximum turning speed in degrees per second.")]
+    public float maxTurnAnglePerSecond = 60f;
 
-    [Header("Impacto")]
-    public bool destruirAoImpactar = true;
-    public GameObject efeitoImpacto;
-    public AudioClip somImpacto;
+    [Header("Impact")]
+    [Tooltip("If true, the object is destroyed upon impact.")]
+    public bool destroyOnImpact = true;
+    [Tooltip("The particle effect prefab to instantiate on impact.")]
+    public GameObject impactEffect;
+    [Tooltip("The sound to play on impact.")]
+    public AudioClip impactSound;
 
-    [Header("Interações")]
-    public bool causarDano = false;
-    public int dano = 1;
-    public bool ativarTrigger = false;
+    [Header("Interactions")]
+    [Tooltip("If true, the object will deal damage on impact.")]
+    public bool causeDamage;
+    public int damage = 1;
+    [Tooltip("If true, the object will activate objects that implement the ITriggerable interface.")]
+    public bool activateTrigger;
 
-    [Header("Ricochete")]
-    public bool podeRicochetear = false;
-    public int ricochetesMaximos = 2;
+    [Header("Ricochet")]
+    [Tooltip("If true, the object can bounce off surfaces.")]
+    public bool canRicochet;
+    public int maxRicochets = 2;
 
     [Header("Extras")]
-    public bool mostrarSombra = true;
-    public GameObject sombraPrefab;
+    [Tooltip("If true, a simple shadow will be projected below the object.")]
+    public bool showShadow = true;
+    public GameObject shadowPrefab;
 
-    private int ricochetes = 0;
-    private GameObject sombraInstanciada;
-    private Vector3 destinoAtual;
-    private Tween vooTween;
-    private bool emVoo = false;
+    private int _ricochetCount;
+    private GameObject _instantiatedShadow;
+    private Vector3 _currentDestination;
+    private Tween _flightTween;
+    private bool _isInFlight;
 
-    public void Arremessar()
-    {
-        destinoAtual = CalcularDestino();
-        float distancia = Vector3.Distance(transform.position, destinoAtual);
-        float tempo = tempoDinamico ? distancia * tempoPorUnidade : tempoBaseNoAr;
-
-        if (mostrarSombra && sombraPrefab)
-            sombraInstanciada = Instantiate(sombraPrefab, transform.position, Quaternion.identity);
-
-        emVoo = true;
-
-        vooTween = DOTween.To(() => 0f, t =>
-        {
-            // Se teleguiado, atualiza o destino
-            if (teleguiado)
+    /// <summary>
+    /// Initiates the throw sequence.
+    /// </summary>
+    private void Throw() {
+        if (_isInFlight) return; // Prevent re-throwing while already in the air.
+        _isInFlight = true;
+        Vector3 startPosition = transform.position;
+        _currentDestination = CalculateDestination();
+        float distance = Vector3.Distance(startPosition, _currentDestination);
+        float airTime = dynamicAirTime ? distance * timePerUnit : baseAirTime;
+        // Create the shadow if enabled.
+        if (showShadow && shadowPrefab && _instantiatedShadow == null) {
+            _instantiatedShadow = Instantiate(shadowPrefab, startPosition, Quaternion.identity);
+        }
+        // Main flight tween using DOTween.To for full control over the update loop.
+        _flightTween = DOTween.To(
+            getter: () => 0f, // Virtual timer from 0
+            setter: t =>      // 't' is the elapsed time percentage (0 to 1)
             {
-                Vector3 novoDestino = CalcularDestino();
-                Vector3 dirAtual = (destinoAtual - transform.position).normalized;
-                Vector3 dirNovo = (novoDestino - transform.position).normalized;
+                // Homing logic: continuously update the destination if needed.
+                if (isHoming && targetTransform != null) {
+                    Vector3 newDestination = CalculateDestination();
+                    // Smoothly turn towards the new destination.
+                    _currentDestination = Vector3.RotateTowards(
+                        current: (_currentDestination - transform.position).normalized,
+                        target: (newDestination - transform.position).normalized,
+                        maxRadiansDelta: Mathf.Deg2Rad * maxTurnAnglePerSecond * Time.deltaTime,
+                        maxMagnitudeDelta: 0f
+                    ) * distance + transform.position;
+                }
 
-                float maxDelta = anguloMaximoPorSegundo * Time.deltaTime;
-                destinoAtual = transform.position + Vector3.RotateTowards(dirAtual, dirNovo, Mathf.Deg2Rad * maxDelta, 0f) * distancia;
-            }
+                // Interpolate position and add arc height.
+                Vector3 currentPos = Vector3.Lerp(startPosition, _currentDestination, t);
+                float height = useCustomCurve ? heightCurve.Evaluate(t) * arcHeight : Mathf.Sin(t * Mathf.PI) * arcHeight;
+                currentPos.y += height;
+                transform.position = currentPos;
 
-            Vector3 pos = Vector3.Lerp(transform.position, destinoAtual, t);
-            float altura = usarCurvaCustomizada ? curvaDeAltura.Evaluate(t) * alturaDoArco : Mathf.Sin(t * Mathf.PI) * alturaDoArco;
-            pos.y += altura;
+                // Update shadow position by raycasting down.
+                if (!_instantiatedShadow) return;
+                if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, 100f)) {
+                    _instantiatedShadow.transform.position = hit.point + Vector3.up * 0.05f; // Small offset from the ground
+                }
+            },
+            endValue: 1f, // to 1
+            duration: airTime)
+        .SetEase(Ease.Linear)
+        .OnComplete(HandleImpact);
 
-            transform.position = pos;
-
-            if (sombraInstanciada)
-            {
-                if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, 100f))
-                    sombraInstanciada.transform.position = hit.point + Vector3.up * 0.1f;
-            }
-
-        }, 1f, tempo).SetEase(Ease.Linear).OnComplete(() =>
-        {
-            emVoo = false;
-
-            if (efeitoImpacto)
-                Instantiate(efeitoImpacto, transform.position, Quaternion.identity);
-
-            if (somImpacto)
-                AudioSource.PlayClipAtPoint(somImpacto, transform.position);
-
-            if (retornarAposImpacto && pontoRetorno != null)
-            {
-                tipoDeAlvo = Alvo.PontoFixo;
-                pontoFixo = pontoRetorno.position;
-                Arremessar();
-                return;
-            }
-
-            if (destruirAoImpactar)
-                Destroy(gameObject);
-
-            if (sombraInstanciada)
-                Destroy(sombraInstanciada);
-        });
-
-        if (girar)
-        {
-            transform.DORotate(eixosDeRotacao, tempo, RotateMode.FastBeyond360)
-                .SetEase(Ease.Linear)
-                .SetLoops(-1, LoopType.Restart);
+        // Rotation tween.
+        if (rotateInAir) {
+            transform.DORotate(rotationAxes, airTime, RotateMode.FastBeyond360)
+                .SetRelative() // Rotates *by* this amount, not *to* this amount.
+                .SetEase(Ease.Linear);
         }
     }
 
-    private Vector3 CalcularDestino()
-    {
-        switch (tipoDeAlvo)
-        {
-            case Alvo.Jogador:
-                GameObject jogador = GameObject.FindWithTag("Player");
-                if (jogador != null)
-                    return jogador.transform.position;
-                break;
+    /// <summary>
+    /// Handles the logic for when the object reaches its destination or collides.
+    /// </summary>
+    private void HandleImpact() {
+        _isInFlight = false;
+        
+        // Play impact effects.
+        if (impactEffect) Instantiate(impactEffect, transform.position, Quaternion.identity);
+        if (impactSound) AudioSource.PlayClipAtPoint(impactSound, transform.position);
 
-            case Alvo.PontoFixo:
-                return pontoFixo;
-
-            case Alvo.Direcao:
-                return transform.position + direcao.normalized * 5f;
+        // Handle boomerang return logic.
+        if (returnAfterImpact && returnPoint != null) {
+            // Reconfigure and re-throw towards the return point.
+            targetType = TargetType.FixedPoint;
+            targetTransform = returnPoint; // Use transform for potential moving return point.
+            returnAfterImpact = false; // Prevent infinite returns.
+            Throw();
+            return; // Exit to avoid destruction.
         }
-        return transform.position;
+
+        // Cleanup.
+        if (_instantiatedShadow) Destroy(_instantiatedShadow);
+        if (destroyOnImpact) Destroy(gameObject);
+    }
+    
+    /// <summary>
+    /// Determines the target destination based on the current settings.
+    /// </summary>
+    private Vector3 CalculateDestination() {
+        switch (targetType) {
+            case TargetType.Player:
+                // Find the player by tag. A more robust system might use a direct reference.
+                if (targetTransform == null) targetTransform = GameObject.FindWithTag("Player")?.transform;
+                return targetTransform != null ? targetTransform.position : transform.position;
+            case TargetType.FixedPoint:
+                return targetTransform != null ? targetTransform.position : fixedPoint;
+            case TargetType.Direction:
+                return transform.position + transform.TransformDirection(direction.normalized * 10f); // 10f is arbitrary distance.
+            default:
+                return transform.position;
+        }
     }
 
-    private void OnCollisionEnter(Collision col)
-    {
-        if (!emVoo) return;
-
-        if (podeRicochetear && ricochetes < ricochetesMaximos)
-        {
-            ricochetes++;
-            Vector3 refletido = Vector3.Reflect(direcao, col.contacts[0].normal);
-            direcao = refletido;
-            Arremessar();
+    /// <summary>
+    /// Handles physical collisions during flight.
+    /// </summary>
+    private void OnCollisionEnter(Collision col) {
+        if (!_isInFlight) return;
+        // Handle ricochet logic.
+        if (canRicochet && _ricochetCount < maxRicochets) {
+            _ricochetCount++;
+            // Reflect the current direction and re-throw.
+            direction = Vector3.Reflect(_currentDestination - transform.position, col.contacts[0].normal).normalized;
+            targetType = TargetType.Direction;
+            _flightTween?.Kill(); // Stop the current tween.
+            _isInFlight = false;
+            Throw();
+        } else {
+            // Handle damage and triggers on collision.
+            if (causeDamage && col.gameObject.CompareTag("Player")) {
+                // Example: col.gameObject.GetComponent<HealthSystem>()?.TakeDamage(damage);
+            }
+            if (activateTrigger && col.gameObject.TryGetComponent(out ITriggerable trigger)) {
+                trigger.Activate();
+            }
+            // Stop the tween and trigger the final impact logic.
+            _flightTween?.Kill();
+            HandleImpact();
         }
-        else
-        {
-            vooTween?.Kill();
+    }
 
-            if (causarDano && col.gameObject.CompareTag("Player"))
-            {
-                // col.gameObject.GetComponent<Vida>().ReceberDano(dano);
-            }
-
-            if (ativarTrigger && col.gameObject.TryGetComponent(out ITriggeravel trigger))
-            {
-                trigger.Ativar();
-            }
-
-            if (efeitoImpacto)
-                Instantiate(efeitoImpacto, transform.position, Quaternion.identity);
-
-            if (somImpacto)
-                AudioSource.PlayClipAtPoint(somImpacto, transform.position);
-
-            if (retornarAposImpacto && pontoRetorno != null)
-            {
-                tipoDeAlvo = Alvo.PontoFixo;
-                pontoFixo = pontoRetorno.position;
-                Arremessar();
-            }
-            else if (destruirAoImpactar)
-            {
-                Destroy(gameObject);
-            }
-
-            if (sombraInstanciada)
-                Destroy(sombraInstanciada);
-
-            emVoo = false;
-        }
+    private void OnDestroy() {
+        // Ensure all tweens and the shadow are destroyed when the object is destroyed.
+        _flightTween?.Kill();
+        if (_instantiatedShadow) Destroy(_instantiatedShadow);
     }
 }

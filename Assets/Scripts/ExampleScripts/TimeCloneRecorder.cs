@@ -1,61 +1,77 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Records player inputs over a specified duration. The recorded inputs can then be
+/// used by a TimeCloneGhost to create a "time clone" that replays the player's actions.
+/// </summary>
 public class TimeCloneRecorder : MonoBehaviour
 {
-    [Header("Configurações de Gravação")]
-    public float duracaoGravacao = 5f;
-    public GameObject prefabClone;
+    [Header("Recording Settings")]
+    [Tooltip("The duration of the input recording in seconds. The recorder will only store the most recent inputs up to this duration.")]
+    public float recordingDuration = 5f;
+    [Tooltip("The prefab for the time clone ghost, which will be instantiated to replay the actions.")]
+    public GameObject clonePrefab;
 
-    private List<PlayerInputFrame> inputGravado = new();
-    private bool gravando = true;
-    private float tempoAtual = 0f;
+    // A list to store the frames of recorded input.
+    private readonly List<PlayerInputFrame> _recordedInputs = new List<PlayerInputFrame>();
+    private const bool IsRecording = true;
+    private float _recordingStartTime;
 
-    void Update()
-    {
-        if (gravando)
-        {
-            GravarInput();
+    private void Start() {
+        _recordingStartTime = Time.time;
+    }
+
+    /// <summary>
+    /// Called every frame to handle input recording and clone creation.
+    /// </summary>
+    private void Update() {
+        if (IsRecording) {
+            RecordInput();
         }
-
-        if (Input.GetKeyDown(KeyCode.C)) // Botão para criar o clone
-        {
-            CriarClone();
+        // Check for the key press to create a clone.
+        if (Input.GetKeyDown(KeyCode.C)) {
+            CreateClone();
         }
     }
 
-    void GravarInput()
-    {
-        tempoAtual += Time.deltaTime;
-        if (tempoAtual > duracaoGravacao)
-        {
-            inputGravado.RemoveAt(0); // remove o mais antigo
-        }
-
-        // Exemplo de gravação básica de movimento e pulo
-        Vector2 movimento = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        bool pulo = Input.GetButton("Jump");
-
-        inputGravado.Add(new PlayerInputFrame
-        {
-            movimento = movimento,
-            pulo = pulo,
-            tempo = Time.time
+    /// <summary>
+    /// Captures the current player input and adds it to the recording list.
+    /// </summary>
+    private void RecordInput() {
+        // Create a new input frame with the current inputs.
+        _recordedInputs.Add(new PlayerInputFrame {
+            move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")),
+            jump = Input.GetButton("Jump"),
+            timestamp = Time.time - _recordingStartTime // Store time relative to start for easier replay.
         });
+        
+        // Prune old input frames to maintain the desired recording duration.
+        // This creates a "rolling" buffer of the last X seconds of input.
+        while (_recordedInputs.Count > 0 && _recordedInputs[^1].timestamp - _recordedInputs[0].timestamp > recordingDuration) {
+            _recordedInputs.RemoveAt(0);
+        }
     }
 
-    void CriarClone()
-    {
-        GameObject clone = Instantiate(prefabClone, transform.position, transform.rotation);
-        var ghost = clone.GetComponent<TimeCloneGhost>();
-        ghost.CarregarInputs(new List<PlayerInputFrame>(inputGravado));
+    /// <summary>
+    /// Instantiates a time clone and passes the recorded inputs to it.
+    /// </summary>
+    private void CreateClone() {
+        if (!clonePrefab || _recordedInputs.Count == 0) return;
+        GameObject clone = Instantiate(clonePrefab, transform.position, transform.rotation);
+        if (clone.TryGetComponent(out TimeCloneGhost ghost)) {
+            // Pass a copy of the recorded inputs to the ghost for replaying.
+            ghost.LoadInputs(new List<PlayerInputFrame>(_recordedInputs));
+        }
     }
 }
 
+/// <summary>
+/// A data structure to hold a snapshot of player inputs at a specific moment in time.
+/// </summary>
 [System.Serializable]
-public class PlayerInputFrame
-{
-    public Vector2 movimento;
-    public bool pulo;
-    public float tempo;
+public class PlayerInputFrame {
+    public Vector2 move;
+    public bool jump;
+    public float timestamp;
 }
