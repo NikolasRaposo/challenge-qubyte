@@ -1,6 +1,7 @@
 ﻿using ThirdParty.StarterAssets.InputSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using ExampleScripts;
 
 namespace ThirdParty.StarterAssets.ThirdPersonController.Scripts
 {
@@ -403,10 +404,10 @@ namespace ThirdParty.StarterAssets.ThirdPersonController.Scripts
             {
                 // Verifica se a interação por pulo está ativa na caixa
                 // E se o personagem está colidindo com a parte de cima da caixa (a normal do ponto de colisão aponta para cima)
-                if (box.podeInteragirComPulo && hit.normal.y > 0.7f)
+                if (box.canInteractOnJump && hit.normal.y > 0.7f)
                 {
                     // Se as condições forem verdadeiras, chama o método público de interação da caixa
-                    box.Interagir(transform);
+                    box.Interact(transform);
                 }
             }
         }

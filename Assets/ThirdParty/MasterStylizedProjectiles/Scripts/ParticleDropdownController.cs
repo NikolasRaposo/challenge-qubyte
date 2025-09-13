@@ -11,17 +11,17 @@ namespace MasterStylizedProjectile
         public Dropdown dropdown;
         public AudioClip changeClip;
 
-        AudioSource audio;
+        private AudioSource _audio;
         private void Start()
         {
             dropdown = GetComponent<Dropdown>();
             RefreshDropdown();
             dropdown.onValueChanged.AddListener(OnSelect);
 
-            audio = gameObject.AddComponent<AudioSource>();
+            _audio = gameObject.AddComponent<AudioSource>();
             if (changeClip != null)
             {
-                audio.clip = changeClip;
+                _audio.clip = changeClip;
             }
 
         }
@@ -34,7 +34,7 @@ namespace MasterStylizedProjectile
                 //RefreshDropdown();
                 if (changeClip != null)
                 {
-                    audio.Play();
+                    _audio.Play();
                 }
             }
             if(Input.GetKeyDown(KeyCode.D))
@@ -44,7 +44,7 @@ namespace MasterStylizedProjectile
                 //RefreshDropdown();
                 if (changeClip != null)
                 {
-                    audio.Play();
+                    _audio.Play();
                 }
             }
         }
