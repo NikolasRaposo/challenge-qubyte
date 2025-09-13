@@ -1,6 +1,7 @@
 using DG.Tweening;
+using Managers;
 using UnityEngine;
-namespace ExampleScripts {
+namespace Gameplay {
     /// <summary>
     /// Controls the behavior of collectible coins, including rotation, magnetism, and collection effects.
     /// </summary>
@@ -183,6 +184,9 @@ namespace ExampleScripts {
         private void Collect() {
             if (_isCollected) return; // Prevent double collection.
             _isCollected = true;
+            if (GameManager.Instance != null) {
+                GameManager.Instance.AddCoin();
+            }
 
             // Stop all coin-specific tweens.
             DOTween.Kill(_rotationTweenId);

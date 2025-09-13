@@ -11,9 +11,6 @@ GameObject:
   - component: {fileID: 8444800969281370438}
   - component: {fileID: 2536446431766542322}
   - component: {fileID: 3974145173027555729}
-  - component: {fileID: 2669211256593579466}
-  - component: {fileID: 7773800546338009604}
-  - component: {fileID: 2685667776603133010}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -31,8 +28,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 2810180019314094540}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -86,99 +83,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &2669211256593579466
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 351972027349365433}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7773800546338009604
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 351972027349365433}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1f8a9ce0e1943f142be6125a7f503b27, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  podeInteragirComPulo: 1
-  podeInteragirComAtaque: 0
-  apenasUmaVez: 1
-  quebraAoInteragir: 1
-  someAoInteragir: 0
-  reapareceDepois: 0
-  tempoParaReaparecer: 3
-  soltaItem: 1
-  itemPrefab: {fileID: 3080391401010577597, guid: b2df085928a23a64397682638ca23628,
-    type: 3}
-  pontoSpawn: {fileID: 2810180019314094540}
-  configuracoesItens:
-    quantidade: 5
-    itensEspalhar: 1
-    alturaSobe: 2
-    tempoSobeDesce: 0.9
-    raioEspalhamento: 2
-    tempoAntesDeEspalhar: 0.2
-    velocidadeRotacao: 360
-    evitarSobreposicao: 1
-    distanciaMinima: 0.5
-  explodeAoQuebrar: 0
-  forcaExplosao: 300
-  prefabPedacos: {fileID: 351972027349365433}
-  funcionaComoTrampolim: 1
-  forcaTrampolim: 10
-  usarControladorTrampolim: 1
-  trampolimPersonalizado: {fileID: 2685667776603133010}
-  feedbackVisual: 1
-  tremorIntensidade: 0.05
-  tremorDuracao: 0.6
---- !u!114 &2685667776603133010
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 351972027349365433}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2bf3447a40fff34da5e7738bcd87370, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  forcaImpulso: 5
-  multiplicadorVelocidadeHorizontal: 1
-  usoUnico: 0
-  tempoRecarga: 0
-  tempoDeRecarga: 2
-  animacaoVisual: 1
-  escalaCompressao: {x: 1.2, y: 0.5, z: 1.2}
-  escalaExtensao: {x: 0.8, y: 1.5, z: 0.8}
-  duracaoAnimacao: 0.3
-  usarSom: 1
-  somTrampolim: {fileID: 0}
-  volumeSom: 0.7
-  camadasInterativas:
-    serializedVersion: 2
-    m_Bits: 0
-  anguloDirecao: 0
-  apenasQuandoCaindo: 1
 --- !u!1 &9095756100521286977
 GameObject:
   m_ObjectHideFlags: 0
@@ -188,6 +92,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2810180019314094540}
+  - component: {fileID: 6913402009656111217}
+  - component: {fileID: 1416800565200577787}
+  - component: {fileID: 1359976650082509787}
   m_Layer: 0
   m_Name: Box
   m_TagString: Untagged
@@ -205,9 +112,98 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 63.59, y: 7.5, z: 49.33}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 8444800969281370438}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &6913402009656111217
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9095756100521286977}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.5, y: 0.5, z: 0.5}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1416800565200577787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9095756100521286977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f8a9ce0e1943f142be6125a7f503b27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canInteractOnJump: 1
+  interactOnce: 1
+  breakOnInteract: 1
+  disappearOnInteract: 0
+  respawnAfterTime: 0
+  respawnTime: 3
+  spawnItem: 0
+  itemPrefab: {fileID: 3080391401010577597, guid: b2df085928a23a64397682638ca23628,
+    type: 3}
+  spawnPoint: {fileID: 0}
+  itemEffectSettings:
+    quantity: 1
+    spreadItems: 1
+    riseHeight: 2
+    riseFallDuration: 0.5
+    spreadRadius: 2
+    delayBeforeSpread: 0.05
+    avoidOverlap: 1
+    minDistance: 0.5
+  explodeOnBreak: 0
+  explosionForce: 300
+  fragmentsPrefab: {fileID: 0}
+  isTrampoline: 0
+  trampolineForce: 10
+  useVisualFeedback: 1
+  shakeIntensity: 0.05
+  shakeDuration: 0.3
+--- !u!114 &1359976650082509787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9095756100521286977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2bf3447a40fff34da5e7738bcd87370, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  launchForce: 10
+  horizontalVelocityMultiplier: 1
+  singleUse: 0
+  hasCooldown: 0
+  cooldownTime: 2
+  useVisualAnimation: 1
+  compressionScale: {x: 1.2, y: 0.5, z: 1.2}
+  extensionScale: {x: 0.8, y: 1.5, z: 0.8}
+  animationDuration: 0.3
+  useSound: 1
+  trampolineSound: {fileID: 0}
+  soundVolume: 0.7
+  interactiveLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  launchAngle: 0
+  onlyWhenFalling: 1

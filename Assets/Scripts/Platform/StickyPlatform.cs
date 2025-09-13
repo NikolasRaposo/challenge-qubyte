@@ -1,4 +1,3 @@
-using ThirdParty.StarterAssets.ThirdPersonController.Scripts;
 using UnityEngine;
 namespace Platform {
     /// <summary>

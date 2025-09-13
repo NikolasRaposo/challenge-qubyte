@@ -1,3 +1,5 @@
+using Gameplay;
+using Player;
 using UnityEngine;
 namespace ExampleScripts {
     /// <summary>
