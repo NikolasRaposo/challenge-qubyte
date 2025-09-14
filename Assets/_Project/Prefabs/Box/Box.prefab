@@ -155,10 +155,10 @@ MonoBehaviour:
   canInteractOnJump: 1
   interactOnce: 1
   breakOnInteract: 1
-  disappearOnInteract: 0
+  disappearOnInteract: 1
   respawnAfterTime: 0
   respawnTime: 3
-  spawnItem: 0
+  spawnItem: 1
   itemPrefab: {fileID: 3080391401010577597, guid: b2df085928a23a64397682638ca23628,
     type: 3}
   spawnPoint: {fileID: 0}
@@ -166,15 +166,15 @@ MonoBehaviour:
     quantity: 5
     spreadItems: 1
     riseHeight: 2
-    riseFallDuration: 0.5
+    riseFallDuration: 0.9
     spreadRadius: 2
-    delayBeforeSpread: 0.05
+    delayBeforeSpread: 0.2
     avoidOverlap: 1
     minDistance: 0.5
   explodeOnBreak: 0
   explosionForce: 300
-  fragmentsPrefab: {fileID: 0}
-  isTrampoline: 0
+  fragmentsPrefab: {fileID: 351972027349365433}
+  isTrampoline: 1
   trampolineForce: 10
   useVisualFeedback: 1
   shakeIntensity: 0.05
@@ -191,7 +191,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2bf3447a40fff34da5e7738bcd87370, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  launchForce: 10
+  launchForce: 5
   horizontalVelocityMultiplier: 1
   singleUse: 0
   hasCooldown: 0
