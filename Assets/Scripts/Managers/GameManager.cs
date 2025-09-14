@@ -6,18 +6,18 @@ namespace Managers {
     /// Implemented as a Singleton to be easily accessed by other scripts.
     /// </summary>
     public class GameManager : MonoBehaviour {
-        // --- Singleton Pattern ---
-        // The static, public instance of the GameManager that can be accessed from anywhere.
         public static GameManager Instance { get; private set; }
 
-        // --- Public Variables ---
         [Header("Player Stats")]
         [Tooltip("The amount of coins the player has collected in the current level.")]
         public int collectedCoins;
         [Header("Game State")]
         [Tooltip("A reference to the player's GameObject.")]
-        public GameObject player; // Arraste o prefab ou o objeto do Saci da cena aqui
-
+        public GameObject player;
+        [Header("UI")]
+        [Tooltip("The UI panel that is shown when the level is completed.")]
+        public GameObject levelCompletePanel;
+        
         private Vector3 _lastCheckpointPosition;
         private PlayerHealth _playerHealth;
 
@@ -33,6 +33,9 @@ namespace Managers {
                 // (Optional) Prevents the GameManager from being destroyed when loading a new scene.
                 // Useful if you want to keep the coin count between levels.
                 // DontDestroyOnLoad(gameObject); 
+            }
+            if (levelCompletePanel != null) {
+                levelCompletePanel.SetActive(false);
             }
         }
         private void Start() {
@@ -76,6 +79,26 @@ namespace Managers {
             if (characterController) characterController.enabled = true;
             // Reset player's state (re-enable model, controls, etc.)
             _playerHealth.PrepareForRespawn();
+        }
+        /// <summary>
+        /// Handles the logic for when the level is successfully completed.
+        /// </summary>
+        public void CompleteLevel() {
+            Debug.Log("Level Completed!");
+
+            // Show the level complete UI panel
+            if (levelCompletePanel != null) {
+                levelCompletePanel.SetActive(true);
+            }
+
+            // Freeze the game
+            Time.timeScale = 0f;
+
+            // You might want to disable player input here as well
+            if(player != null) {
+                // This assumes you are using the new Input System with PlayerInput component
+                player.GetComponent<UnityEngine.InputSystem.PlayerInput>().enabled = false;
+            }
         }
     }
 }

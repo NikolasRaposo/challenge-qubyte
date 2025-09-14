@@ -1,6 +1,6 @@
 using Player;
 using UnityEngine;
-namespace Gameplay {
+namespace Triggers {
     /// <summary>
     /// A trigger volume that causes any object with a PlayerHealth component to die upon entry.
     /// </summary>

@@ -7,6 +7,9 @@ namespace Gameplay {
     /// Allows for various interactions like breaking, dropping items, acting as a trampoline, exploding, and more.
     /// </summary>
     public class BoxInteractor : MonoBehaviour {
+        [Header("Box Settings")]
+        public GameObject boxModel;
+        
         [Header("General Settings")]
         [Tooltip("Can the box be triggered by the player jumping on it from above?")]
         public bool canInteractOnJump = true;
@@ -66,7 +69,7 @@ namespace Gameplay {
         /// </summary>
         private void Start() {
             _originalScale = transform.localScale;
-            _boxRenderer = GetComponent<Renderer>();
+            _boxRenderer = boxModel.GetComponent<Renderer>();
             _boxCollider = GetComponent<Collider>();
         }
 
