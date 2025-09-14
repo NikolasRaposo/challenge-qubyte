@@ -8,9 +8,11 @@ namespace Player.Powers {
     /// and applies an upward force to any player that enters its trigger, making them float.
     /// </summary>
     public class Tornado : MonoBehaviour {
+        
+        [Header("Tornado Settings")]
         [Tooltip("The total time in seconds the tornado will exist before being destroyed.")]
         public float lifeTime = 3f;
-        [Header("Player Interaction")]
+        
         [Tooltip("The initial upward force applied to the player upon entering the tornado.")]
         public float upwardForce = 5f;
         
@@ -51,14 +53,11 @@ namespace Player.Powers {
         /// </summary>
         private void OnTriggerExit(Collider other) {
             if (!other.CompareTag("Player")) return;
-            ThirdPersonController playerController = other.GetComponent<ThirdPersonController>();
-            if (playerController == null || !_playersInTornado.Contains(playerController)) return;
-            // Remove the player from tracking.
+
+            if (!other.TryGetComponent(out ThirdPersonController playerController) || !_playersInTornado.Contains(playerController)) return;
+            // Restore the player's normal state.
+            RestorePlayerState(playerController);
             _playersInTornado.Remove(playerController);
-            // Revert the player's animation state.
-            playerController.SetFreeFallAnimation(false);
-            // Restore the player's normal gravity.
-            playerController.SetGravityOverride(false);
         }
 
         /// <summary>
@@ -73,6 +72,15 @@ namespace Player.Powers {
             }
             // Clear the set for good measure.
             _playersInTornado.Clear();
+        }
+        
+        /// <summary>
+        /// Reverts the player to their normal state (with gravity and default animations).
+        /// </summary>
+        private void RestorePlayerState(ThirdPersonController playerController)
+        {
+            playerController.SetFreeFallAnimation(false);
+            playerController.SetGravityOverride(false);
         }
     }
 }

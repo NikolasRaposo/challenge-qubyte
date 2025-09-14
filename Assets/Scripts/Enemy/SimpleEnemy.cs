@@ -14,11 +14,18 @@ namespace Enemy {
 
         [Tooltip("The movement speed of the enemy.")]
         public float speed = 2f;
+        
+        [Header("Effects")]
+        [Tooltip("The particle effect to spawn when defeated.")]
+        public GameObject deathVFX;
+        [Tooltip("The sound effect to play when defeated.")]
+        public AudioClip deathSFX;
 
         [Tooltip("How close the enemy needs to be to a point to switch targets.")]
         private const float DistanceThreshold = 0.1f;
 
         private Transform _currentTarget;
+        private bool _isDefeated = false;
 
         private void Start() {
             // Safety check to ensure patrol points are set
@@ -32,6 +39,7 @@ namespace Enemy {
         }
 
         private void Update() {
+            if (_isDefeated) return;
             // Move towards the current target
             transform.position = Vector3.MoveTowards(transform.position, _currentTarget.position, speed * Time.deltaTime);
             // Check if we have reached the target
@@ -42,6 +50,8 @@ namespace Enemy {
 
         // This function is called when this collider/rigidbody has begun touching another rigidbody/collider.
         private void OnCollisionEnter(Collision collision) {
+            // If the enemy is already defeated, do nothing.
+            if (_isDefeated) return;
             // Check if the object we collided with has the "Player" tag
             if (!collision.gameObject.CompareTag("Player")) return;
             // Try to get the PlayerHealth component from the collided object
@@ -49,6 +59,29 @@ namespace Enemy {
                 // If found, call the Die() method
                 playerHealth.Die();
             }
+        }
+        /// <summary>
+        /// This is called by the PlayerController when the enemy is jumped on.
+        /// </summary>
+        public void Defeat() {
+            _isDefeated = true;
+            // Play visual and audio feedback.
+            if (deathVFX != null) {
+                Instantiate(deathVFX, transform.position, Quaternion.identity);
+            }
+            if (deathSFX != null) {
+                AudioSource.PlayClipAtPoint(deathSFX, transform.position);
+            }
+            // Disable components to make the enemy disappear and stop interacting.
+            GetComponent<Collider>().enabled = false;
+            // Hides all renderers in children objects as well.
+            foreach (Renderer enemyRenderer in GetComponentsInChildren<Renderer>())
+            {
+                enemyRenderer.enabled = false;
+            }
+
+            // Destroy the GameObject after a short delay to allow effects to play.
+            Destroy(gameObject, 2f);
         }
     }
 }

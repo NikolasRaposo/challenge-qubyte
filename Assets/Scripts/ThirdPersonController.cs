@@ -1,4 +1,5 @@
-﻿using Gameplay;
+﻿using Enemy;
+using Gameplay;
 using Platform;
 using ThirdParty.StarterAssets.InputSystem;
 using UnityEngine;
@@ -25,7 +26,11 @@ public class ThirdPersonController : MonoBehaviour {
     [Tooltip("How fast the momentum decays while in air. 0 = no decay, 1 = instant decay")]
     [Range(0.0f, 1.0f)]
     [SerializeField] private float _momentumDecayRate = 0.1f;
-
+    
+    [Header("Player Combat")]
+    [Tooltip("The upward force applied to the player after successfully jumping on an enemy.")]
+    [SerializeField] private float _bounceForceOnEnemy = 7f;
+    
     [Header("Player Jump & Gravity")]
     [Tooltip("The height the player can jump")]
     [SerializeField] private float _jumpHeight = 1.2f;
@@ -72,13 +77,13 @@ public class ThirdPersonController : MonoBehaviour {
     // Player state
     private float _speed;
     private float _animationBlend;
-    private float _targetRotation = 0.0f;
+    private float _targetRotation;
     private float _rotationVelocity;
     private float _verticalVelocity;
-    private float _terminalVelocity = 53.0f;
-    private int _airJumpsRemaining = 0;
+    private int _airJumpsRemaining;
     private bool _isDoubleJumpEnabled = true;
-    private bool _isGravityOverridden = false;
+    private bool _isGravityOverridden;
+    private const float TerminalVelocity = 53.0f;
         
     // Momentum system for air control
     private Vector3 _baseMomentum = Vector3.zero;
@@ -246,7 +251,7 @@ public class ThirdPersonController : MonoBehaviour {
         // Aplica a gravidade constantemente.
         if (!_isGravityOverridden)
         {
-            if (_verticalVelocity < _terminalVelocity)
+            if (_verticalVelocity < TerminalVelocity)
             {
                 _verticalVelocity += _gravity * Time.deltaTime;
             }
@@ -266,10 +271,6 @@ public class ThirdPersonController : MonoBehaviour {
             {
                 Vector3 platformHorizontalVelocity = new Vector3(_platformVelocity.x, 0.0f, _platformVelocity.z);
                 currentVelocity += platformHorizontalVelocity;
-            }
-            else
-            {
-                Debug.Log($"[ThirdPersonController] Nenhuma plataforma detectada");
             }
                 
             _baseMomentum = currentVelocity;
@@ -386,15 +387,27 @@ public class ThirdPersonController : MonoBehaviour {
     }
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        // Tenta encontrar o componente BoxInteractor no objeto em que colidimos
+        // --- BOX INTERACTION LOGIC ---
         if (hit.gameObject.TryGetComponent(out BoxInteractor box))
         {
-            // Verifica se a interação por pulo está ativa na caixa
-            // E se o personagem está colidindo com a parte de cima da caixa (a normal do ponto de colisão aponta para cima)
+            // Check if interaction by jumping is enabled on the box
+            // and if the character is hitting the top of the box.
             if (box.canInteractOnJump && hit.normal.y > 0.7f)
             {
-                // Se as condições forem verdadeiras, chama o método público de interação da caixa
                 box.Interact(transform);
+            }
+        }
+
+        // --- NEW ENEMY INTERACTION LOGIC ---
+        // Check if the object we hit has a SimpleEnemy component.
+        if (hit.gameObject.TryGetComponent(out SimpleEnemy enemy)) {
+            // Check if we are hitting the enemy from above.
+            // hit.normal is the normal of the surface we collided with.
+            // A value close to 1 in the Y axis means we are on top of it.
+            if (hit.normal.y > 0.7f) {
+                // If so, defeat the enemy and bounce.
+                enemy.Defeat();
+                ApplyUpwardForce(_bounceForceOnEnemy);
             }
         }
     }
