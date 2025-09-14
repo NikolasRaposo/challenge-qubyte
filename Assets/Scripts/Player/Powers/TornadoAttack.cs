@@ -50,6 +50,18 @@ namespace Player.Powers {
             // Create a new instance of the tornado.
             Instantiate(tornadoPrefab, spawnPoint.position, transform.rotation);
         }
+        /// <summary>
+        /// Returns the cooldown progress as a value between 0 (ready) and 1 (just used).
+        /// </summary>
+        public float GetCooldownProgress()
+        {
+            float timeSinceLast = Time.time - _lastTornadoTime;
+            if (timeSinceLast >= cooldown)
+            {
+                return 1f;
+            }
+            return timeSinceLast / cooldown;
+        }
         
         /// <summary>
         /// Unsubscribe from the event when this object is destroyed to prevent memory leaks.

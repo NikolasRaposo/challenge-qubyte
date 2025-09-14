@@ -1,3 +1,4 @@
+using Managers;
 using Player;
 using UnityEngine;
 namespace Enemy {
@@ -79,7 +80,7 @@ namespace Enemy {
             {
                 enemyRenderer.enabled = false;
             }
-
+            GameManager.Instance.IncrementDefeatedEnemies();
             // Destroy the GameObject after a short delay to allow effects to play.
             Destroy(gameObject, 2f);
         }

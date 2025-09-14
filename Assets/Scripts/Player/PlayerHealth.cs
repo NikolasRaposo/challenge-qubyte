@@ -1,7 +1,7 @@
 using System.Collections;
 using Managers;
 using UnityEngine;
-using UnityEngine.Serialization;
+
 namespace Player {
     /// <summary>
     /// Manages the player's health state, handling death and coordinating the respawn process.
@@ -54,11 +54,11 @@ namespace Player {
             StartCoroutine(NotifyGameManagerOfRespawn());
         }
 
-        private IEnumerator NotifyGameManagerOfRespawn() {
+        private static IEnumerator NotifyGameManagerOfRespawn() {
             // Wait for a moment before respawning
             yield return new WaitForSeconds(2f);
 
-            if (GameManager.Instance != null) {
+            if (GameManager.Instance) {
                 GameManager.Instance.RespawnPlayer();
             }
         }
@@ -68,7 +68,7 @@ namespace Player {
         /// </summary>
         public void PrepareForRespawn() {
             // Show the player model again
-            if (playerModel != null) {
+            if (playerModel) {
                 playerModel.SetActive(true);
             } else {
                 GetComponentInChildren<Renderer>().enabled = true;

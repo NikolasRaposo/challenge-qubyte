@@ -1,5 +1,9 @@
+using System;
+using System.Collections;
 using Player;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 namespace Managers {
     /// <summary>
     /// Manages the overall game state, such as coin count, player status, and level progress.
@@ -8,55 +12,74 @@ namespace Managers {
     public class GameManager : MonoBehaviour {
         public static GameManager Instance { get; private set; }
 
+        public event Action<int> OnCoinsUpdated;
+        public event Action<int> OnLivesUpdated;
+        public event Action<int> OnEnemiesDefeatedUpdated;
+        
         [Header("Player Stats")]
-        [Tooltip("The amount of coins the player has collected in the current level.")]
-        public int collectedCoins;
+        public int playerLives = 3;
+        
         [Header("Game State")]
         [Tooltip("A reference to the player's GameObject.")]
         public GameObject player;
+        
         [Header("UI")]
         [Tooltip("The UI panel that is shown when the level is completed.")]
         public GameObject levelCompletePanel;
         
         private Vector3 _lastCheckpointPosition;
         private PlayerHealth _playerHealth;
+        private bool _isPaused;
+        private int _collectedCoins;
+        private int _enemiesDefeated;
 
         // The Awake method is called before any Start methods.
         private void Awake() {
-            // Check if an instance of the GameManager already exists in the scene.
-            if (Instance != null && Instance != this) {
-                // If so, and it's not this one, destroy this object to ensure there is only one.
-                Destroy(gameObject);
-            } else {
-                // If no instance exists, this one becomes the instance.
-                Instance = this;
-                // (Optional) Prevents the GameManager from being destroyed when loading a new scene.
-                // Useful if you want to keep the coin count between levels.
-                // DontDestroyOnLoad(gameObject); 
-            }
+            if (Instance != null && Instance != this) { Destroy(gameObject); }
+            else { Instance = this; }
+            
             if (levelCompletePanel != null) {
                 levelCompletePanel.SetActive(false);
             }
         }
         private void Start() {
+            Time.timeScale = 1f;
             if (player != null) {
                 _lastCheckpointPosition = player.transform.position;
                 _playerHealth = player.GetComponent<PlayerHealth>();
+            } 
+            InputManager.Instance.OnPause += TogglePause;
+            
+            OnCoinsUpdated?.Invoke(_collectedCoins);
+            OnLivesUpdated?.Invoke(playerLives);
+            OnEnemiesDefeatedUpdated?.Invoke(_enemiesDefeated);
+        }
+        public void TogglePause() {
+            _isPaused = !_isPaused;
+            Time.timeScale = _isPaused ? 0f : 1f;
+            UIManager.Instance.TogglePauseMenu(_isPaused);
+            if (_isPaused) {
+                InputManager.Instance.SetUiContext();
             } else {
-                Debug.LogError("Player reference is not set in the GameManager!");
+                InputManager.Instance.SetPlayerContext();
             }
         }
-
         /// <summary>
         /// Adds a specified amount of coins to the counter.
         /// </summary>
         /// <param name="amount">The number of coins to add.</param>
         public void AddCoin(int amount = 1) {
-            collectedCoins += amount;
-            Debug.Log("Coins: " + collectedCoins);
-        
-            // In the future, you can invoke an event here to update the UI.
-            // E.g., OnCoinCountChanged?.Invoke(collectedCoins);
+            _collectedCoins += amount;
+            OnCoinsUpdated?.Invoke(_collectedCoins);
+        }
+        public void IncrementDefeatedEnemies() {
+            _enemiesDefeated++;
+            OnEnemiesDefeatedUpdated?.Invoke(_enemiesDefeated);
+        }
+        private void OnDestroy() {
+            if (InputManager.Instance != null) {
+                InputManager.Instance.OnPause -= TogglePause;
+            }
         }
         /// <summary>
         /// Updates the position where the player will respawn.
@@ -72,6 +95,24 @@ namespace Managers {
         /// </summary>
         public void RespawnPlayer() {
             if (!player || !_playerHealth) return;
+            
+            playerLives--;
+            OnLivesUpdated?.Invoke(playerLives); 
+            if (playerLives > 0) {
+                StartCoroutine(RespawnSequence());
+            } else {
+                GameOver();
+            }
+        }
+        /// <summary>
+        /// Coroutine that manages the sequence of the player respawning.
+        /// </summary>
+        private IEnumerator RespawnSequence() {
+            // Block player input while the countdown is running.
+            InputManager.Instance.SetBlockInputContext();
+            // Tell the UIManager to show the countdown and wait for it to finish.
+            yield return UIManager.Instance.StartRespawnCountdown(3f); // 3-second countdown
+            // --- Actual Respawn Logic ---
             Debug.Log("Respawning player at: " + _lastCheckpointPosition);
             CharacterController characterController = player.GetComponent<CharacterController>();
             if (characterController) characterController.enabled = false;
@@ -79,6 +120,18 @@ namespace Managers {
             if (characterController) characterController.enabled = true;
             // Reset player's state (re-enable model, controls, etc.)
             _playerHealth.PrepareForRespawn();
+            // Give control back to the player.
+            InputManager.Instance.SetPlayerContext();
+        }
+        /// <summary>
+        /// Handles the game over state.
+        /// </summary>
+        private void GameOver() {
+            Debug.Log("Game Over!");
+            // Tell the UIManager to show the final screen.
+            UIManager.Instance.ShowGameOverScreen();
+            // Block all player input permanently.
+            InputManager.Instance.SetBlockInputContext();
         }
         /// <summary>
         /// Handles the logic for when the level is successfully completed.
@@ -99,6 +152,16 @@ namespace Managers {
                 // This assumes you are using the new Input System with PlayerInput component
                 player.GetComponent<UnityEngine.InputSystem.PlayerInput>().enabled = false;
             }
+        }
+        public void RestartLevel() {
+            // Reloads the currently active scene.
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        public void GoToMainMenu() {
+            // Loads the main menu scene. Make sure you have a scene named "MainMenu"
+            // or change the string to the correct name.
+            SceneManager.LoadScene(0);
         }
     }
 }
