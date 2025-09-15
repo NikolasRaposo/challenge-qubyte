@@ -100,7 +100,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -118,16 +118,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51987be04446e754abc776d39b7d6d06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  coletadoEfeito: {fileID: 0}
-  somColeta: {fileID: 0}
-  tempoDestruir: 0.2
-  velocidadeRotacao: 180
-  velocidadeMagnetismo: 7
-  distanciaMinimaParaColetar: 0.2
-  raioAtracao: 1.5
-  easeDoMagnetismo: 25
-  corGizmo: {r: 0.87165225, g: 1, b: 0, a: 0.3}
-  pontoAtracaoPersonalizado: {fileID: 0}
-  tempoEsperaAntesDoMagnetismo: 1
-  ignorarTempoEspera: 0
-  tempoDesativarColetaPorToque: 1.2
+  collectionEffect: {fileID: 0}
+  collectionSound: {fileID: 0}
+  destroyDelay: 1
+  rotationSpeed: 180
+  magnetismSpeed: 5
+  minCollectionDistance: 0.5
+  customAttractionPoint: {fileID: 0}
+  magnetismDelay: 1.2
+  ignoreDelay: 0
+  touchCollectionDisableTime: 1.5
