@@ -11,7 +11,7 @@ namespace Managers {
     public class InputManager : MonoBehaviour {
         public static InputManager Instance { get; private set; }
         private StarterAssets _controls;
-        public event Action OnTornado; 
+        public event Action OnTornado, OnPause; 
         private void Awake() {
             if (Instance != null && Instance != this) Destroy(gameObject);
             else Instance = this;
@@ -34,19 +34,49 @@ namespace Managers {
             _controls.Disable();
             switch (context) {
                 case InputContext.Player:
-                    _controls.Player.Tornado.performed += TornadoOnPerformed;
+                    SetPlayerEvents();
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
                     break;
                 case InputContext.UI:
+                    _controls.UI.Enable();
+                    _controls.UI.Pause.performed += PauseOnPerformed;
+                    
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
                     break;
                 case InputContext.BlockInput:
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(context), context, null);
             }
         }
+        private void SetPlayerEvents() {
+            _controls.Player.Enable();
+            _controls.Player.Tornado.performed += TornadoOnPerformed;
+            _controls.Player.Pause.performed += PauseOnPerformed;
+        }
+        private void SeUIEvents() {
+            _controls.Player.Enable();
+            _controls.Player.Tornado.performed += TornadoOnPerformed;
+            _controls.Player.Pause.performed += PauseOnPerformed;
+        }
+        
+        
         private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
+        private void PauseOnPerformed(InputAction.CallbackContext obj) => OnPause?.Invoke();
         private void ClearAllBindings() {
+            ClearPlayerBindings();
+            ClearUiBindings();
+        }
+        private void ClearPlayerBindings() {
             _controls.Player.Tornado.performed -= TornadoOnPerformed;
+            _controls.Player.Pause.performed -= PauseOnPerformed;
+        }
+        private void ClearUiBindings() {
+            _controls.UI.Pause.performed -= PauseOnPerformed;
         }
     }
 }
