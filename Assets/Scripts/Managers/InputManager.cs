@@ -57,6 +57,7 @@ namespace Managers {
             _controls.UI.Enable();
             _controls.UI.Pause.performed += PauseOnPerformed;
         }
+
         private static void LockCursor() {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -65,7 +66,6 @@ namespace Managers {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
-        
         
         private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
         private void PauseOnPerformed(InputAction.CallbackContext obj) => OnPause?.Invoke();
@@ -78,7 +78,7 @@ namespace Managers {
             _controls.Player.Pause.performed -= PauseOnPerformed;
         }
         private void ClearUiBindings() {
-            _controls.UI.Pause.performed -= PauseOnPerformed;
+           _controls.UI.Pause.performed -= PauseOnPerformed;
         }
     }
 }
