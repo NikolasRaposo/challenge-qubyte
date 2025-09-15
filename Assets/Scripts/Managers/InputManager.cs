@@ -38,7 +38,7 @@ namespace Managers {
                     LockCursor();
                     break;
                 case InputContext.UI:
-                    SetPlayerEvents();
+                    SeUIEvents();
                     UnlockCursor();
                     break;
                 case InputContext.BlockInput:
@@ -57,12 +57,12 @@ namespace Managers {
             _controls.UI.Enable();
             _controls.UI.Pause.performed += PauseOnPerformed;
         }
-        private void LockCursor() {
+
+        private static void LockCursor() {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
-        private void UnlockCursor() {
-            
+        private static void UnlockCursor() {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }

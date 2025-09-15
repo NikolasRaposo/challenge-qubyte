@@ -66,7 +66,7 @@ Material:
     - _Blend: 0
     - _CameraDistanceImpact: 0
     - _CelExtraEnabled: 0
-    - _CelNumSteps: 4
+    - _CelNumSteps: 3
     - _CelPrimaryMode: 0
     - _Cull: 2
     - _Cutoff: 0.5
@@ -76,9 +76,9 @@ Material:
     - _FlatRimEdgeSmoothness: 0.5
     - _FlatRimLightAlign: 0
     - _FlatRimSize: 0.5
-    - _FlatSpecularEdgeSmoothness: 0.153
-    - _FlatSpecularSize: 0.236
-    - _Flatness: 0.417
+    - _FlatSpecularEdgeSmoothness: 0
+    - _FlatSpecularSize: 0.1
+    - _Flatness: 1
     - _FlatnessExtra: 1
     - _GradientAngle: 0
     - _GradientCenterX: 0
@@ -98,18 +98,18 @@ Material:
     - _OverrideLightmapDir: 0
     - _QueueOffset: 0
     - _RimEnabled: 0
-    - _SelfShadingSize: 0.433
+    - _SelfShadingSize: 0.5
     - _SelfShadingSizeExtra: 0.6
-    - _ShadowEdgeSize: 0.268
+    - _ShadowEdgeSize: 0.05
     - _ShadowEdgeSizeExtra: 0.05
     - _SpecularEnabled: 0
     - _SrcBlend: 1
     - _Surface: 0
     - _TextureBlendingMode: 0
-    - _TextureImpact: 0.867
+    - _TextureImpact: 0.95
     - _UnityShadowMode: 0
     - _UnityShadowOcclusion: 0
-    - _UnityShadowPower: 0.181
+    - _UnityShadowPower: 0.2
     - _UnityShadowSharpness: 1
     - _VertexColorsEnabled: 0
     - _VertexExtrusionSmoothNormals: 0
@@ -128,5 +128,5 @@ Material:
     - _FlatSpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _LightmapDirection: {r: 0, g: 1, b: 0, a: 0}
     - _OutlineColor: {r: 1, g: 1, b: 1, a: 1}
-    - _UnityShadowColor: {r: 0.8207547, g: 0, b: 0, a: 0.85056}
+    - _UnityShadowColor: {r: 0.85023, g: 0.85034, b: 0.8504499, a: 0.85056}
   m_BuildTextureStacks: []

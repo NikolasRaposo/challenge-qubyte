@@ -27,11 +27,11 @@ namespace Gameplay {
         [Tooltip("A custom attraction point on the player (optional). If not set, it will use the player's transform.")]
         public Transform customAttractionPoint;
         [Tooltip("The delay in seconds before the coin can be affected by magnetism. Prevents it from being attracted immediately after spawning.")]
-        public float magnetismDelay = 0.6f;
+        public float magnetismDelay = 1.2f;
         [Tooltip("If enabled, ignores the magnetism delay. Useful for coins placed directly in the scene.")]
         public bool ignoreDelay;
         [Tooltip("Time in seconds to disable touch collection during the spawn/spread animation.")]
-        public float touchCollectionDisableTime = 2f;
+        public float touchCollectionDisableTime = 1.5f;
 
         // --- Private State Variables ---
         private bool _isCollected;

@@ -29,27 +29,19 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
     private Quaternion targetRotation;
     private bool hasValidTarget;
     
-    void Start()
-    {
+    void Start() {
         // Tenta obter o CharacterController primeiro, depois Rigidbody
         characterController = GetComponent<CharacterController>();
-        if (characterController == null)
-        {
+        if (characterController == null) {
             playerRigidbody = GetComponent<Rigidbody>();
         }
         
         // Esconde o feedback visual inicialmente e desacopla do pai
-        if (feedbackVisualObject != null)
-        {
+        if (feedbackVisualObject != null) {
             feedbackVisualObject.SetActive(false);
-            
             // Remove o objeto de feedback da hierarquia do player para evitar oscilação
             feedbackVisualObject.transform.SetParent(null);
-            
-            Debug.Log("PlayerVfxPosFeedbackControl: Objeto de feedback desacoplado do player para evitar oscilação.");
-        }
-        else
-        {
+        } else {
             Debug.LogWarning("PlayerVfxPosFeedbackControl: Objeto de feedback visual não foi atribuído!");
         }
     }

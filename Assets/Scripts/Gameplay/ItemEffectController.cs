@@ -23,6 +23,9 @@ namespace Gameplay {
         [Tooltip("The total time for the rise and fall animation (in seconds).")]
         public float riseFallDuration = 0.5f;
 
+        [Tooltip("Offset Y para ajustar altura final de descida.")]
+        public float yOffset = 0f;
+
         [Header("Spreading Settings")]
         [Tooltip("The maximum distance items will spread from the center.")]
         public float spreadRadius = 2f;
@@ -35,6 +38,13 @@ namespace Gameplay {
 
         [Tooltip("The minimum distance between items when 'avoidOverlap' is enabled.")]
         public float minDistance = 0.5f;
+
+        [Header("Descent Animation")]
+        [Tooltip("The duration for items to descend to original height after spreading.")]
+        public float descentDuration = 0.3f;
+
+        [Tooltip("The delay before descent animation begins after spreading is complete.")]
+        public float delayBeforeDescent = 0.1f;
     }
 
     /// <summary>
@@ -51,6 +61,9 @@ namespace Gameplay {
 
         // A list to keep track of all created items.
         private readonly List<GameObject> _spawnedItems = new List<GameObject>();
+        
+        // Store the original spawn height for descent animation
+        private float _originalSpawnHeight;
 
         /// <summary>
         /// Creates the items, starts their rise animation, and schedules the spreading animation.
@@ -64,6 +77,9 @@ namespace Gameplay {
 
             // Clear any previously spawned items.
             _spawnedItems.Clear();
+            
+            // Store the original spawn height
+            _originalSpawnHeight = transform.position.y;
 
             // Instantiate the specified quantity of items.
             for (int i = 0; i < settings.quantity; i++) {
@@ -72,102 +88,97 @@ namespace Gameplay {
                 _spawnedItems.Add(item);
             }
 
-            // Start the rise and fall animation.
+            // Start the unified animation that combines rise, spread and fall
+        if (settings.spreadItems) {
+            AnimateCoinsNaturally();
+        } else {
             AnimateRiseAndFall();
-
-            // Schedule the radial spread animation after a short delay.
-            if (settings.spreadItems) {
-                // Use DOVirtual.DelayedCall for a reliable, tween-based delay.
-                DOVirtual.DelayedCall(settings.delayBeforeSpread, SpreadItemsRadially);
-            }
+        }
         }
 
         /// <summary>
-        /// Applies the rise and fall animation to all spawned items.
-        /// </summary>
-        private void AnimateRiseAndFall() {
-            foreach (GameObject item in _spawnedItems) {
-                if (item == null) continue;
+    /// Applies the rise animation to all spawned items while they spread.
+    /// </summary>
+    private void AnimateRiseAndFall() {
+        foreach (GameObject item in _spawnedItems) {
+            if (item == null) continue;
 
-                Vector3 startPos = item.transform.position;
-                Vector3 peakPos = startPos + Vector3.up*settings.riseHeight;
+            Vector3 startPos = item.transform.position;
+            Vector3 peakPos = startPos + Vector3.up*settings.riseHeight;
 
-                // Animate moving up, then on completion, animate moving back down.
-                item.transform.DOMoveY(peakPos.y, settings.riseFallDuration/2f)
-                    .SetEase(Ease.OutSine)
-                    .OnComplete(() => {
-                        // Ensure item still exists before starting the second part of the animation.
-                        if (item != null) {
-                            item.transform.DOMoveY(startPos.y, settings.riseFallDuration/2f)
-                                .SetEase(Ease.InSine);
-                        }
-                    });
-            }
-        }
-
-        /// <summary>
-        /// Spreads the items out in a radial pattern with random variations.
-        /// Attempts to avoid item overlap and collisions with the environment.
-        /// </summary>
-        private void SpreadItemsRadially() {
-            if (_spawnedItems.Count == 0) return;
-
-            // Calculate the base angle between each item for even distribution.
-            float angleIncrement = 360f/_spawnedItems.Count;
-            List<Vector3> targetPositions = new List<Vector3>();
-
-            for (int i = 0; i < _spawnedItems.Count; i++) {
-                GameObject item = _spawnedItems[i];
-                if (item == null) continue;
-
-                // --- Calculate Target Position ---
-                // Add a slight random variation to the angle and radius to make the pattern look more natural.
-                float randomAngleOffset = Random.Range(-10f, 10f);
-                float angle = (i*angleIncrement + randomAngleOffset)*Mathf.Deg2Rad;
-                float variedRadius = settings.spreadRadius*Random.Range(0.8f, 1.2f);
-
-                // Calculate direction and final destination.
-                Vector3 direction = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
-                Vector3 startPos = item.transform.position; // Use the item's current position as the origin.
-                Vector3 destination = startPos + direction*variedRadius;
-
-                // --- Environmental Collision Check ---
-                // Cast a ray from the start position to the destination to check for walls or obstacles.
-                if (Physics.Raycast(startPos, direction, out RaycastHit hit, variedRadius)) {
-                    // If we hit something, place the item slightly away from the hit point.
-                    destination = hit.point - direction*0.3f;
-                }
-
-                // --- Overlap Avoidance ---
-                if (settings.avoidOverlap) {
-                    int attempts = 0;
-                    // Try a few times to find a position that isn't too close to another item's target position.
-                    while (IsTooCloseToOtherPositions(destination, targetPositions) && attempts < 5) {
-                        // If too close, try a new random direction.
-                        angle = Random.Range(0, 360)*Mathf.Deg2Rad;
-                        direction = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
-                        destination = startPos + direction*variedRadius;
-                        attempts++;
+            // Animate moving up then down in a natural arc
+            item.transform.DOMoveY(peakPos.y, settings.riseFallDuration * 0.5f)
+                .SetEase(Ease.OutSine)
+                .OnComplete(() => {
+                    if (item != null) {
+                        item.transform.DOMoveY(_originalSpawnHeight + settings.yOffset, settings.riseFallDuration * 0.5f)
+                            .SetEase(Ease.InSine)
+                            .OnComplete(() => {
+                                item.GetComponent<CoinPickup>()?.OnSpreadComplete();
+                            });
                     }
-                }
-
-                targetPositions.Add(destination);
-
-                // --- Animate to Target Position ---
-                // Kill any previous movement tweens on this object to avoid conflicts.
-                DOTween.Kill(item.transform);
-
-                // Start the movement tween.
-                item.transform.DOMove(destination, 0.4f)
-                    .SetEase(Ease.OutQuad)
-                    .OnComplete(() => {
-                        // Notify the item (if it has a CoinPickup script) that the spreading animation is complete.
-                        if (item != null) {
-                            item.GetComponent<CoinPickup>()?.OnSpreadComplete();
-                        }
-                    });
-            }
+                });
         }
+    }
+    
+    /// <summary>
+    /// Creates a natural coin animation that combines rise, spread and fall in a unified motion.
+    /// Simulates the physics of tossing coins up and letting them fall naturally.
+    /// </summary>
+    private void AnimateCoinsNaturally() {
+        if (_spawnedItems.Count == 0) return;
+
+        // Calculate the base angle between each item for even distribution
+        float angleIncrement = 360f / _spawnedItems.Count;
+        float totalAnimationTime = settings.riseFallDuration + settings.descentDuration;
+        
+        for (int i = 0; i < _spawnedItems.Count; i++) {
+            GameObject item = _spawnedItems[i];
+            if (item == null) continue;
+
+            // Calculate target spread position
+            float randomAngleOffset = Random.Range(-10f, 10f);
+            float angle = (i * angleIncrement + randomAngleOffset) * Mathf.Deg2Rad;
+            float variedRadius = settings.spreadRadius * Random.Range(0.8f, 1.2f);
+            
+            Vector3 direction = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
+            Vector3 startPos = item.transform.position;
+            Vector3 horizontalTarget = startPos + direction * variedRadius;
+            
+            // Environmental collision check
+            if (Physics.Raycast(startPos, direction, out RaycastHit hit, variedRadius)) {
+                horizontalTarget = hit.point - direction * 0.3f;
+            }
+            
+            // Create the natural coin trajectory using a sequence
+            var sequence = DOTween.Sequence();
+            
+            // Phase 1: Rise while starting to spread (0 to 50% of time)
+            float riseTime = totalAnimationTime * 0.4f;
+            Vector3 peakPos = new Vector3(
+                Mathf.Lerp(startPos.x, horizontalTarget.x, 0.3f),
+                startPos.y + settings.riseHeight,
+                Mathf.Lerp(startPos.z, horizontalTarget.z, 0.3f)
+            );
+            
+            sequence.Append(item.transform.DOMove(peakPos, riseTime).SetEase(Ease.OutSine));
+            
+            // Phase 2: Continue spreading while falling (50% to 100% of time)
+            float fallTime = totalAnimationTime * 0.6f;
+            Vector3 finalPos = new Vector3(horizontalTarget.x, _originalSpawnHeight + settings.yOffset, horizontalTarget.z);
+            
+            sequence.Append(item.transform.DOMove(finalPos, fallTime).SetEase(Ease.InSine));
+            
+            // Notify when complete
+            sequence.OnComplete(() => {
+                if (item != null) {
+                    item.GetComponent<CoinPickup>()?.OnSpreadComplete();
+                }
+            });
+        }
+    }
+
+
 
         /// <summary>
         /// Checks if a given position is too close to any of the already calculated target positions.
@@ -178,6 +189,8 @@ namespace Gameplay {
         private bool IsTooCloseToOtherPositions(Vector3 position, List<Vector3> otherPositions) {
             return otherPositions.Any(pos => Vector3.Distance(position, pos) < settings.minDistance);
         }
+
+
 
         /// <summary>
         /// Called when the GameObject is being destroyed.
