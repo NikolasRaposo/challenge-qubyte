@@ -1082,6 +1082,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3312219182624650844}
     m_Modifications:
+    - target: {fileID: 1416800565200577787, guid: dc323612e55cbd24ea40c2a35db8402d,
+        type: 3}
+      propertyPath: trampolineForce
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 2810180019314094540, guid: dc323612e55cbd24ea40c2a35db8402d,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1159,17 +1164,17 @@ PrefabInstance:
     - target: {fileID: 1580093120262683260, guid: 354c4e187e6651d49b617b5fe9d6a440,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 23.41
+      value: 51.29
       objectReference: {fileID: 0}
     - target: {fileID: 1580093120262683260, guid: 354c4e187e6651d49b617b5fe9d6a440,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 6.84
+      value: 5.69
       objectReference: {fileID: 0}
     - target: {fileID: 1580093120262683260, guid: 354c4e187e6651d49b617b5fe9d6a440,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -9.5
+      value: 38.49
       objectReference: {fileID: 0}
     - target: {fileID: 1580093120262683260, guid: 354c4e187e6651d49b617b5fe9d6a440,
         type: 3}

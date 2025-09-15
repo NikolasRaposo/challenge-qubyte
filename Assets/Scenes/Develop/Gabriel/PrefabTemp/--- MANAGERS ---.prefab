@@ -502,6 +502,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1956851254462098121, guid: 01524e387372df14c81fe6409f6c1019,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.6928
+      objectReference: {fileID: 0}
+    - target: {fileID: 1956851254462098121, guid: 01524e387372df14c81fe6409f6c1019,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.05
       objectReference: {fileID: 0}
@@ -509,6 +514,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalPosition.z
       value: 0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 6005048902899947491, guid: 01524e387372df14c81fe6409f6c1019,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.7558
       objectReference: {fileID: 0}
     - target: {fileID: 6005048902899947491, guid: 01524e387372df14c81fe6409f6c1019,
         type: 3}
@@ -534,6 +544,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: CamTPriGroup
+      objectReference: {fileID: 0}
+    - target: {fileID: 8379239374753074756, guid: 01524e387372df14c81fe6409f6c1019,
+        type: 3}
+      propertyPath: m_Name
+      value: CameraTriggerBack
       objectReference: {fileID: 0}
     - target: {fileID: 9212964784825440207, guid: 01524e387372df14c81fe6409f6c1019,
         type: 3}
@@ -584,6 +599,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220232058807278485, guid: 01524e387372df14c81fe6409f6c1019,
+        type: 3}
+      propertyPath: m_Name
+      value: CameraTriggerFront
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
