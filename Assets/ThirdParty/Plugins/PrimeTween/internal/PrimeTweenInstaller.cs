@@ -29,8 +29,8 @@ namespace PrimeTween {
     internal class InstallerInspector : Editor {
         internal const string pluginName = "PrimeTween";
         internal const string pluginPackageId = "com.kyrylokuzyk.primetween";
-        internal const string tgzPath = "Assets/Plugins/PrimeTween/internal/com.kyrylokuzyk.primetween.tgz";
-        internal const string newTgzPath = "Assets/Plugins/PrimeTween/internal/com.kyrylokuzyk.primetween-" + version + ".tgz";
+        internal const string tgzPath = "Assets/ThirdParty/Plugins/PrimeTween/internal/com.kyrylokuzyk.primetween.tgz";
+        internal const string newTgzPath = "Assets/ThirdParty/Plugins/PrimeTween/internal/com.kyrylokuzyk.primetween-" + version + ".tgz";
         const string documentationUrl = "https://github.com/KyryloKuzyk/PrimeTween";
         bool isInstalled;
         bool hasNewTgz;
