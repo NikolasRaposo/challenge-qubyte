@@ -1,6 +1,6 @@
 ﻿using Enemy;
 using Gameplay;
-using Platform;
+using Gameplay.Platform;
 using ThirdParty.StarterAssets.InputSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;

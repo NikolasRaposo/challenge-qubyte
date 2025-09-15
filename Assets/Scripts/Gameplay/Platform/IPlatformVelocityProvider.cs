@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace Platform {
+namespace Gameplay.Platform {
     /// <summary>
     /// An interface for objects that can provide velocity information to the player.
     /// Implemented by moving platforms to communicate their speed to the player's momentum system.

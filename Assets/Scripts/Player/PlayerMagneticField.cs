@@ -29,6 +29,7 @@ namespace Player {
             GameObject magneticFieldObject = new GameObject("MagneticField");
             magneticFieldObject.transform.SetParent(transform);
             magneticFieldObject.transform.localPosition = new Vector3(0, verticalOffset, 0);
+            magneticFieldObject.layer = LayerMask.NameToLayer("PlayerMagneticField");
 
             // Add a SphereCollider and configure it as a trigger.
             _magneticFieldCollider = magneticFieldObject.AddComponent<SphereCollider>();
@@ -42,8 +43,6 @@ namespace Player {
             Rigidbody rb = magneticFieldObject.AddComponent<Rigidbody>();
             rb.isKinematic = true; // Prevents the field from being affected by physics forces.
             rb.useGravity = false; // Disables gravity for this object.
-
-            Debug.Log("Magnetic field created successfully!");
         }
 
         /// <summary>

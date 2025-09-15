@@ -2,14 +2,14 @@ using DG.Tweening;
 using DG.Tweening.Core;
 using DG.Tweening.Plugins.Options;
 using UnityEngine;
-namespace Gameplay {
+namespace Gameplay.Platform {
     /// <summary>
     /// Manages the behavior of various types of platforms, such as moving, sinking, disappearing, or rotating platforms.
     /// Requires a Collider component on the same GameObject.
     /// </summary>
     [RequireComponent(typeof(Collider))]
     public class PlatformBehavior : MonoBehaviour {
-        [Header("🔧 General Settings")]
+        [Header("General Settings")]
         [Tooltip("Enable this for a platform that moves back and forth or follows waypoints.")]
         public bool isMovingPlatform;
         [Tooltip("Enable this for a platform that sinks when the player stands on it.")]
@@ -27,7 +27,7 @@ namespace Gameplay {
         [Tooltip("Enable this to make the platform act like a trampoline.")]
         public bool isTrampoline;
 
-        [Header("🎯 Moving Platform")]
+        [Header("Moving Platform")]
         [Tooltip("The direction of movement relative to the platform's starting position.")]
         public Vector3 moveDirection = Vector3.right;
         [Tooltip("The distance the platform will travel in the specified direction.")]
@@ -37,29 +37,29 @@ namespace Gameplay {
         [Tooltip("If true, the platform will move back and forth (YoYo). If false, it will loop back to the start.")]
         public bool pingPongMovement = true;
 
-        [Header("📦 Sinking Platform")]
+        [Header("Sinking Platform")]
         [Tooltip("How far down the platform sinks when stepped on.")]
         public float sinkDepth = 0.5f;
         [Tooltip("How quickly the platform sinks and rises.")]
         public float sinkSpeed = 0.3f;
 
-        [Header("👻 Disappearing / Falling")]
+        [Header("Disappearing / Falling")]
         [Tooltip("The delay in seconds before the platform disappears after contact.")]
         public float disappearDelay = 1f;
         [Tooltip("The delay in seconds before the platform falls after contact.")]
         public float fallDelay = 1f;
 
-        [Header("♻️ Respawning")]
+        [Header("Respawning")]
         [Tooltip("The time in seconds before the platform reappears.")]
         public float respawnTime = 3f;
 
-        [Header("🔁 Rotation")]
+        [Header("Rotation")]
         [Tooltip("The axis around which the platform will rotate.")]
         public Vector3 rotationAxis = Vector3.up;
         [Tooltip("The speed of rotation in degrees per second.")]
         public float rotationSpeed = 45f;
 
-        [Header("🧭 Waypoints")]
+        [Header("Waypoints")]
         [Tooltip("A list of transforms that the platform will move between.")]
         public Transform[] waypoints;
         [Tooltip("The time it takes to travel between each waypoint.")]
@@ -67,11 +67,11 @@ namespace Gameplay {
         [Tooltip("If true, the platform will loop through the waypoints continuously.")]
         public bool loopWaypoints = true;
 
-        [Header("🦘 Trampoline")]
+        [Header("Trampoline")]
         [Tooltip("The force applied to the player when they jump on the platform.")]
         public float reboundForce = 10f;
 
-        [Header("✨ Visual Feedback")]
+        [Header("Visual Feedback")]
         [Tooltip("If true, the platform will shake before it falls or disappears.")]
         public bool shakeBeforeFalling = true;
         [Tooltip("The duration of the shake animation.")]
@@ -82,6 +82,10 @@ namespace Gameplay {
         public bool animateRespawn = true;
         [Tooltip("The duration of the respawn animation.")]
         public float respawnAnimationDuration = 0.6f;
+        
+        [Header("Debugging")]
+        [Tooltip("Enable this to see detailed log messages in the console during gameplay.")]
+        public bool enableDebugLogs;
 
         // --- Private State Variables ---
         private Vector3 _initialPosition;
@@ -96,6 +100,14 @@ namespace Gameplay {
             _platformRenderer = GetComponent<Renderer>();
             _platformCollider = GetComponent<Collider>();
             _initialPosition = transform.position;
+            
+            // Critical setup logs - these should always appear if there's a problem.
+            if (_platformCollider == null) {
+                Debug.LogError($"[PlatformBehavior] Platform '{gameObject.name}' is missing a Collider component!", this);
+            } else if (!_platformCollider.isTrigger) {
+                Debug.LogWarning($"[PlatformBehavior] Collider on '{gameObject.name}' is not set to 'Is Trigger'. This is required for contact detection.", this);
+            }
+
             ValidateConflicts();
         }
 
@@ -103,25 +115,21 @@ namespace Gameplay {
         /// Sets up the platform's continuous behaviors (movement, rotation) at the start of the game.
         /// </summary>
         private void Start() {
-            // Setup for a simple moving platform.
             if (isMovingPlatform) {
                 Vector3 destination = transform.position + moveDirection.normalized * moveDistance;
                 TweenerCore<Vector3, Vector3, VectorOptions> moveTween = transform.DOMove(destination, moveDuration).SetEase(Ease.InOutSine);
                 moveTween.SetLoops(-1, pingPongMovement ? LoopType.Yoyo : LoopType.Restart);
             }
-
-            // Setup for a rotating platform.
+            
             if (rotates) {
-                float duration = 360f / rotationSpeed; // Calculate duration based on speed.
+                float duration = 360f / rotationSpeed;
                 transform.DORotate(rotationAxis * 360, duration, RotateMode.FastBeyond360)
-                    .SetLoops(-1, LoopType.Incremental) // Use Incremental for continuous rotation.
+                    .SetLoops(-1, LoopType.Incremental)
                     .SetEase(Ease.Linear);
             }
-
-            // Setup for a waypoint-following platform.
+            
             if (!followsWaypoints || waypoints.Length <= 1) return;
             _waypointSequence = DOTween.Sequence();
-            // Append a move command for each waypoint in the list.
             foreach (Transform waypoint in waypoints) {
                 _waypointSequence.Append(transform.DOMove(waypoint.position, timePerWaypoint).SetEase(Ease.InOutSine));
             }
@@ -133,28 +141,34 @@ namespace Gameplay {
         /// Detects when the player enters the platform's trigger.
         /// </summary>
         private void OnTriggerEnter(Collider other) {
-            if (!other.CompareTag("Player")) return;
+            if (enableDebugLogs) 
+                Debug.Log($"[PlatformBehavior] Trigger entered by '{other.gameObject.name}' which has tag '{other.tag}'.", this);
 
-            // Sinking behavior.
+            if (!other.CompareTag("Player")) return;
+            
+            if (enableDebugLogs)
+                Debug.Log($"[PlatformBehavior] Player detected on platform '{gameObject.name}'.", this);
+
             if (sinksUnderWeight) {
                 transform.DOMoveY(_initialPosition.y - sinkDepth, sinkSpeed);
             }
-
-            // Disappearing behavior.
+            
             if (disappearsOnContact) {
                 Invoke(nameof(Disappear), disappearDelay);
             }
-
-            // Falling behavior.
+            
             if (fallsOnContact) {
+                if (enableDebugLogs)
+                    Debug.Log($"[PlatformBehavior] 'fallsOnContact' is TRUE. Scheduling Fall() in {fallDelay} seconds.", this);
                 Invoke(nameof(Fall), fallDelay);
+            } else {
+                if (enableDebugLogs)
+                    Debug.LogWarning($"[PlatformBehavior] Player detected, but 'fallsOnContact' is FALSE. Check the inspector.", this);
             }
-
-            // Trampoline behavior.
+            
             if (!isTrampoline) return;
             Rigidbody rb = other.attachedRigidbody;
             if (rb == null) return;
-            // Reset vertical velocity for a consistent bounce height.
             rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z); 
             rb.AddForce(Vector3.up * reboundForce, ForceMode.VelocityChange);
         }
@@ -164,7 +178,6 @@ namespace Gameplay {
         /// </summary>
         private void OnTriggerExit(Collider other) {
             if (!other.CompareTag("Player")) return;
-            // If the platform sinks, make it rise back up.
             if (sinksUnderWeight) {
                 transform.DOMoveY(_initialPosition.y, sinkSpeed);
             }
@@ -174,7 +187,6 @@ namespace Gameplay {
         /// Makes the platform disappear.
         /// </summary>
         private void Disappear() {
-            // Optional shake feedback before disappearing.
             if (shakeBeforeFalling) {
                 PlayShake(() => {
                     _platformRenderer.enabled = false;
@@ -194,12 +206,13 @@ namespace Gameplay {
         /// Makes the platform fall.
         /// </summary>
         private void Fall() {
-            // Optional shake feedback before falling.
+            if (enableDebugLogs)
+                Debug.Log($"[PlatformBehavior] Executing Fall() method on '{gameObject.name}'. Platform should now fall.", this);
+
             if (shakeBeforeFalling) {
                 PlayShake(() => {
-                    // Add a Rigidbody to make it affected by gravity.
                     if (GetComponent<Rigidbody>() == null) gameObject.AddComponent<Rigidbody>();
-                    _platformCollider.isTrigger = false; // Allow for physical collision as it falls.
+                    _platformCollider.isTrigger = false;
                     if (respawnsAfterDelay)
                         Invoke(nameof(RespawnAfterFall), respawnTime);
                 });
@@ -221,7 +234,6 @@ namespace Gameplay {
             if (animateRespawn) {
                 transform.localScale = Vector3.zero;
                 _platformRenderer.enabled = true;
-                // Play a scale-up animation.
                 transform.DOScale(Vector3.one, respawnAnimationDuration).SetEase(Ease.OutBack);
             } else {
                 _platformRenderer.enabled = true;
@@ -232,13 +244,12 @@ namespace Gameplay {
         /// Respawns a platform that fell.
         /// </summary>
         private void RespawnAfterFall() {
-            // Clean up the Rigidbody component.
             if (GetComponent<Rigidbody>() != null) Destroy(GetComponent<Rigidbody>());
 
             transform.position = _initialPosition;
-            transform.rotation = Quaternion.identity; // Reset rotation.
+            transform.rotation = Quaternion.identity;
             _platformCollider.enabled = true;
-            _platformCollider.isTrigger = true; // Set it back to a trigger.
+            _platformCollider.isTrigger = true;
 
             if (animateRespawn) {
                 transform.localScale = Vector3.zero;

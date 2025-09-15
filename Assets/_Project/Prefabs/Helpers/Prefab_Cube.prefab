@@ -118,4 +118,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbbfb5a4945211845ac1261139518729, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabAssetPath: Assets/Helpers/Prefab_Cube.prefab
+  prefabAssetPath: Assets/_Project/Prefabs/Helpers/Prefab_Cube.prefab

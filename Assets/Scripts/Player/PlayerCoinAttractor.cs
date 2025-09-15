@@ -54,8 +54,6 @@ namespace ExampleScripts {
                 handler.attractionPoint = this.attractionPoint;
 
                 Debug.Log("PlayerCoinAttractor configured successfully using the existing magnetic field!");
-            } else {
-                Debug.LogError("Magnetic field not found! Ensure PlayerMagneticField is on the same GameObject.");
             }
         }
 
