@@ -248,6 +248,11 @@ PrefabInstance:
       propertyPath: m_LookAt
       value: 
       objectReference: {fileID: 584333155}
+    - target: {fileID: 6391322792039696261, guid: 1affa7a6812ab9a4e90fcfd958c65d0d,
+        type: 3}
+      propertyPath: m_PathPosition
+      value: 1.026678
+      objectReference: {fileID: 0}
     - target: {fileID: 6447130152614052196, guid: 1affa7a6812ab9a4e90fcfd958c65d0d,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -303,6 +308,16 @@ PrefabInstance:
       propertyPath: m_LookAt
       value: 
       objectReference: {fileID: 584333155}
+    - target: {fileID: 7640042352851031002, guid: 1affa7a6812ab9a4e90fcfd958c65d0d,
+        type: 3}
+      propertyPath: m_PathPosition
+      value: 3.1884751
+      objectReference: {fileID: 0}
+    - target: {fileID: 7680042326546539028, guid: 1affa7a6812ab9a4e90fcfd958c65d0d,
+        type: 3}
+      propertyPath: m_PathPosition
+      value: -0.58
+      objectReference: {fileID: 0}
     - target: {fileID: 8663640621664869031, guid: 1affa7a6812ab9a4e90fcfd958c65d0d,
         type: 3}
       propertyPath: m_Follow
@@ -11977,6 +11992,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1660640898740099984, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1683415108800149821, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -12025,6 +12045,11 @@ PrefabInstance:
     - target: {fileID: 1683415108800149821, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4109189202266042524, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
+        type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4609788416102237764, guid: c416fe6fb6f7b0241ae7005ab9c7267a,

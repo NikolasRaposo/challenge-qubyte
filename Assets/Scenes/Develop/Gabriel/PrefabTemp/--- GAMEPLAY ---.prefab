@@ -2447,6 +2447,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: pfShortTornadoAttack
       objectReference: {fileID: 0}
+    - target: {fileID: 5683014945023061648, guid: aa489ba3bd691db429436229dd48cbd0,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6976940227986605468, guid: aa489ba3bd691db429436229dd48cbd0,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 2539848768559885282, guid: aa489ba3bd691db429436229dd48cbd0, type: 3}
     m_RemovedGameObjects: []
