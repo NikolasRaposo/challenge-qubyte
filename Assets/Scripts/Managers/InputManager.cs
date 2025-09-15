@@ -35,19 +35,14 @@ namespace Managers {
             switch (context) {
                 case InputContext.Player:
                     SetPlayerEvents();
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
+                    LockCursor();
                     break;
                 case InputContext.UI:
-                    _controls.UI.Enable();
-                    _controls.UI.Pause.performed += PauseOnPerformed;
-                    
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
+                    SetPlayerEvents();
+                    UnlockCursor();
                     break;
                 case InputContext.BlockInput:
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
+                    UnlockCursor();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(context), context, null);
@@ -59,11 +54,18 @@ namespace Managers {
             _controls.Player.Pause.performed += PauseOnPerformed;
         }
         private void SeUIEvents() {
-            _controls.Player.Enable();
-            _controls.Player.Tornado.performed += TornadoOnPerformed;
-            _controls.Player.Pause.performed += PauseOnPerformed;
+            _controls.UI.Enable();
+            _controls.UI.Pause.performed += PauseOnPerformed;
         }
-        
+        private void LockCursor() {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        private void UnlockCursor() {
+            
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
         
         private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
         private void PauseOnPerformed(InputAction.CallbackContext obj) => OnPause?.Invoke();
@@ -76,7 +78,7 @@ namespace Managers {
             _controls.Player.Pause.performed -= PauseOnPerformed;
         }
         private void ClearUiBindings() {
-            _controls.UI.Pause.performed -= PauseOnPerformed;
+           _controls.UI.Pause.performed -= PauseOnPerformed;
         }
     }
 }
