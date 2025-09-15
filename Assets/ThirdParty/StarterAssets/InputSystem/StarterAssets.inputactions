@@ -295,26 +295,7 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
-                }
-            ],
-            "bindings": [
-                {
-                    "name": "",
-                    "id": "9e02f601-6ae2-4564-aa33-42c7d4c661b4",
-                    "path": "<Keyboard>/escape",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Pause",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                }
-            ]
-        },
-        {
-            "name": "UI",
-            "id": "8fc1b368-274c-47b9-83f5-53942e6c7ffe",
-            "actions": [
+                },
                 {
                     "name": "Navigate",
                     "type": "Value",
@@ -371,6 +352,17 @@
                 }
             ],
             "bindings": [
+                {
+                    "name": "",
+                    "id": "9e02f601-6ae2-4564-aa33-42c7d4c661b4",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
                 {
                     "name": "WASD",
                     "id": "64cdd8e3-ffac-4847-91d4-59d67bafecab",
