@@ -3,6 +3,7 @@ using Player.Powers;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+
 namespace Managers {
     /// <summary>
     /// Manages all UI elements in the game. Listens to events from the GameManager
@@ -12,7 +13,8 @@ namespace Managers {
         public static UIManager Instance { get; private set; }
 
         [Header("UI Panels")]
-        [SerializeField] private GameObject hudPanel;
+        [SerializeField] private GameObject coinsPanel;
+        [SerializeField] private GameObject livesPanel;
         [SerializeField] private GameObject pauseMenuPanel;
         [SerializeField] private GameObject respawnPanel;
         [SerializeField] private GameObject gameOverPanel;
@@ -28,6 +30,9 @@ namespace Managers {
 
         [Header("Respawn Elements")]
         [SerializeField] private TextMeshProUGUI respawnCountdownText;
+        
+        [Header("HUD Settings")]
+        [SerializeField] private float hudVisibleTime = 3f;
         
         private TornadoAttack _playerTornadoAttack;
 
@@ -55,7 +60,9 @@ namespace Managers {
             pauseMenuPanel.SetActive(false);
             respawnPanel.SetActive(false);
             gameOverPanel.SetActive(false);
-            hudPanel.SetActive(true);
+            
+            ShowPanel(coinsPanel);
+            ShowPanel(livesPanel);
         }
 
         private void Update() {
@@ -71,6 +78,7 @@ namespace Managers {
         private void UpdateCoinText(int newCoinAmount) {
             coinsText.text = $"{newCoinAmount}";
             pauseCoinsText.text = $"{newCoinAmount}";
+            ShowPanel(coinsPanel);
         }
     
         /// <summary>
@@ -78,6 +86,16 @@ namespace Managers {
         /// </summary>
         private void UpdateLivesText(int newLivesAmount) {
             livesText.text = $"{newLivesAmount}";
+            ShowPanel(livesPanel);
+        }
+        private void ShowPanel(GameObject panel) {
+            StopCoroutine(nameof(HideAfterDelay));
+            panel.SetActive(true);
+            StartCoroutine(HideAfterDelay(panel));
+        }
+        private IEnumerator HideAfterDelay(GameObject panel) {
+            yield return new WaitForSeconds(hudVisibleTime);
+            panel.SetActive(false);
         }
         /// <summary>
         /// Event handler for when enemies are defeated count change.
@@ -88,13 +106,15 @@ namespace Managers {
 
         public void TogglePauseMenu(bool isPaused) {
             pauseMenuPanel.SetActive(isPaused);
-            hudPanel.SetActive(!isPaused);
+            coinsPanel.SetActive(!isPaused);
+            livesPanel.SetActive(!isPaused);
         }
         /// <summary>
         /// Shows the Game Over screen.
         /// </summary>
         public void ShowGameOverScreen() {
-            hudPanel.SetActive(false);
+            coinsPanel.SetActive(false);
+            livesPanel.SetActive(false);
             gameOverPanel.SetActive(true);
         }
         /// <summary>
@@ -102,7 +122,8 @@ namespace Managers {
         /// </summary>
         /// <param name="countdownDuration">How long the countdown should last.</param>
         public IEnumerator StartRespawnCountdown(float countdownDuration) {
-            hudPanel.SetActive(false);
+            coinsPanel.SetActive(false);
+            livesPanel.SetActive(false);
             respawnPanel.SetActive(true);
 
             float timer = countdownDuration;
@@ -113,7 +134,8 @@ namespace Managers {
             }
 
             respawnPanel.SetActive(false);
-            hudPanel.SetActive(true);
+            coinsPanel.SetActive(true);
+            livesPanel.SetActive(true);
         }
         
         private void OnDestroy() {
