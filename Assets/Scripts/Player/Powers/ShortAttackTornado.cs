@@ -4,29 +4,38 @@ using Managers;
 
 namespace Player.Powers
 {
+    /// <summary>
+    /// Manages the player's short-range tornado attack.
+    /// It triggers an animation and activates a local effect object.
+    /// </summary>
     public class ShortAttackTornado : MonoBehaviour
     {
-        [Header("Referências")]
-        [Tooltip("O componente Animator do personagem. Pode ser arrastado aqui ou será pego automaticamente.")]
-        public Animator animator; 
-        [Tooltip("Arraste aqui o GameObject FILHO que contém o efeito de tornado.")]
-        public GameObject objetoEfeitoTornado; // Nome alterado para maior clareza
+        // Caches the "Attack" animator parameter's hash for performance.
+        private static readonly int Attack = Animator.StringToHash("Attack");
 
-        [Header("Configurações do Ataque")]
-        [Tooltip("Duração em segundos que o efeito do tornado permanecerá ativo.")]
-        public float duracaoEfeito = 2.0f;
-        [Tooltip("O tempo mínimo em segundos entre cada ataque.")]
+        [Header("References")]
+        [Tooltip("The character's Animator component. Can be assigned here or will be found automatically.")]
+        public Animator animator;
+        [Tooltip("Drag the child GameObject that contains the tornado effect here.")]
+        public GameObject tornadoEffectObject;
+
+        [Header("Attack Settings")]
+        [Tooltip("Duration in seconds that the tornado effect will remain active.")]
+        public float effectDuration = 2.0f;
+        [Tooltip("The minimum time in seconds between each attack.")]
         public float cooldown = 1.5f;
-        
-        // ADICIONE ESTA LINHA ABAIXO
-        [Tooltip("O script de trigger que está no objeto de efeito do tornado.")]
-        public TornadoTrigger tornadoTrigger; 
+        [Tooltip("The TornadoTrigger script that is on the tornado effect object.")]
+        public TornadoTrigger tornadoTrigger;
 
+        // Tracks the time of the last attack to manage the cooldown.
         private float _lastAttackTime = -Mathf.Infinity;
 
+        /// <summary>
+        /// Called when the script instance is being loaded.
+        /// </summary>
         private void Awake()
         {
-            // Se o Animator não foi arrastado no Inspector, tenta pegá-lo no mesmo GameObject.
+            // If the Animator was not assigned in the Inspector, try to get it from this same GameObject.
             if (animator == null)
             {
                 animator = GetComponent<Animator>();
@@ -34,73 +43,82 @@ namespace Player.Powers
 
             if (animator == null)
             {
-                Debug.LogError("Componente Animator NÃO ENCONTRADO! O ataque não funcionará.", this.gameObject);
+                Debug.LogError("Animator component NOT FOUND! The attack will not work.", gameObject);
             }
-            
-           
         }
-        
+
+        /// <summary>
+        /// Called on the frame when a script is enabled just before any of the Update methods are called the first time.
+        /// </summary>
         private void Start()
         {
             if (InputManager.Instance != null)
             {
+                // Subscribe to the input event.
                 InputManager.Instance.OnTornado += HandleAttackInput;
             }
             else
             {
-                Debug.LogError("InputManager.Instance não encontrado! O input de ataque não funcionará.");
+                Debug.LogError("InputManager.Instance not found! The attack input will not work.");
             }
-            
-            if (objetoEfeitoTornado != null)
+
+            if (tornadoEffectObject != null)
             {
-                // Garante que o efeito comece desativado, como você pediu.
-                objetoEfeitoTornado.SetActive(false);
+                // Ensures the effect object is disabled at the start.
+                tornadoEffectObject.SetActive(false);
             }
         }
 
+        /// <summary>
+        /// Called when the corresponding input action is triggered.
+        /// </summary>
         private void HandleAttackInput()
         {
-            // DEBUG: Isso aparecerá no console se o evento do InputManager estiver funcionando.
-            Debug.Log("Input de Tornado Recebido!");
-
+            // Check if the attack is on cooldown.
             if (Time.time < _lastAttackTime + cooldown)
             {
-                return; // Em cooldown
+                return; // On cooldown
             }
 
-            // DEBUG: Isso aparecerá se o cooldown passou e o ataque vai começar.
-            Debug.Log("Cooldown OK. Executando PerformAttack...");
             PerformAttack();
-            
+
+            // Record the time of this attack.
             _lastAttackTime = Time.time;
         }
 
+        /// <summary>
+        /// Triggers the attack animation and the visual effect.
+        /// </summary>
         private void PerformAttack()
         {
-            if (animator == null || objetoEfeitoTornado == null) return;
+            if (animator == null || tornadoEffectObject == null || tornadoTrigger == null) return;
 
-            // DEBUG: A linha final antes de ativar o trigger.
-            Debug.Log("Disparando gatilho 'Attack' no Animator!", animator.gameObject);
-            animator.SetTrigger("Attack");
+            animator.SetTrigger(Attack);
 
             StartCoroutine(TornadoEffectCoroutine());
         }
 
+        /// <summary>
+        /// A coroutine that activates the tornado effect for a set duration.
+        /// </summary>
         private IEnumerator TornadoEffectCoroutine()
         {
-            // ADICIONE ESTA LINHA PARA LIMPAR OS ALVOS DO ATAQUE ANTERIOR
+            // Clears the list of targets from the previous attack to allow hitting them again.
             tornadoTrigger.ResetHitTargets();
-            
-            // Ativa o objeto filho
-            objetoEfeitoTornado.SetActive(true);
-            
-            // Espera pela duração do EFEITO
-            yield return new WaitForSeconds(duracaoEfeito);
 
-            // Desativa o objeto filho
-            objetoEfeitoTornado.SetActive(false);
+            // Activate the child effect object.
+            tornadoEffectObject.SetActive(true);
+
+            // Wait for the effect's duration.
+            yield return new WaitForSeconds(effectDuration);
+
+            // Deactivate the child effect object.
+            tornadoEffectObject.SetActive(false);
         }
 
+        /// <summary>
+        /// Called when the object is destroyed. Unsubscribes from events to prevent memory leaks.
+        /// </summary>
         private void OnDestroy()
         {
             if (InputManager.Instance != null)
