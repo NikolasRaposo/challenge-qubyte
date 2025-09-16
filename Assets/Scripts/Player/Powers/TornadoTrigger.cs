@@ -1,81 +1,75 @@
+using System.Collections.Generic;
+using Boss;
+using Gameplay;
 using UnityEngine;
-using Gameplay; // Namespace do seu BoxInteractor
-using System.Collections.Generic; // Necessário para usar Listas
 
-// Se seus inimigos estiverem em um namespace, adicione-o aqui.
-// using Enemies; 
-
-/// <summary>
-/// Detecta quando objetos entram na área de efeito do tornado e interage com eles.
-/// Procura por componentes como BoxInteractor ou scripts de inimigos.
-/// </summary>
-public class TornadoTrigger : MonoBehaviour
+namespace Player.Powers
 {
-    [Header("Configurações de Dano")]
-    [Tooltip("A quantidade de dano que o tornado causa aos inimigos.")]
-    public int tornadoDamage = 10;
-
-    // Guarda uma lista de objetos que já foram atingidos por este tornado
-    // para evitar que o mesmo alvo seja atingido várias vezes em um único ataque.
-    private List<Collider> _alreadyHit = new List<Collider>();
-
     /// <summary>
-    /// Este método é chamado automaticamente pelo Unity sempre que
-    /// outro Collider entra no trigger deste objeto.
+    /// Detects when objects enter the tornado's area of effect and interacts with them.
+    /// Looks for components like BoxInteractor or enemy scripts.
     /// </summary>
-    /// <param name="other">O Collider do objeto que entrou no trigger.</param>
-    private void OnTriggerEnter(Collider other)
+    public class TornadoTrigger : MonoBehaviour
     {
-        // Se já atingimos este objeto neste ataque, não fazemos nada.
-        if (_alreadyHit.Contains(other))
+        [Header("Damage Configuration")]
+        [Tooltip("The amount of damage the tornado deals to enemies.")]
+        public int tornadoDamage = 10;
+
+        // Stores a list of colliders that have already been hit by this tornado instance
+        // to prevent a single target from being hit multiple times in one attack.
+        private readonly List<Collider> _alreadyHit = new List<Collider>();
+
+        /// <summary>
+        /// This method is called automatically by Unity whenever
+        /// another Collider enters this object's trigger.
+        /// </summary>
+        /// <param name="other">The Collider of the object that entered the trigger.</param>
+        private void OnTriggerEnter(Collider other)
         {
-            return;
+            // If we've already hit this collider in this attack, do nothing.
+            if (_alreadyHit.Contains(other)) return;
+
+            // --- INTERACTION LOGIC ---
+
+            // Try to find a 'BoxInteractor' component on the collided object.
+            if (other.gameObject.TryGetComponent(out BoxInteractor box))
+            {
+                box.Interact(transform);
+                _alreadyHit.Add(other);
+            }
+            
+            // Try to find an 'EnemyHealth' component.
+            if (other.gameObject.TryGetComponent(out EnemyHealth enemy))
+            {
+                enemy.TakeDamage(tornadoDamage);
+                _alreadyHit.Add(other);
+            }
+            
+            // Try to find the 'CapeloboBoss' component.
+            if (other.gameObject.TryGetComponent(out CapeloboBoss boss))
+            {
+                Debug.Log($"Tornado hit the BOSS: {other.name}");
+                boss.TakeDamage();
+                _alreadyHit.Add(other);
+            }
         }
 
-        // --- LÓGICA DE INTERAÇÃO ---
-
-        // Tenta encontrar um componente 'BoxInteractor' no objeto que colidiu.
-        if (other.gameObject.TryGetComponent(out BoxInteractor box))
+        /// <summary>
+        /// Clears the list of already hit targets. This should be called at the beginning
+        /// of each new tornado attack so it can hit targets again.
+        /// </summary>
+        public void ResetHitTargets()
         {
-            Debug.Log($"Tornado atingiu uma caixa: {other.name}");
-            // Chama o método público 'Interact' da caixa.
-            // Não precisamos da checagem de "pulo" (hit.normal.y), como você mencionou.
-            box.Interact(transform);
-            
-            // Adiciona a caixa à lista de já atingidos.
-            _alreadyHit.Add(other);
-        }
-
-        // Tenta encontrar um componente de vida do inimigo.
-        // !! IMPORTANTE: Substitua 'EnemyHealth' pelo nome real do seu script de inimigo !!
-        if (other.gameObject.TryGetComponent(out EnemyHealth enemy))
-        {
-            Debug.Log($"Tornado atingiu um inimigo: {other.name}");
-            // Chama um método público no script do inimigo para causar dano.
-            // !! IMPORTANTE: Substitua 'TakeDamage' pelo nome real do seu método de dano !!
-            enemy.TakeDamage(tornadoDamage);
-            
-            // Adiciona o inimigo à lista de já atingidos.
-            _alreadyHit.Add(other);
+            _alreadyHit.Clear();
         }
     }
 
-    /// <summary>
-    /// Limpa a lista de alvos já atingidos. Deve ser chamado no início
-    /// de cada novo ataque de tornado para que ele possa atingir alvos novamente.
-    /// </summary>
-    public void ResetHitTargets()
-    {
-        _alreadyHit.Clear();
-    }
-}
-
-// !! Exemplo de como seu script de inimigo poderia ser. Ignore se você já tem um. !!
-public class EnemyHealth : MonoBehaviour
-{
-    public void TakeDamage(int damage)
-    {
-        Debug.Log($"Inimigo {gameObject.name} tomou {damage} de dano!");
-        // Aqui você colocaria a lógica de diminuir a vida, etc.
+    // !! Example of how your enemy script could look. Ignore if you already have one. !!
+    public class EnemyHealth : MonoBehaviour {
+        public void TakeDamage(int damage)
+        {
+            Debug.Log($"Enemy {gameObject.name} took {damage} damage!");
+            // Here you would put the logic for decreasing health, etc.
+        }
     }
 }

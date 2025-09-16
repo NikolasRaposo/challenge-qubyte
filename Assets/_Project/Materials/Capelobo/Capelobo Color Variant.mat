@@ -41,6 +41,7 @@ Material:
     - _CelExtraEnabled: 0
     - _CelNumSteps: 2
     - _CelPrimaryMode: 2
+    - _DetailMapImpact: 0
     - _FlatRimEdgeSmoothness: 0
     - _FlatRimLightAlign: 0.491
     - _FlatRimSize: 0.319

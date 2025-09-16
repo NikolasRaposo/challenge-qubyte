@@ -122,7 +122,7 @@ MonoBehaviour:
   animateRespawn: 1
   respawnAnimationDuration: 0.6
   platformVisuals: {fileID: 7681455869829346163}
-  enableDebugLogs: 1
+  enableDebugLogs: 0
   fallDelay: 1.5
   shakeBeforeFalling: 1
   shakeDuration: 0.5
