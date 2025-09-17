@@ -1,4 +1,8 @@
-﻿#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
+﻿// ARQUIVO COMENTADO: Sistema de instanciamento procedural desabilitado para resolver artefatos de iluminação
+// Todo o conteúdo foi comentado para permitir que o Unity gerencie o instanciamento automaticamente
+
+/*
+#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 
 	struct IndirectShaderData
 	{
@@ -24,6 +28,9 @@ void setupScale()
 		unity_WorldToObject = IndirectShaderDataBuffer[unity_InstanceID].InversePositionMatrix;
 	#endif
 
+	// COMENTADO: Sistema de culling customizado que causava artefatos circulares
+	// Deixando o Unity gerenciar o culling automaticamente
+	/*
 	#ifdef FAR_CULL_ON_PROCEDURAL_INSTANCING
 		#define transformPosition mul(unity_ObjectToWorld, float4(0,0,0,1)).xyz
 			#define distanceToCamera length(transformPosition - _WorldSpaceCameraPos.xyz)
@@ -32,6 +39,7 @@ void setupScale()
 			#undef transformPosition
 		#undef distanceToCamera
 	#endif
+	*//*
 #endif
 }
 
@@ -47,4 +55,5 @@ void setup()
 	#endif
 #endif
 }
+*/
 

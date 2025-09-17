@@ -23,9 +23,6 @@ namespace Gameplay {
         [Tooltip("The total time for the rise and fall animation (in seconds).")]
         public float riseFallDuration = 0.5f;
 
-        [Tooltip("Offset Y para ajustar altura final de descida.")]
-        public float yOffset = 0f;
-
         [Header("Spreading Settings")]
         [Tooltip("The maximum distance items will spread from the center.")]
         public float spreadRadius = 2f;
@@ -111,7 +108,7 @@ namespace Gameplay {
                 .SetEase(Ease.OutSine)
                 .OnComplete(() => {
                     if (item != null) {
-                        item.transform.DOMoveY(_originalSpawnHeight + settings.yOffset, settings.riseFallDuration * 0.5f)
+                        item.transform.DOMoveY(_originalSpawnHeight, settings.riseFallDuration * 0.5f)
                             .SetEase(Ease.InSine)
                             .OnComplete(() => {
                                 item.GetComponent<CoinPickup>()?.OnSpreadComplete();
@@ -165,7 +162,7 @@ namespace Gameplay {
             
             // Phase 2: Continue spreading while falling (50% to 100% of time)
             float fallTime = totalAnimationTime * 0.6f;
-            Vector3 finalPos = new Vector3(horizontalTarget.x, _originalSpawnHeight + settings.yOffset, horizontalTarget.z);
+            Vector3 finalPos = new Vector3(horizontalTarget.x, _originalSpawnHeight, horizontalTarget.z);
             
             sequence.Append(item.transform.DOMove(finalPos, fallTime).SetEase(Ease.InSine));
             
