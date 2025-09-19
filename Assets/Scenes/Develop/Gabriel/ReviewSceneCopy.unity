@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 1
   m_FogColor: {r: 0.4862745, g: 0.69411767, b: 0.8117647, a: 1}
   m_FogMode: 2
@@ -42,8 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
-  m_GIWorkflowMode: 1
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -67,9 +67,6 @@ LightmapSettings:
       type: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -124,18 +121,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!114 &341424388 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8396224612839428060, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 87353399669911401}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &346928720 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5651864844448939752, guid: b682e0cee9f103f4ba446ba89d01f098,
@@ -154,30 +139,6 @@ Camera:
     type: 3}
   m_PrefabInstance: {fileID: 4866368476270018585}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &471430313 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7731232194438327919, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 87353399669911401}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &739615156 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7043756895158535517, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 87353399669911401}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1141013678 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 682981062171620961, guid: b682e0cee9f103f4ba446ba89d01f098,
@@ -226,12 +187,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45e653bab7fb20e499bda25e1b646fea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &1658002539 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2859060772753559088, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 87353399669911401}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1748597229 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6131142233062379086, guid: 3a4085da8d77dec40a2effa7a9c5651b,
@@ -556,17 +511,17 @@ PrefabInstance:
         type: 3}
       propertyPath: hudPanel
       value: 
-      objectReference: {fileID: 1658002539}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: coinsText
       value: 
-      objectReference: {fileID: 471430313}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: livesText
       value: 
-      objectReference: {fileID: 739615156}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: respawnPanel
@@ -596,7 +551,7 @@ PrefabInstance:
         type: 3}
       propertyPath: tornadoCooldownImage
       value: 
-      objectReference: {fileID: 341424388}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: pauseEnemiesDefeatedText

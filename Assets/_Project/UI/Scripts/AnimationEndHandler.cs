@@ -1,16 +1,15 @@
 using UnityEngine;
-using UnityEngine.Events; // Necessário para usar UnityEvent
+using UnityEngine.Events; // Necessï¿½rio para usar UnityEvent
 
 public class AnimationEndHandler : MonoBehaviour
 {
-    // Esta é a sua função personalizável, igual ao OnClick de um botão!
-    // Você pode até renomeá-la para OnAnimEnd no Inspector se quiser.
+    // Esta ï¿½ a sua funï¿½ï¿½o personalizï¿½vel, igual ao OnClick de um botï¿½o!
+    // Vocï¿½ pode atï¿½ renomeï¿½-la para OnAnimEnd no Inspector se quiser.
     public UnityEvent OnAnimationFinished;
 
-    // Este método será chamado pelo nosso outro script (o State Machine Behaviour)
+    // Este mï¿½todo serï¿½ chamado pelo nosso outro script (o State Machine Behaviour)
     public void TriggerAnimationEndEvent()
     {
-        Debug.Log("Animação do estado terminou. Disparando evento!");
         OnAnimationFinished.Invoke();
     }
 }

@@ -61,6 +61,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -151,7 +154,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4001428036880475180}
-  - component: {fileID: 4514997209056777764}
   m_Layer: 0
   m_Name: MovingPlatform
   m_TagString: Untagged
@@ -175,103 +177,3 @@ Transform:
   - {fileID: 8026448482250845038}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4514997209056777764
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7633287322273686310}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7d43667da2360c4dbcb7acba0b1c8d5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  targetTransform: {fileID: 4001428036880475180}
-  targetCamera: {fileID: 0}
-  positionSettings:
-    startFromCurrent: 0
-    startValue: {x: 74.51, y: 7.47, z: 49.81}
-    endValue: {x: 79, y: 7.47, z: 49.81}
-    settings:
-      duration: 10
-      ease: 25
-      customEase:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      cycles: -1
-      cycleMode: 1
-      startDelay: 0
-      endDelay: 0
-      useUnscaledTime: 0
-      _useFixedUpdate: 0
-      _updateType: 0
-  rotationSettings:
-    startFromCurrent: 0
-    startValue: {x: 0, y: 0, z: 0}
-    endValue: {x: 0, y: 90, z: 0}
-    settings:
-      duration: 1
-      ease: 0
-      customEase:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      cycles: 1
-      cycleMode: 0
-      startDelay: 0
-      endDelay: 0
-      useUnscaledTime: 0
-      _useFixedUpdate: 0
-      _updateType: 0
-  scaleSettings:
-    startFromCurrent: 0
-    startValue: 1
-    endValue: 2
-    settings:
-      duration: 1
-      ease: 0
-      customEase:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      cycles: 1
-      cycleMode: 0
-      startDelay: 0
-      endDelay: 0
-      useUnscaledTime: 0
-      _useFixedUpdate: 0
-      _updateType: 0
-  cameraShakeSettings:
-    strength: {x: 0.5, y: 0.5, z: 0}
-    duration: 0.5
-    frequency: 10
-    enableFalloff: 1
-    falloffEase: 0
-    strengthOverTime:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    asymmetry: 0
-    easeBetweenShakes: 0
-    cycles: 1
-    startDelay: 0
-    endDelay: 0
-    useUnscaledTime: 0
-    _useFixedUpdate: 0
-    _updateType: 0
-  animatePosition: 1
-  animateRotation: 0
-  animateScale: 0
-  shakeCamera: 0
-  chainPositionAndScale: 0
-  chainRotationAndShake: 0

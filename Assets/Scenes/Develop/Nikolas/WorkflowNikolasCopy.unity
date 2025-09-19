@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 1
   m_FogColor: {r: 0.2470588, g: 0.51846987, b: 0.8862745, a: 1}
   m_FogMode: 1
@@ -42,8 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
-  m_GIWorkflowMode: 1
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -66,9 +66,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -533,6 +530,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SerializedVersion: 0
   m_AgentTypeID: 0
   m_CollectObjects: 0
   m_Size: {x: 10, y: 10, z: 10}
@@ -585,18 +583,6 @@ MonoBehaviour:
   m_BiasX: 0
   m_BiasY: 0
   m_CenterOnActivate: 1
---- !u!114 &554514208 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7731232194438327919, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 2082212883}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &584333155 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4386438620030265974, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
@@ -849,18 +835,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1035248452 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7043756895158535517, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 2082212883}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1064136544 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2070925441746177671, guid: a1a802ecaf6775746bb2a929fb554ad8,
@@ -925,18 +899,6 @@ Light:
     type: 3}
   m_PrefabInstance: {fileID: 1863710854}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1434642824 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8396224612839428060, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 2082212883}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1465196124
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1009,12 +971,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 525020349}
   m_SourcePrefab: {fileID: 100100000, guid: 437750cdd2d35494894d896c3f003b54, type: 3}
---- !u!1 &1468832997 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2859060772753559088, guid: b682e0cee9f103f4ba446ba89d01f098,
-    type: 3}
-  m_PrefabInstance: {fileID: 2082212883}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1477648499
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1226,17 +1182,17 @@ PrefabInstance:
         type: 3}
       propertyPath: hudPanel
       value: 
-      objectReference: {fileID: 1468832997}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: coinsText
       value: 
-      objectReference: {fileID: 554514208}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: livesText
       value: 
-      objectReference: {fileID: 1035248452}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: respawnPanel
@@ -1266,7 +1222,7 @@ PrefabInstance:
         type: 3}
       propertyPath: tornadoCooldownImage
       value: 
-      objectReference: {fileID: 1434642824}
+      objectReference: {fileID: 0}
     - target: {fileID: 8317106473900534007, guid: 3a4085da8d77dec40a2effa7a9c5651b,
         type: 3}
       propertyPath: pauseEnemiesDefeatedText
@@ -1469,12 +1425,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7163653461412273639, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
         type: 3}
-      propertyPath: bossRenderers.Array.data[0]
+      propertyPath: 'bossRenderers.Array.data[0]'
       value: 
       objectReference: {fileID: 2079440123}
     - target: {fileID: 7163653461412273639, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
         type: 3}
-      propertyPath: bossRenderers.Array.data[1]
+      propertyPath: 'bossRenderers.Array.data[1]'
       value: 
       objectReference: {fileID: 2079440123}
     - target: {fileID: 8249871519114904347, guid: c416fe6fb6f7b0241ae7005ab9c7267a,
