@@ -27,9 +27,9 @@ Shader "SNB_Nature/SNB_Foliage_Deferred"
 		#include "UnityStandardUtils.cginc"
 		#pragma target 3.0
 		#pragma multi_compile _ LOD_FADE_CROSSFADE
-		#pragma instancing_options procedural:setup
-		#pragma multi_compile GPU_FRUSTUM_ON__
-		#include "VS_indirect.cginc"
+		// #pragma instancing_options procedural:setup - Comentado para desabilitar instanciamento procedural
+		// #pragma multi_compile GPU_FRUSTUM_ON__ - Comentado para desabilitar culling customizado
+		// #include "VS_indirect.cginc" - Comentado para desabilitar instanciamento procedural
 		#pragma surface surf StandardSpecular keepalpha addshadow fullforwardshadows dithercrossfade vertex:vertexDataFunc 
 		struct Input
 		{
