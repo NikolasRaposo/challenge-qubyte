@@ -66,8 +66,8 @@ namespace Managers {
             respawnPanel.SetActive(false);
             gameOverPanel.SetActive(false);
             
-            ShowPanel(coinsPanel);
-            ShowPanel(livesPanel);
+            //ShowPanel(coinsPanel);
+            //ShowPanel(livesPanel);
         }
 
         private void Update() {

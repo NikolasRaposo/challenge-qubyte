@@ -94,7 +94,7 @@ public class StartMenuControlAnim : MonoBehaviour
         if (LoadingAnimator != null)
         {
             LoadingAnimator.SetTrigger("StartLoading");
-            StartCoroutine(EnableHUDDelayed(6f));
+            StartCoroutine(EnableHUDDelayed(3f));
         }
         else
         {
