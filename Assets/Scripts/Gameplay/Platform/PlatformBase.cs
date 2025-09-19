@@ -85,7 +85,7 @@ namespace Gameplay.Platform {
             if (TryGetComponent<Rigidbody>(out var rb)) {
                 rb.isKinematic = true;
                 rb.useGravity = false;
-                rb.velocity = Vector3.zero;
+                rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
 

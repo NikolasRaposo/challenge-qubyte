@@ -150,7 +150,7 @@ namespace Gameplay {
             // As a fallback, try to apply force to a Rigidbody.
             else if (target.TryGetComponent(out Rigidbody rb)) {
                 // Reset vertical velocity to ensure a consistent jump height.
-                rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
+                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
                 rb.AddForce(Vector3.up * trampolineForce, ForceMode.VelocityChange);
             }
         }

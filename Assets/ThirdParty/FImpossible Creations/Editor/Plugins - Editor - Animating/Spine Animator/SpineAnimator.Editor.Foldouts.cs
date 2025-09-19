@@ -123,7 +123,7 @@ public partial class FSpineAnimator_Editor
 
             EditorGUILayout.BeginHorizontal();
 
-            if (animator) if (animator.updateMode == AnimatorUpdateMode.AnimatePhysics) GUI.color = new Color(0.6f, 1f, 0.6f, 1f);
+            if (animator) if (animator.updateMode == AnimatorUpdateMode.Fixed) GUI.color = new Color(0.6f, 1f, 0.6f, 1f);
             EditorGUILayout.PropertyField(sp_PhysicalClock); 
             GUI.color = c;
             GUILayout.Space(3);
