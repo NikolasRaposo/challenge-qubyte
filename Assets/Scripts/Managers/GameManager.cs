@@ -171,13 +171,39 @@ namespace Managers {
         }
         public void RestartLevel() {
             // Reloads the currently active scene.
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         public void GoToMainMenu() {
             // Loads the main menu scene. Make sure you have a scene named "MainMenu"
             // or change the string to the correct name.
-            SceneManager.LoadScene(0);
+            //SceneManager.LoadScene(0);
+            Debug.Log("Voltando para o menu");
+
+            // Pausa o jogo
+            Time.timeScale = 0f;
+
+            // Bloqueia o input do player
+            if (player != null) {
+                var playerInput = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+                if (playerInput != null) playerInput.enabled = false;
+            }
+            InputManager.Instance.SetUiContext();
+
+            // Mostra a UI de menu
+            var startMenu = FindObjectOfType<StartMenuControlAnim>(true);
+            if (startMenu != null) {
+                startMenu.gameObject.SetActive(true);
+                startMenu.AtivarMainMenuStart(); // animação do logo
+                startMenu.AtivarMainMenuLateStart(); // animação dos painéis
+            } else {
+                Debug.LogWarning("Nenhum StartMenuControlAnim encontrado na cena!");
+            }
+        }
+            
+        public void QuitGame() 
+        {
+            Application.Quit();
         }
         private void HandleBossDefeated() {
             CompleteLevel();

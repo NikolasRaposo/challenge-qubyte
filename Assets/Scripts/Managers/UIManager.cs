@@ -1,8 +1,9 @@
 using System.Collections;
 using Player.Powers;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using UI.HUD;
 
 namespace Managers {
     /// <summary>
@@ -32,9 +33,13 @@ namespace Managers {
         [SerializeField] private TextMeshProUGUI respawnCountdownText;
         
         [Header("HUD Settings")]
-        [SerializeField] private float hudVisibleTime = 3f;
+        [SerializeField] private float hudVisibleTime = 6f;
+        [SerializeField] private PopUIAnimation  coinsPopAnimation;
+        [SerializeField] private PopUIAnimation  livesPopAnimation;
         
         private TornadoAttack _playerTornadoAttack;
+        private Coroutine _coinsCoroutine;
+        private Coroutine _livesCoroutine;
 
         private void Awake() {
             if (Instance != null && Instance != this) {
@@ -79,6 +84,9 @@ namespace Managers {
             coinsText.text = $"{newCoinAmount}";
             pauseCoinsText.text = $"{newCoinAmount}";
             ShowPanel(coinsPanel);
+
+            if (coinsPopAnimation != null)
+                coinsPopAnimation.PlayPop();
         }
     
         /// <summary>
@@ -87,11 +95,21 @@ namespace Managers {
         private void UpdateLivesText(int newLivesAmount) {
             livesText.text = $"{newLivesAmount}";
             ShowPanel(livesPanel);
+            
+            if (livesPopAnimation != null)
+                livesPopAnimation.PlayPop();
         }
         private void ShowPanel(GameObject panel) {
-            StopCoroutine(nameof(HideAfterDelay));
+            if (panel == coinsPanel) {
+                if (_coinsCoroutine != null) StopCoroutine(_coinsCoroutine);
+                _coinsCoroutine = StartCoroutine(HideAfterDelay(panel));
+            }
+            else if (panel == livesPanel) {
+                if (_livesCoroutine != null) StopCoroutine(_livesCoroutine);
+                _livesCoroutine = StartCoroutine(HideAfterDelay(panel));
+            }
+
             panel.SetActive(true);
-            StartCoroutine(HideAfterDelay(panel));
         }
         private IEnumerator HideAfterDelay(GameObject panel) {
             yield return new WaitForSeconds(hudVisibleTime);

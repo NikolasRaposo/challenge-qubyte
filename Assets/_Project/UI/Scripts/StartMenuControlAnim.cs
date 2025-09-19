@@ -1,18 +1,29 @@
+using System.Collections;
 using UnityEngine;
 
 public class StartMenuControlAnim : MonoBehaviour
 {
+    [Header("HUD References")]
+    [SerializeField] private GameObject canvasUI;
+    [SerializeField] private GameObject canvasHUD;
+    
     [Header("Animator References")]
-    [Tooltip("Arraste aqui o GameObject que contém o Animator do Logo")]
+    [Tooltip("Arraste aqui o GameObject que contï¿½m o Animator do Logo")]
     [SerializeField] private Animator logoGroupAnimator;
 
-    [Tooltip("Arraste aqui o GameObject que contém o Animator dos painéis de UI")]
+    [Tooltip("Arraste aqui o GameObject que contï¿½m o Animator dos painï¿½is de UI")]
     [SerializeField] private Animator uiPanelsAnimator;
     
-    [Tooltip("Arraste aqui o GameObject que contém o Animator do Loading")]
+    [Tooltip("Arraste aqui o GameObject que contï¿½m o Animator do Loading")]
     [SerializeField] private Animator LoadingAnimator;
 
-    // --- Métodos para o Animator 'LogoGroup' ---
+    private void Start()
+    {
+        canvasUI.SetActive(false);
+        canvasHUD.SetActive(false);
+    }
+
+    // --- Mï¿½todos para o Animator 'LogoGroup' ---
 
     public void AtivarMainMenuStart()
     {
@@ -22,7 +33,7 @@ public class StartMenuControlAnim : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("O Animator do LogoGroup não foi atribuído no Inspector!");
+            Debug.LogWarning("O Animator do LogoGroup nï¿½o foi atribuï¿½do no Inspector!");
         }
     }
 
@@ -34,11 +45,11 @@ public class StartMenuControlAnim : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("O Animator do LogoGroup não foi atribuído no Inspector!");
+            Debug.LogWarning("O Animator do LogoGroup nï¿½o foi atribuï¿½do no Inspector!");
         }
     }
 
-    // --- Métodos para o Animator 'UIPanels' ---
+    // --- Mï¿½todos para o Animator 'UIPanels' ---
 
     public void AtivarMainMenuLateStart()
     {
@@ -48,7 +59,7 @@ public class StartMenuControlAnim : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("O Animator do UIPanels não foi atribuído no Inspector!");
+            Debug.LogWarning("O Animator do UIPanels nï¿½o foi atribuï¿½do no Inspector!");
         }
     }
     
@@ -60,11 +71,9 @@ public class StartMenuControlAnim : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("O Animator do UIPanels não foi atribuído no Inspector!");
+            Debug.LogWarning("O Animator do UIPanels nï¿½o foi atribuï¿½do no Inspector!");
         }
     }
-    
-    
 
     public void BotaoDeStartPressionado()
     {
@@ -74,21 +83,22 @@ public class StartMenuControlAnim : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("O Animator do UIPanels não foi atribuído no Inspector!");
+            Debug.LogWarning("O Animator do UIPanels nï¿½o foi atribuï¿½do no Inspector!");
         }
     }
     
-    // --- Métodos para o Animator 'Loading' ---
+    // --- Mï¿½todos para o Animator 'Loading' ---
     
     public void AtivarLoadingScreen()
     {
         if (LoadingAnimator != null)
         {
             LoadingAnimator.SetTrigger("StartLoading");
+            StartCoroutine(EnableHUDDelayed(6f));
         }
         else
         {
-            Debug.LogWarning("O Animator do Loading não foi atribuído no Inspector!");
+            Debug.LogWarning("O Animator do Loading nï¿½o foi atribuï¿½do no Inspector!");
         }
     }
     
@@ -97,11 +107,18 @@ public class StartMenuControlAnim : MonoBehaviour
         if (LoadingAnimator != null)
         {
             LoadingAnimator.SetTrigger("StopLoading");
+            //StartCoroutine(EnableHUDDelayed(0.5f));
         }
         else
         {
-            Debug.LogWarning("O Animator do Loading não foi atribuído no Inspector!");
+            Debug.LogWarning("O Animator do Loading nï¿½o foi atribuï¿½do no Inspector!");
         }
     }
     
+    private IEnumerator EnableHUDDelayed(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        canvasUI.SetActive(true);
+        canvasHUD.SetActive(true);
+    }
 }

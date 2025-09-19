@@ -16,7 +16,7 @@ namespace Managers {
             if (Instance != null && Instance != this) Destroy(gameObject);
             else Instance = this;
             _controls = new StarterAssets();
-            SetContext(InputContext.Player);
+            SetContext(InputContext.UI);
         }
         private void OnEnable() => _controls.Enable();
         private void OnDisable() => _controls.Disable();
