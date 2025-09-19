@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using TMPro;
 using UI.HUD;
 
-
 namespace Managers {
     /// <summary>
     /// Manages all UI elements in the game. Listens to events from the GameManager

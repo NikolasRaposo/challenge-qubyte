@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3760801788988470848
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Shader Graphs_HDRP_GridShader
+  m_Shader: {fileID: -6465566751694194690, guid: 453a54838f759c945a648da67db7c54a,
+    type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - Texture2D_1:
+        m_Texture: {fileID: 2800000, guid: ad96621db1b07aa45a79e3e1201ca947, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_4f6d5548e8ad4a7d9dcd2592726e1879:
+        m_Texture: {fileID: 2800000, guid: 58780efb29e14bd4d8015aa66cf60699, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_b502034b32e2457f9470330e18d86df9:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - Boolean_0a5be01eb5a64018bea328348e70ad29: 0
+    - Boolean_2104466b05db40c0b45563dee6b67a90: 1
+    - Boolean_80c0f336b1884dc69c7896889e548b67: 0
+    - Vector1_1d125ece77b3467cb38fceed94bc3307: 5.59
+    - Vector1_1f2e805564624a7e9de49769cffb3516: 1
+    - Vector1_29cc0d1bca804c469cc378cb2909eec2: 1
+    - Vector1_408be6ba290c487d92c36bd96ef536f8: 0.22
+    - Vector1_460ffa4bae104b48914a44b28551646f: 0
+    - Vector1_49788e15aefd43d4b3665cea74fcc218: 1
+    - Vector1_abbb0e4cc2de402ba9515ca2c2436fb3: 0
+    - Vector1_cd3493061a9540569cbb651799afc7c9: 1
+    - Vector1_e52ae5f4aae448a9bf2aff69a47eef94: 6.22
+    - Vector1_ee0b755e329b417e849ebbef91063ece: 0
+    - _BlendTri1: 3.94
+    - _BlendTri2: 3.03
+    - _Normal_End: 0.937
+    - _Normal_Start: 0.676
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    - _TileTex2: -0.31
+    m_Colors:
+    - Color_1: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 0}
+    - Color_1d2e51f2e41f4b9aa299c21b9e01bce9: {r: 0.21698111, g: 0.21698111, b: 0.21698111,
+        a: 0}
+    - Color_e721205f01134817a55c87ba777f7c1f: {r: 1, g: 1, b: 1, a: 1}
+    - Vector2_517d66196aef4293bf28c15ca7118d2f: {r: 0, g: 0, b: 0, a: 0}
+    - _GrassColor: {r: 0.7766975, g: 1, b: 0.033018887, a: 0}
+  m_BuildTextureStacks: []

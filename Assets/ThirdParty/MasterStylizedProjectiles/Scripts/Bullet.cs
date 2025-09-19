@@ -17,6 +17,10 @@ namespace MasterStylizedProjectile
         public bool isTargeting;
         public Transform target;
         public float rotSpeed = 0;
+        
+        [Header("Configurações de Colisão")]
+        [Tooltip("Layer do collider que o projétil deve colidir")]
+        public LayerMask targetLayer = -1;
         private void Start()
         {
             if (bulletClip != null)

@@ -2807,7 +2807,7 @@ Shader "SNB_Nature/SNB_Grass"
 	}
 	/*ase_lod*/
 	CustomEditor "UnityEditor.ShaderGraph.PBRMasterGUI"
-	Fallback "Hidden/InternalErrorShader"
+	// Fallback "Hidden/InternalErrorShader" - Removed to fix build errors
 	
 }
 /*ASEBEGIN

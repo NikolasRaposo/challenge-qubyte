@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Boss;
 using Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,6 +16,7 @@ namespace Managers {
         public event Action<int> OnCoinsUpdated;
         public event Action<int> OnLivesUpdated;
         public event Action<int> OnEnemiesDefeatedUpdated;
+        public event Action OnPlayerRespawn;
         
         [Header("Player Stats")]
         public int playerLives = 3;
@@ -26,6 +28,10 @@ namespace Managers {
         [Header("UI")]
         [Tooltip("The UI panel that is shown when the level is completed.")]
         public GameObject levelCompletePanel;
+        
+        [Header("Boss Battle")]
+        [Tooltip("A reference to the boss controller script in the scene.")]
+        public CapeloboBoss bossController;
         
         private Vector3 _lastCheckpointPosition;
         private PlayerHealth _playerHealth;
@@ -48,6 +54,9 @@ namespace Managers {
                 _lastCheckpointPosition = player.transform.position;
                 _playerHealth = player.GetComponent<PlayerHealth>();
             } 
+            if (bossController != null) {
+                bossController.OnBossDefeated += HandleBossDefeated;
+            }
             InputManager.Instance.OnPause += TogglePause;
             
             OnCoinsUpdated?.Invoke(_collectedCoins);
@@ -80,6 +89,9 @@ namespace Managers {
             if (InputManager.Instance != null) {
                 InputManager.Instance.OnPause -= TogglePause;
             }
+            if (bossController != null) {
+                bossController.OnBossDefeated -= HandleBossDefeated;
+            }
         }
         /// <summary>
         /// Updates the position where the player will respawn.
@@ -98,6 +110,9 @@ namespace Managers {
             
             playerLives--;
             OnLivesUpdated?.Invoke(playerLives); 
+            if (bossController) {
+                bossController.ResetBattle();
+            }
             if (playerLives > 0) {
                 StartCoroutine(RespawnSequence());
             } else {
@@ -122,6 +137,7 @@ namespace Managers {
             _playerHealth.PrepareForRespawn();
             // Give control back to the player.
             InputManager.Instance.SetPlayerContext();
+            OnPlayerRespawn?.Invoke();
         }
         /// <summary>
         /// Handles the game over state.
@@ -188,6 +204,9 @@ namespace Managers {
         public void QuitGame() 
         {
             Application.Quit();
+        }
+        private void HandleBossDefeated() {
+            CompleteLevel();
         }
     }
 }
