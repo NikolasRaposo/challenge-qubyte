@@ -3,15 +3,21 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - CinemachineTarget
+  - Enemy
+  - Collider
+  - Moeda
+  - MagneticTrigger
+  - MagnetTrigger
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Tornado
   - Water
   - UI
-  - 
+  - PlayerMagneticField
   - 
   - 
   - 
