@@ -33,7 +33,7 @@ namespace Managers {
         [SerializeField] private TextMeshProUGUI respawnCountdownText;
         
         [Header("HUD Settings")]
-        [SerializeField] private float hudVisibleTime = 6f;
+        [SerializeField] private float hudVisibleTime = 4f;
         [SerializeField] private PopUIAnimation  coinsPopAnimation;
         [SerializeField] private PopUIAnimation  livesPopAnimation;
         
@@ -99,21 +99,50 @@ namespace Managers {
             if (livesPopAnimation != null)
                 livesPopAnimation.PlayPop();
         }
-        private void ShowPanel(GameObject panel) {
-            if (panel == coinsPanel) {
+        private void ShowPanel(GameObject panel)
+        {
+            bool isCoins = (panel == coinsPanel);
+            bool isLives = (panel == livesPanel);
+
+            // Reinicia a coroutine de esconder
+            if (isCoins)
+            {
                 if (_coinsCoroutine != null) StopCoroutine(_coinsCoroutine);
                 _coinsCoroutine = StartCoroutine(HideAfterDelay(panel));
             }
-            else if (panel == livesPanel) {
+            else if (isLives)
+            {
                 if (_livesCoroutine != null) StopCoroutine(_livesCoroutine);
                 _livesCoroutine = StartCoroutine(HideAfterDelay(panel));
             }
 
-            panel.SetActive(true);
+            var anim = panel.GetComponent<HideUIAnimation>();
+
+            if (!panel.activeSelf) // só toca animação de entrada se estiver desativado
+            {
+                if (anim != null)
+                    anim.PlayShow();
+                else
+                    panel.SetActive(true);
+            }
+            else
+            {
+                // já está ativo → não faz a animação de descida, apenas garante que fica visível
+                panel.SetActive(true);
+            }
         }
         private IEnumerator HideAfterDelay(GameObject panel) {
             yield return new WaitForSeconds(hudVisibleTime);
-            panel.SetActive(false);
+            
+            var anim = panel.GetComponent<HideUIAnimation>();
+            if (anim != null)
+            {
+                anim.PlayHide();
+            }
+            else
+            {
+                panel.SetActive(false); // fallback se não tiver animação
+            }
         }
         /// <summary>
         /// Event handler for when enemies are defeated count change.

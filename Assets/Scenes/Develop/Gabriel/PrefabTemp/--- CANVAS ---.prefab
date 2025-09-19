@@ -4715,10 +4715,18 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8281344975228054879}
+    - targetCorrespondingSourceObject: {fileID: 4905024336636645694, guid: 8c919e6dbb7cc7d4eb3866620972488c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5345812792350194488}
     - targetCorrespondingSourceObject: {fileID: 698988690004643851, guid: 8c919e6dbb7cc7d4eb3866620972488c,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4023855973216878994}
+    - targetCorrespondingSourceObject: {fileID: 698988690004643851, guid: 8c919e6dbb7cc7d4eb3866620972488c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7539251326601484694}
   m_SourcePrefab: {fileID: 100100000, guid: 8c919e6dbb7cc7d4eb3866620972488c, type: 3}
 --- !u!224 &447975498560117015 stripped
 RectTransform:
@@ -4774,6 +4782,21 @@ MonoBehaviour:
   punchDuration: 0.3
   vibrato: 5
   elasticity: 0.5
+--- !u!114 &7539251326601484694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2736494265139944399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd48cd7a80932f42a03beb95414ee7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 200
+  duration: 0.5
+  ease: 10
 --- !u!114 &4566255793726413483 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1374773230062047599, guid: 8c919e6dbb7cc7d4eb3866620972488c,
@@ -4810,6 +4833,21 @@ MonoBehaviour:
   punchDuration: 0.3
   vibrato: 5
   elasticity: 0.5
+--- !u!114 &5345812792350194488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7518918109129792250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd48cd7a80932f42a03beb95414ee7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 200
+  duration: 0.5
+  ease: 10
 --- !u!114 &8100389032463965717 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6638562465448547793, guid: 8c919e6dbb7cc7d4eb3866620972488c,
