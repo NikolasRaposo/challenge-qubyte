@@ -54,8 +54,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.82, y: 0.47, z: 1.88}
-  m_Center: {x: 0, y: 0.2, z: 0}
+  m_Size: {x: 1.82, y: 0.35, z: 1.88}
+  m_Center: {x: -0.09, y: 0.14, z: 0}
 --- !u!54 &2434404029210776762
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -101,9 +101,9 @@ MonoBehaviour:
   respawnAnimationDuration: 0.6
   platformVisuals: {fileID: 878404608844811040}
   enableDebugLogs: 0
-  fallDelay: 0.2
+  fallDelay: 0
   shakeBeforeFalling: 1
-  shakeDuration: 1.5
+  shakeDuration: 1
   shakeIntensity: 0.1
 --- !u!1001 &2013441050074437540
 PrefabInstance:
@@ -213,7 +213,7 @@ MeshCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
-  m_Convex: 0
+  m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -5061437265948370845, guid: bf6c0e51852316446bd2653686091227, type: 3}
 --- !u!4 &2052397379304108111 stripped
