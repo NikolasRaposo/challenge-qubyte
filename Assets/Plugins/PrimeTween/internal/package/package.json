@@ -1,0 +1,44 @@
+{
+  "name": "com.kyrylokuzyk.primetween",
+  "displayName": "PrimeTween",
+  "version": "1.3.3",
+  "unity": "2018.4",
+  "author": {
+    "name": "Kyrylo Kuzyk"
+  },
+  "samples": [
+    {
+      "displayName": "Examples",
+      "path": "Samples~/Examples"
+    }
+  ],
+  "hideInEditor": false,
+  "description": "PrimeTween is a high-performance, allocation-free animation library for Unity.\n\nAnimate anything with just one line of code, tweak all animation properties directly from the Inspector, and create complex animation sequences. No runtime memory allocations, ever.\n\nEnjoying PrimeTween? Consider leaving an honest review on Asset Store.",
+  "keywords": [
+    "Tween",
+    "Easing",
+    "Delay",
+    "Sequence",
+    "Shake",
+    "Screen Shake",
+    "Camera Shake",
+    "Game Feel",
+    "Feel",
+    "Interpolation",
+    "Performance",
+    "Zero-allocation",
+    "Ease",
+    "Tweening",
+    "Animate"
+  ],
+  "documentationUrl": "https://github.com/KyryloKuzyk/PrimeTween",
+  "changelogUrl": "https://github.com/KyryloKuzyk/PrimeTween/blob/main/changelog.md",
+  "_upm": {
+    "changelog": "### Fixed\n- SetEase() does not work with custom AnimationCurve in adapter. https://github.com/KyryloKuzyk/PrimeTween/issues/175\n- Using an invalid Ease value throws an 'Invalid ease type' exception and breaks PrimeTween.\n- PRIME_TWEEN_SAFETY_CHECKS now works correctly with hot reloading (Recompile And Continue Playing).\n- Edit-mode support incorrectly creates PrimeTweenManager when PrimeTween API is used before RuntimeInitializeLoadType.BeforeSceneLoad, which can hide initialization order issues. https://github.com/KyryloKuzyk/PrimeTween/issues/185\n- Highlight animations in Demo do not work in Windows Editor."
+  },
+  "repository": {
+    "url": "https://tobeglad@bitbucket.org/stampedegames/primetween.git",
+    "type": "git",
+    "revision": "3321d1c8688d50565421adc6d98642b205fdbd4d"
+  }
+}
