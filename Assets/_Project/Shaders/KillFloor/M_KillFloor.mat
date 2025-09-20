@@ -39,7 +39,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _CellDensity: 2671
-    - _Emit: 1.16
+    - _Emit: 0.97
     - _NoiseSize: 2385
     - _QueueControl: 0
     - _QueueOffset: 0

@@ -83,10 +83,10 @@ namespace Gameplay.Platform {
             if(enableDebugLogs) Debug.Log($"[PlatformBase.PrepareForRespawn] Starting invisible respawn prep for '{gameObject.name}'.", this);
 
             if (TryGetComponent<Rigidbody>(out var rb)) {
-                rb.isKinematic = true;
                 rb.useGravity = false;
                 rb.velocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = true;
             }
 
             if (platformVisuals != null) {
