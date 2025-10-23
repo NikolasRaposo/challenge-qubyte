@@ -713,6 +713,7 @@ CanvasRenderer:
   m_CullTransparentMesh: 1
 --- !u!114 &375854007239291695
 MonoBehaviour:
+  m_SerializedVersion: 1
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1850,6 +1851,7 @@ CanvasRenderer:
   m_CullTransparentMesh: 1
 --- !u!114 &206809332789862874
 MonoBehaviour:
+  m_SerializedVersion: 1
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
