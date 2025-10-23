@@ -19,8 +19,8 @@ namespace Enemy {
         [Tooltip("The movement speed of the enemy.")]
         public float speed = 2f;
 
-        [Tooltip("Se marcado, o inimigo não rotacionará, mesmo que sofra colisões físicas.")]
-        public bool lockRotation = false; // <-- SUA NOVA OPÇÃO AQUI
+        [Tooltip("Se marcado, o inimigo nï¿½o rotacionarï¿½, mesmo que sofra colisï¿½es fï¿½sicas.")]
+        public bool lockRotation = false; // <-- SUA NOVA OPï¿½ï¿½O AQUI
         
         [Header("Effects")]
         [Tooltip("The particle effect to spawn when defeated.")]
@@ -35,7 +35,7 @@ namespace Enemy {
         private Rigidbody _rigidbody;
 
         private void Awake() {
-            // Pega a referência do Rigidbody para uso futuro.
+            // Pega a referï¿½ncia do Rigidbody para uso futuro.
             _rigidbody = GetComponent<Rigidbody>();
         }
 
@@ -47,7 +47,7 @@ namespace Enemy {
                 return;
             }
 
-            // APLICA A RESTRIÇÃO DE ROTAÇÃO AQUI
+            // APLICA A RESTRIï¿½ï¿½O DE ROTAï¿½ï¿½O AQUI
             if (lockRotation) {
                 _rigidbody.constraints = RigidbodyConstraints.FreezeRotation;
             }
@@ -59,11 +59,11 @@ namespace Enemy {
         private void Update() {
             if (_isDefeated) return;
 
-            // Em vez de manipular transform.position, é melhor usar o Rigidbody para movimento físico.
-            // Isso resulta em interações mais realistas e estáveis com outros objetos.
+            // Em vez de manipular transform.position, ï¿½ melhor usar o Rigidbody para movimento fï¿½sico.
+            // Isso resulta em interaï¿½ï¿½es mais realistas e estï¿½veis com outros objetos.
             Vector3 targetDirection = (_currentTarget.position - transform.position).normalized;
             Vector3 newVelocity = targetDirection * speed;
-            _rigidbody.velocity = new Vector3(newVelocity.x, _rigidbody.velocity.y, newVelocity.z);
+            _rigidbody.linearVelocity = new Vector3(newVelocity.x, _rigidbody.linearVelocity.y, newVelocity.z);
             
             // Check if we have reached the target
             if (!(Vector3.Distance(transform.position, _currentTarget.position) < DistanceThreshold)) return;
@@ -89,9 +89,9 @@ namespace Enemy {
         /// </summary>
         public void Defeat() {
             _isDefeated = true;
-            // Desativa o movimento físico ao ser derrotado
+            // Desativa o movimento fï¿½sico ao ser derrotado
             _rigidbody.isKinematic = true;
-            _rigidbody.velocity = Vector3.zero;
+            _rigidbody.linearVelocity = Vector3.zero;
 
             // Play visual and audio feedback.
             if (deathVFX != null) {

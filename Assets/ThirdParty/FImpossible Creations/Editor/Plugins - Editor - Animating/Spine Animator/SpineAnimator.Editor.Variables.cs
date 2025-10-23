@@ -204,7 +204,7 @@ public partial class FSpineAnimator_Editor
 
         if (animator)
         {
-            if (animator.updateMode == AnimatorUpdateMode.AnimatePhysics)
+            if (animator.updateMode == AnimatorUpdateMode.Fixed)
             {
                 if (Get.AnimatePhysics == FSpineAnimator.EFixedMode.None)
                 {

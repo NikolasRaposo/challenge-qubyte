@@ -169,7 +169,7 @@ namespace Gameplay.Platform {
             if (!isTrampoline) return;
             Rigidbody rb = other.attachedRigidbody;
             if (rb == null) return;
-            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z); 
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z); 
             rb.AddForce(Vector3.up * reboundForce, ForceMode.VelocityChange);
         }
 

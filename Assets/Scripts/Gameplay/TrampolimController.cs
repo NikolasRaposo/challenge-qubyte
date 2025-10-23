@@ -117,11 +117,11 @@ namespace Gameplay {
                 player.ApplyUpwardForce(launchForce);
             } else if (targetObject.TryGetComponent(out Rigidbody rb)) {
                 // Preserve and multiply horizontal velocity.
-                Vector3 horizontalVelocity = new Vector3(rb.velocity.x, 0, rb.velocity.z) * horizontalVelocityMultiplier;
+                Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z) * horizontalVelocityMultiplier;
                 // Calculate the launch direction based on the angle.
                 Vector3 launchDirection = Quaternion.Euler(-launchAngle, 0, 0) * Vector3.up;
                 // Apply the force as an impulse.
-                rb.velocity = horizontalVelocity;
+                rb.linearVelocity = horizontalVelocity;
                 rb.AddForce(launchDirection * launchForce, ForceMode.Impulse);
             }
             // Trigger feedback effects.

@@ -80,7 +80,7 @@ namespace Gameplay {
             } else {
                 // If set to repel, push the object away from the center.
                 Vector3 direction = (rb.position - transform.position).normalized;
-                rb.velocity = direction * launchForce;
+                rb.linearVelocity = direction * launchForce;
             }
         }
 
@@ -109,7 +109,7 @@ namespace Gameplay {
         private IEnumerator OrbitObject(Rigidbody rb) {
             // Prepare the object for orbiting.
             rb.useGravity = false;
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
 
             float currentAngle = Random.Range(0f, 360f);
@@ -130,7 +130,7 @@ namespace Gameplay {
 
                     // If the object is within the launch cone, launch it.
                     if (angle >= minLaunchAngle && angle <= maxLaunchAngle) {
-                        rb.velocity = transform.forward * launchForce;
+                        rb.linearVelocity = transform.forward * launchForce;
                         rb.useGravity = true;
                         // Stop tracking this object and exit the coroutine.
                         _orbitingObjects.Remove(rb);
