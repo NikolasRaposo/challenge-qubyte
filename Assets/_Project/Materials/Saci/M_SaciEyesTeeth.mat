@@ -12,7 +12,6 @@ Material:
   m_Parent: {fileID: 2100000, guid: a1c21dca55d2d684a929076243cc003f, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - DR_RIM_ON
   - _BASEMAP_PREMULTIPLY
   - _CELPRIMARYMODE_STEPS
   - _DETAILMAPBLENDINGMODE_MULTIPLY
@@ -36,6 +35,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _RimEnabled: 0
     m_Colors: []
   m_BuildTextureStacks: []

@@ -11,12 +11,13 @@ namespace Managers {
     public class InputManager : MonoBehaviour {
         public static InputManager Instance { get; private set; }
         private StarterAssets _controls;
-        public event Action OnTornado, OnPause; 
+        public event Action OnTornado, OnPause, OnProjetarTornado;
+
         private void Awake() {
             if (Instance != null && Instance != this) Destroy(gameObject);
             else Instance = this;
             _controls = new StarterAssets();
-            SetContext(InputContext.UI);
+            SetContext(InputContext.Player);
         }
         private void OnEnable() => _controls.Enable();
         private void OnDisable() => _controls.Disable();
@@ -51,6 +52,7 @@ namespace Managers {
         private void SetPlayerEvents() {
             _controls.Player.Enable();
             _controls.Player.Tornado.performed += TornadoOnPerformed;
+            _controls.Player.ProjetarTornado.performed += ProjetarTornadoOnPerformed;
             _controls.Player.Pause.performed += PauseOnPerformed;
         }
         private void SeUIEvents() {
@@ -66,7 +68,7 @@ namespace Managers {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
-        
+        private void ProjetarTornadoOnPerformed(InputAction.CallbackContext obj) => OnProjetarTornado?.Invoke();
         private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
         private void PauseOnPerformed(InputAction.CallbackContext obj) => OnPause?.Invoke();
         private void ClearAllBindings() {
@@ -75,6 +77,7 @@ namespace Managers {
         }
         private void ClearPlayerBindings() {
             _controls.Player.Tornado.performed -= TornadoOnPerformed;
+            _controls.Player.ProjetarTornado.performed -= ProjetarTornadoOnPerformed;
             _controls.Player.Pause.performed -= PauseOnPerformed;
         }
         private void ClearUiBindings() {

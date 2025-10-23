@@ -80,6 +80,15 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ProjetarTornado"",
+                    ""type"": ""Button"",
+                    ""id"": ""37b18360-7443-44b6-a246-47d3e14736a0"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -300,6 +309,39 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5f67b925-2823-4551-b753-60b7ae2c6e07"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ProjetarTornado"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""6683f0d4-da48-48b3-a937-0cba687d8e31"",
+                    ""path"": ""<Mouse>/middleButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ProjetarTornado"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7e0bc1a5-4fa3-471c-ac58-08b02660eb7b"",
+                    ""path"": ""<Keyboard>/r"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ProjetarTornado"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -666,6 +708,7 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
         m_Player_Tornado = m_Player.FindAction("Tornado", throwIfNotFound: true);
         m_Player_Pause = m_Player.FindAction("Pause", throwIfNotFound: true);
+        m_Player_ProjetarTornado = m_Player.FindAction("ProjetarTornado", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Pause = m_UI.FindAction("Pause", throwIfNotFound: true);
@@ -748,6 +791,7 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Sprint;
     private readonly InputAction m_Player_Tornado;
     private readonly InputAction m_Player_Pause;
+    private readonly InputAction m_Player_ProjetarTornado;
     public struct PlayerActions
     {
         private @StarterAssets m_Wrapper;
@@ -758,6 +802,7 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
         public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
         public InputAction @Tornado => m_Wrapper.m_Player_Tornado;
         public InputAction @Pause => m_Wrapper.m_Player_Pause;
+        public InputAction @ProjetarTornado => m_Wrapper.m_Player_ProjetarTornado;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -785,6 +830,9 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
             @Pause.started += instance.OnPause;
             @Pause.performed += instance.OnPause;
             @Pause.canceled += instance.OnPause;
+            @ProjetarTornado.started += instance.OnProjetarTornado;
+            @ProjetarTornado.performed += instance.OnProjetarTornado;
+            @ProjetarTornado.canceled += instance.OnProjetarTornado;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -807,6 +855,9 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
             @Pause.started -= instance.OnPause;
             @Pause.performed -= instance.OnPause;
             @Pause.canceled -= instance.OnPause;
+            @ProjetarTornado.started -= instance.OnProjetarTornado;
+            @ProjetarTornado.performed -= instance.OnProjetarTornado;
+            @ProjetarTornado.canceled -= instance.OnProjetarTornado;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -962,6 +1013,7 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
         void OnSprint(InputAction.CallbackContext context);
         void OnTornado(InputAction.CallbackContext context);
         void OnPause(InputAction.CallbackContext context);
+        void OnProjetarTornado(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

@@ -23,7 +23,7 @@ namespace Player.Powers {
         private void Start() {
             // Subscribe to the OnTornado event from the InputManager singleton.
             // The 'HandleTornadoInput' method will be called whenever the event is triggered.
-            InputManager.Instance.OnTornado += HandleTornadoInput;
+            InputManager.Instance.OnProjetarTornado += HandleTornadoInput;
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Player.Powers {
         /// </summary>
         private void OnDestroy() {
             if (InputManager.Instance != null) {
-                InputManager.Instance.OnTornado -= HandleTornadoInput;
+                InputManager.Instance.OnProjetarTornado -= HandleTornadoInput;
             }
         }
     }

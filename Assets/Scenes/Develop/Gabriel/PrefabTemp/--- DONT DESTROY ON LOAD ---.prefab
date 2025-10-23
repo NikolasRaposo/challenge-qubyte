@@ -48,6 +48,7 @@ MonoBehaviour:
   playerLives: 3
   player: {fileID: 0}
   levelCompletePanel: {fileID: 0}
+  bossController: {fileID: 0}
 --- !u!114 &8317106473900534007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60,7 +61,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9627b0bc6c657914e95134982b94bd75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hudPanel: {fileID: 0}
+  coinsPanel: {fileID: 0}
+  livesPanel: {fileID: 0}
   pauseMenuPanel: {fileID: 0}
   respawnPanel: {fileID: 0}
   gameOverPanel: {fileID: 0}
@@ -70,3 +72,6 @@ MonoBehaviour:
   pauseCoinsText: {fileID: 0}
   pauseEnemiesDefeatedText: {fileID: 0}
   respawnCountdownText: {fileID: 0}
+  hudVisibleTime: 6
+  coinsPopAnimation: {fileID: 0}
+  livesPopAnimation: {fileID: 0}

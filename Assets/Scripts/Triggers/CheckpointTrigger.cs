@@ -4,17 +4,15 @@ using UnityEngine.Events; // Namespace necessário para usar UnityEvent
 
 /// <summary>
 /// Este script deve ser anexado a um objeto com um Collider configurado como Trigger.
-/// Quando o jogador entra no trigger, ele atualiza a posição do último checkpoint no GameManager
-/// e pode disparar um evento customizável na primeira ativação.
+/// Quando o jogador entra no trigger pela primeira vez, ele atualiza a posição do último checkpoint no GameManager,
+/// dispara um evento customizável e depois desativa a si mesmo para não ser executado novamente.
+/// O Collider permanece ativo para uso de outros scripts.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class CheckpointTrigger : MonoBehaviour {
     [Header("Configurações do Checkpoint")]
     [Tooltip("O deslocamento (offset) a partir do centro deste objeto que definirá o ponto de respawn exato.")]
     [SerializeField] private Vector3 checkpointOffset = Vector3.zero;
-
-    [Tooltip("Se marcado, o checkpoint será desativado após ser acionado uma vez.")]
-    [SerializeField] private bool disableAfterUse = true;
     
     [Header("Eventos")]
     [Tooltip("Evento que será disparado APENAS na primeira vez que o jogador entrar no trigger.")]
@@ -24,38 +22,41 @@ public class CheckpointTrigger : MonoBehaviour {
     [Tooltip("Se marcado, exibe mensagens de log no console quando o checkpoint é ativado.")]
     [SerializeField] private bool enableDebugLogs = false;
 
+    // Esta variável agora controla se o checkpoint já foi ativado.
     private bool _hasBeenTriggered = false;
 
     private void OnTriggerEnter(Collider other) {
-        // Verifica se o objeto que entrou no trigger é o jogador (pela tag "Player")
-        if (other.CompareTag("Player")) {
-            
-            // Verifica se esta é a primeira vez que o trigger é ativado
-            if (!_hasBeenTriggered) {
-                // Dispara o evento customizável
-                onFirstTriggerEnter.Invoke();
-                _hasBeenTriggered = true; // Marca que o evento já foi disparado
-            }
-
-            // Calcula a posição final do checkpoint aplicando o offset
-            Vector3 checkpointPosition = transform.position + checkpointOffset;
-
-            // Acessa a instância do GameManager (Singleton) e atualiza o checkpoint
-            GameManager.Instance.UpdateCheckpoint(checkpointPosition);
-            
-            // Log para confirmar que o checkpoint foi ativado, se a opção estiver habilitada
-            if (enableDebugLogs) {
-                Debug.Log($"Checkpoint ativado em {gameObject.name}. Nova posição de respawn: {checkpointPosition}");
-            }
-
-            // Se a opção para desativar após o uso estiver marcada, desativa o GameObject
-            if (disableAfterUse) {
-                // Desativar o colisor é suficiente e mais otimizado do que desativar o objeto inteiro
-                GetComponent<Collider>().enabled = false; 
-                // Opcionalmente, você pode desativar o objeto inteiro se quiser que ele desapareça:
-                // gameObject.SetActive(false);
-            }
+        // 1. Condição de guarda: se já foi ativado ou se não é o jogador, não faz mais nada.
+        if (_hasBeenTriggered || !other.CompareTag("Player")) {
+            return;
         }
+        
+        // Se chegou até aqui, é a primeira vez que o jogador entra.
+        
+        // Marca que o checkpoint foi ativado para não repetir a lógica.
+        _hasBeenTriggered = true; 
+
+        // Dispara o evento customizável
+        onFirstTriggerEnter.Invoke();
+        
+        // Calcula a posição final do checkpoint aplicando o offset
+        Vector3 checkpointPosition = transform.position + checkpointOffset;
+
+        // Acessa a instância do GameManager (Singleton) e atualiza o checkpoint
+        if (GameManager.Instance != null) {
+            GameManager.Instance.UpdateCheckpoint(checkpointPosition);
+        } else {
+            Debug.LogWarning("GameManager.Instance não encontrado! O checkpoint não foi salvo.");
+        }
+        
+        // Log para confirmar que o checkpoint foi ativado, se a opção estiver habilitada
+        if (enableDebugLogs) {
+            Debug.Log($"Checkpoint ativado em {gameObject.name}. Nova posição de respawn: {checkpointPosition}");
+        }
+
+        // 2. A MUDANÇA PRINCIPAL: Desativa este componente de script para que o OnTriggerEnter não seja mais chamado.
+        // O GameObject e seu Collider continuarão ativos.
+        this.enabled = false; 
     }
 
     /// <summary>

@@ -36,6 +36,9 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
-    m_Colors: []
+    m_Floats:
+    - _FlatRimSize: 0.262
+    - _RimEnabled: 1
+    m_Colors:
+    - _FlatRimColor: {r: 0.047169805, g: 0.018979173, b: 0.006897471, a: 1}
   m_BuildTextureStacks: []
