@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d9a21d3aa0344954ba798b865efa56fd
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Examples/Scene/KalderaExampleTerrain.asset
+  uploadId: 723425

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5e089b457bdefe3429a2b3241b1fff3e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Scripts/Editor/Distribution/UniformDistribution.cs
+  uploadId: 723425

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 747e95e8457f0c047ae4b11b8d99c682
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Scripts/Editor/SpawnEffects/KalderaSpawnEffectsSettingsRegister.cs
+  uploadId: 723425

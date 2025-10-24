@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e4be464dd39e23743b4b6e95f19a2b29
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Examples/Prefabs/Kaldera_Structures/Assets/Satellite_Mat.mat
+  uploadId: 723425

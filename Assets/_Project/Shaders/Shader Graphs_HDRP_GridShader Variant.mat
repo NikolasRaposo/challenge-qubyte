@@ -26,7 +26,10 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _BlendTri1: 1.76
+    - _BlendTri2: 3.98
+    - _RockBright: 5.21
     m_Colors:
     - Color_1: {r: 0.4716981, g: 0.459215, b: 0.36267355, a: 0}
   m_BuildTextureStacks: []

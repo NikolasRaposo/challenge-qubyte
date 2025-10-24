@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 3b2f9b1e28acaf04db1034fc7d4457d0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Scripts/Editor/PlacementModes/AnyColliderMode.cs
+  uploadId: 723425

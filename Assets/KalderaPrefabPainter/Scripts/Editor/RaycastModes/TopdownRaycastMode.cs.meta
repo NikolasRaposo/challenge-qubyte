@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a6f4c6248f7bdc34698526e6e347e62f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Scripts/Editor/RaycastModes/TopdownRaycastMode.cs
+  uploadId: 723425

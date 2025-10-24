@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Shader Graphs_HDRP_GridShaderRocks
+  m_Shader: {fileID: -6465566751694194690, guid: 453a54838f759c945a648da67db7c54a,
+    type: 3}
+  m_Parent: {fileID: 2100000, guid: 5b72ea71ca3178e4aa3576fc6d87eeed, type: 2}
+  m_ModifiedSerializedProperties: 2
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 2
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - Boolean_0a5be01eb5a64018bea328348e70ad29: 0
+    - Boolean_2104466b05db40c0b45563dee6b67a90: 1
+    - Vector1_29cc0d1bca804c469cc378cb2909eec2: 1
+    - Vector1_408be6ba290c487d92c36bd96ef536f8: 0.19
+    - Vector1_abbb0e4cc2de402ba9515ca2c2436fb3: 0
+    - Vector1_cd3493061a9540569cbb651799afc7c9: 1
+    - Vector1_e52ae5f4aae448a9bf2aff69a47eef94: 4.97
+    - Vector1_ee0b755e329b417e849ebbef91063ece: 0
+    - _BlendTri1: 9.04
+    - _BlendTri2: 1.41
+    - _Normal_End: 0.93
+    - _Normal_Start: 0.636
+    - _RockBright: 3
+    - _Specular: 0.5
+    - _TileTex2: 0.38
+    m_Colors:
+    - Color_1: {r: 0.4433962, g: 0.4433962, b: 0.4433962, a: 0}
+    - _GrassColor: {r: 0.48788375, g: 1, b: 0.4669811, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!114 &8072062146131590043
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 10

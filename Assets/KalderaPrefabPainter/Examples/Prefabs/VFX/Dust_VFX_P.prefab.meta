@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e7090718773c27a4d84f80d2353bb272
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Examples/Prefabs/VFX/Dust_VFX_P.prefab
+  uploadId: 723425

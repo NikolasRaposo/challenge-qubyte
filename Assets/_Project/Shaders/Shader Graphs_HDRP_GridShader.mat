@@ -75,7 +75,7 @@ Material:
     - Vector1_49788e15aefd43d4b3665cea74fcc218: 1
     - Vector1_abbb0e4cc2de402ba9515ca2c2436fb3: 0
     - Vector1_cd3493061a9540569cbb651799afc7c9: 1
-    - Vector1_e52ae5f4aae448a9bf2aff69a47eef94: 6.22
+    - Vector1_e52ae5f4aae448a9bf2aff69a47eef94: 10
     - Vector1_ee0b755e329b417e849ebbef91063ece: 0
     - _BlendTri1: 3.94
     - _BlendTri2: 3.03
@@ -83,6 +83,8 @@ Material:
     - _Normal_Start: 0.676
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _RockBright: 3
+    - _Specular: 0.5
     - _TileTex2: -0.31
     m_Colors:
     - Color_1: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 0}
@@ -90,6 +92,6 @@ Material:
         a: 0}
     - Color_e721205f01134817a55c87ba777f7c1f: {r: 1, g: 1, b: 1, a: 1}
     - Vector2_517d66196aef4293bf28c15ca7118d2f: {r: 0, g: 0, b: 0, a: 0}
-    - _GrassColor: {r: 0.7766975, g: 1, b: 0.033018887, a: 0}
+    - _GrassColor: {r: 0, g: 1, b: 0.8334408, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

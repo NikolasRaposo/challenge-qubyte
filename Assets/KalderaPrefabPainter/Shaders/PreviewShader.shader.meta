@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: c3dafa675b2b0fc4fb98b3f51716d84d
+timeCreated: 1515800629
+licenseType: Store
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Shaders/PreviewShader.shader
+  uploadId: 723425

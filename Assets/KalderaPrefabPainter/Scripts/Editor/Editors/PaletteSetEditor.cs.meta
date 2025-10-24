@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: fd6b00ee5453dce4da0ef5ac45fb5a23
+timeCreated: 1518889942
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Scripts/Editor/Editors/PaletteSetEditor.cs
+  uploadId: 723425

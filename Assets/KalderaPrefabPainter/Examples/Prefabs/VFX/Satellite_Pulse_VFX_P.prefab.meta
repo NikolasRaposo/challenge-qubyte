@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 838779b03bafe8c42ab443d75f214fa0
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Examples/Prefabs/VFX/Satellite_Pulse_VFX_P.prefab
+  uploadId: 723425

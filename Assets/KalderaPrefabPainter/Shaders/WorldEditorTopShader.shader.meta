@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 83f7aaea2f666bd4fa865e8ed79d9e20
+timeCreated: 1515800629
+licenseType: Store
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Shaders/WorldEditorTopShader.shader
+  uploadId: 723425

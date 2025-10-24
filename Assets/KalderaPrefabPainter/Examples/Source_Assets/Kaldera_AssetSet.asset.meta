@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 681eaa0e6cd469842b436ab0779564d5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Examples/Source_Assets/Kaldera_AssetSet.asset
+  uploadId: 723425

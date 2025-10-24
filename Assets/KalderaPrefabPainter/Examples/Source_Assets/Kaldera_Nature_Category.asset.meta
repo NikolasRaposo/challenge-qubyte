@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 175b9c6585f23c94894335fd6065d064
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 266905
+  packageName: Kaldera Prefab Painter Lite
+  packageVersion: 1.7.0
+  assetPath: Assets/KalderaPrefabPainter/Examples/Source_Assets/Kaldera_Nature_Category.asset
+  uploadId: 723425

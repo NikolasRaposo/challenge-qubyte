@@ -12,6 +12,7 @@ Material:
   m_Parent: {fileID: 2100000, guid: 54e5d573377d2064daef29454d661478, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - DR_CEL_EXTRA_ON
   - _BASEMAP_PREMULTIPLY
   - _DETAILMAPBLENDINGMODE_MULTIPLY
   - _GRADIENTSPACE_WORLD
@@ -36,10 +37,29 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _BaseMapPremultiply: 1
+    - _CelExtraEnabled: 1
     - _CelPrimaryMode: 0
+    - _DetailMapImpact: 0
+    - _FlatRimEdgeSmoothness: 0.404
+    - _FlatRimLightAlign: 0.787
+    - _FlatRimSize: 0.238
+    - _FlatnessExtra: 1
+    - _OutlineEnabled: 0
     - _RimEnabled: 0
+    - _SelfShadingSize: 0.213
+    - _SelfShadingSizeExtra: 0.386
+    - _ShadowEdgeSize: 0.219
+    - _ShadowEdgeSizeExtra: 0.284
+    - _SpecularEnabled: 0
     - _Surface: 1
     - _TextureBlendingMode: 0
     - _TextureImpact: 1
-    m_Colors: []
+    - _VertexColorsEnabled: 0
+    - _VertexExtrusionSmoothNormals: 0
+    m_Colors:
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FlatRimColor: {r: 1, g: 0.11792451, b: 0.61799186, a: 1}
+    - _UnityShadowColor: {r: 0.8773585, g: 0.82374215, b: 0, a: 0.85056}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
