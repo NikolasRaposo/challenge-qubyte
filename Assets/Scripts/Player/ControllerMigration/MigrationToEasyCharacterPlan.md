@@ -189,6 +189,79 @@ CharacterMovement:
 - Snap To Ground: true
 ```
 
+### 6.3 Hierarquia do GameObject (SaciECMController)
+
+```
+SaciECMController (GameObject Pai)
+├── Components (no objeto pai)
+│   ├── Rigidbody
+│   ├── CapsuleCollider
+│   ├── CharacterMovement
+│   ├── GroundDetection
+│   ├── SaciECMController (Script)
+│   ├── PlayerInput
+│   ├── StarterAssetsInputs
+│   ├── InputModeManager
+│   └── (Opcional) Componente de áudio / efeitos específicos
+├── SaciModel (Filho)
+│   ├── SkinnedMeshRenderer / Meshes
+│   ├── Animator (Controller: Saci_ECM_Animator.controller)
+│   └── (Opcional) RootMotionController (helper do ECM)
+└── CinemachineCameraTarget (Filho)
+    └── Empty / Pivot para câmera (se necessário)
+```
+
+- O objeto pai `SaciECMController` agrupa toda a lógica de movimento e input.
+- O filho `SaciModel` contém o modelo 3D do Saci e o `Animator` (com o novo controller dedicado).
+- `RootMotionController` pode ser adicionado ao mesmo GameObject do `Animator` caso usemos root motion (rotação e/ou deslocamento) conforme suporte do ECM.
+- `CinemachineCameraTarget` é um filho vazio usado como alvo de câmera para seguir/rotacionar com maior controle (compatível com Dolly Tracks).
+
+### 6.4 Guia: Criar Novo Animator Controller (Saci_ECM_Animator)
+
+- **Objetivo**: Manter o Animator atual intacto e criar um novo controller dedicado ao ECM para maior liberdade.
+
+**Passo a passo**:
+1. Criar um `Animator Controller` chamado `Saci_ECM_Animator.controller` em `Assets/_Project/Animations/Controllers` (ou pasta padrão do projeto).
+2. No `SaciModel` (filho), atribuir este controller ao componente `Animator`.
+3. Adicionar os seguintes parâmetros ao Animator:
+   - `Speed` (float): magnitude da velocidade lateral (usado para blend Idle/Walk/Run).
+   - `IsGrounded` (bool): estado de contato com o chão.
+   - `VerticalVelocity` (float): velocidade vertical (para estados de queda / subida).
+   - `IsJumping` (bool): estado de pulo ativo.
+   - `IsCrouching` (bool): agachado ou não.
+   - (Opcional) `JumpTrigger` (trigger): para iniciar animação de pulo.
+4. Criar um `Blend Tree` de Locomoção (Base Layer):
+   - Entrada: `Speed`
+   - Clips: `Idle`, `Walk`, `Run` (transições suaves por velocidade)
+5. Criar camada / sub-estados de Aéreo:
+   - Estados: `Jump`, `Fall`, `Land`
+   - Transições: `JumpTrigger`/`IsJumping` para `Jump`; `VerticalVelocity < 0` e `!IsGrounded` para `Fall`; `IsGrounded` para `Land`.
+6. Adicionar estado de `Crouch` em sub-máquina ou camada separada:
+   - Ativar quando `IsCrouching == true`.
+7. Configurar **Root Motion** conforme necessidade:
+   - Se usar root motion de rotação, habilitar `_useRootMotion = true` e `_rootMotionRotation = true` no controlador.
+   - Adicionar `RootMotionController` ao GameObject do `Animator` se usar root motion (compatível com ECM 1.8+).
+8. No `SaciECMController.Animate()` mapear os parâmetros:
+
+```csharp
+protected override void Animate()
+{
+    if (_animator == null)
+        _animator = GetComponentInChildren<Animator>();
+
+    var lateralSpeed = Vector3.ProjectOnPlane(movement.velocity, transform.up).magnitude;
+
+    _animator.SetFloat("Speed", lateralSpeed);
+    _animator.SetBool("IsGrounded", movement.isGrounded);
+    _animator.SetFloat("VerticalVelocity", movement.velocity.y);
+    _animator.SetBool("IsJumping", _isJumping);
+    _animator.SetBool("IsCrouching", isCrouching);
+}
+```
+
+- Ajustar nomes de clips e thresholds no `Blend Tree` conforme os assets de animação do Saci.
+- Manter o Animator antigo intacto e referenciável para fallback em caso de testes A/B.
+
 ## 7. Riscos e Mitigações
 
 ### 7.1 Riscos Identificados
@@ -244,3 +317,24 @@ CharacterMovement:
 - Testes constantes são essenciais durante toda a migração
 - Manter versão funcional do sistema atual como fallback
 - Documentar todas as alterações para facilitar debugging
+
+
+
+
+Pontos a Ajustar
+
+- Integração com InputModeManager : o plano prevê manter e usar; o controlador atual não consulta o InputModeManager para habilitar/desabilitar input conforme modo. Recomenda verificar modo ativo antes de consumir inputs .
+- Assinaturas Awake / OnValidate : estão como public override . No ECM, é comum protected virtual na base; se o BaseCharacterController usar protected , o override deve ser protected override para compatibilidade.
+- Estado walk : a propriedade privada walk é redundante (não usada em cálculos após a mudança de CalcDesiredVelocity ). Pode ser removida ou usada se houver lógica adicional (ex.: animação/estados específicos de caminhada).
+- JumpTrigger : o plano lista como opcional; o controlador não aciona o Trigger . Se o Animator depender do JumpTrigger para entrar em Jump , sugerido acionar junto com isJumping no momento do salto.
+- Configuração de componentes: o plano recomenda ajustes no Rigidbody (freeze X/Z, Use Gravity: false ) e CharacterMovement (snap to ground, slope limit, gravity). Esses devem ser conferidos no Inspector; o script não força essas configs.
+- Mecânicas avançadas: double jump e bounce on enemy ainda não estão implementados (previstos na Fase 3).
+- Root Motion flags: se for usar root motion de rotação/deslocamento, além do RootMotionController , é bom alinhar flags do controlador base (ex.: habilitar rotação por root motion se existir suporte no BaseCharacterController ).
+Sugestões Objetivas
+
+- Verificar e ajustar a acessibilidade de Awake e OnValidate para protected override se a base for protected virtual .
+- Adicionar verificação de modo no HandleInput() usando InputModeManager (ignorar input quando não estiver em modo de player).
+- Remover ou utilizar walk de forma consistente (ex.: para uma flag de estado visual ou auditoria).
+- Se o Animator usar JumpTrigger , acionar animator.SetTrigger("JumpTrigger") no início do salto.
+- Conferir e aplicar no Inspector as recomendações de Rigidbody e CharacterMovement do plano.
+- Planejar a Fase 3: pontos de extensão para double jump e bounce (com CharacterMovement.ApplyImpulse ou equivalente no ECM).
