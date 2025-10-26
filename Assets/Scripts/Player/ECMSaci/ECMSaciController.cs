@@ -39,10 +39,40 @@ namespace Player
         [SerializeField] private float _rotationSmoothTime = 0.1f;
         private float _rotationYawVelocity = 0f;
 
+        [Header("Movimento (Suavização)")]
+        [Tooltip("Tempo de suavização do input de movimento (segundos).")]
+        [SerializeField] private float _moveInputSmoothTime = 0.08f;
+        private Vector3 _smoothedMoveDirection = Vector3.zero;
+        private Vector3 _moveInputVelocity = Vector3.zero;
+
+        [Header("Queda (Free Fall)")]
+        [Tooltip("Aplica um pequeno atraso antes de marcar FreeFall.")]
+        [SerializeField] private bool _useFallTimeout = true;
+        [Tooltip("Tempo para entrar em FreeFall ao sair do chão.")]
+        [SerializeField] private float _fallTimeout = 0.15f;
+        private float _fallTimeoutDelta = 0f;
+
         [Header("Pulo (Mid-Air)")]
         [Tooltip("Número máximo de pulos no ar (1 = double jump).")]
         [SerializeField] private int _maxMidAirJumpsLocal = 1;
         private int _prevMidAirJumpCount = 0;
+
+        [Header("Pulo (Input Buffer)")]
+        [Tooltip("Tempo que um toque de pulo fica em buffer para ser consumido no FixedUpdate.")]
+        [SerializeField] private float _jumpInputBufferTime = 0.1f;
+        private float _jumpInputBufferTimer = 0f;
+
+        [Header("Pulo (Tolerâncias)")]
+        [Tooltip("Janela para pressionar pulo antes de encostar no chão e ainda validar.")]
+        [SerializeField] private float _jumpPreGroundedToleranceLocal = 0.35f;
+        [Tooltip("Janela para pressionar pulo após sair do chão (coyote time).")]
+        [SerializeField] private float _jumpPostGroundedToleranceLocal = 0.2f;
+
+        [Header("Pulo (Alturas)")]
+        [Tooltip("Altura base do primeiro pulo (m).")]
+        [SerializeField] private float _groundJumpHeight = 1.8f;
+        [Tooltip("Altura base do pulo no ar (m).")]
+        [SerializeField] private float _midAirJumpHeight = 1.5f;
         // Ajusta a velocidade alvo com base no estado (caminhando/correndo)
         protected override Vector3 CalcDesiredVelocity()
         {
@@ -74,17 +104,58 @@ namespace Player
                 vy = 0f;
             animator.SetFloat("VerticalVelocity", vy);
 
+            // FreeFall: precisa ser mais preciso que apenas sair do chão
+            // Critério: no ar e movendo verticalmente (|vy| > deadzone). 
+            // Comportamento:
+            // - Se há impulso externo (não está em estado de jump), ativa FreeFall imediatamente.
+            // - Caso contrário, aplica pequeno atraso (_fallTimeout) antes de marcar FreeFall.
+            bool freeFall = false;
+            if (!movement.isGrounded)
+            {
+                if (Mathf.Abs(vy) > _verticalVelocityDeadzone)
+                {
+                    if (_useFallTimeout)
+                    {
+                        // Bypass do atraso se não está no estado de jump (empurrão/impulso externo)
+                        if (!isJumping)
+                        {
+                            freeFall = true;
+                        }
+                        else
+                        {
+                            if (_fallTimeoutDelta > 0f)
+                                _fallTimeoutDelta -= Time.deltaTime;
+                            else
+                                freeFall = true;
+                        }
+                    }
+                    else
+                    {
+                        freeFall = true;
+                    }
+                }
+            }
+            else
+            {
+                // Reset do atraso ao tocar o chão
+                _fallTimeoutDelta = _fallTimeout;
+            }
+            animator.SetBool("FreeFall", freeFall);
+
             // Mid-air jump helpers para o Animator
             bool canDoubleJump = !movement.isGrounded && _midAirJumpCount < maxMidAirJumps;
             animator.SetBool("CanDoubleJump", canDoubleJump);
             animator.SetInteger("MidAirJumpCount", _midAirJumpCount);
-            if (_midAirJumpCount > _prevMidAirJumpCount)
+            if (!movement.isGrounded && _midAirJumpCount > _prevMidAirJumpCount)
             {
                 animator.SetTrigger("DoubleJump");
                 _prevMidAirJumpCount = _midAirJumpCount;
             }
             if (movement.isGrounded)
-                _prevMidAirJumpCount = _midAirJumpCount; // normalmente 0 ao aterrar
+            {
+                _prevMidAirJumpCount = 0;
+                animator.ResetTrigger("DoubleJump");
+            }
 
             // Placeholder para futuro: manter IsCrouching alinhado ao plano
             animator.SetBool("IsCrouching", isCrouching);
@@ -119,31 +190,27 @@ namespace Player
             {
                 worldDir = new Vector3(move.x, 0f, move.y);
             }
-            moveDirection = worldDir;
+            // Suaviza o input para reduzir tremedeiras quando não há root motion
+            if (_moveInputSmoothTime > 0f)
+                _smoothedMoveDirection = Vector3.SmoothDamp(_smoothedMoveDirection, worldDir, ref _moveInputVelocity, _moveInputSmoothTime);
+            else
+                _smoothedMoveDirection = worldDir;
+            if (_smoothedMoveDirection.sqrMagnitude < 0.0004f)
+                _smoothedMoveDirection = Vector3.zero;
+            moveDirection = _smoothedMoveDirection;
 
-            // Rotaciona para a direção de movimento (apenas quando não usando root motion)
-            if (_rotateToMoveDirection && !useRootMotion)
+            // Rotação aplicada em UpdateRotation (override) para evitar duplicidade
+
+            // Pular com buffer para evitar perda entre Update/FixedUpdate e facilitar re-jumps ao tocar o chão
+            bool rawJump = inputs != null && inputs.jump;
+            if (rawJump)
             {
-                Vector3 flatDir = worldDir; flatDir.y = 0f;
-                if (flatDir.sqrMagnitude > 0.0001f)
-                {
-                    float targetYaw = Mathf.Atan2(flatDir.x, flatDir.z) * Mathf.Rad2Deg;
-                    float currentYaw = transform.eulerAngles.y;
-                    if (_rotationSmoothTime > 0f)
-                    {
-                        float newYaw = Mathf.SmoothDampAngle(currentYaw, targetYaw, ref _rotationYawVelocity, _rotationSmoothTime);
-                        transform.rotation = Quaternion.Euler(0f, newYaw, 0f);
-                    }
-                    else
-                    {
-                        transform.rotation = Quaternion.Euler(0f, targetYaw, 0f);
-                    }
-                }
+                _jumpInputBufferTimer = _jumpInputBufferTime;
+                if (inputs != null) inputs.jump = false; // consome o pulo do StarterAssetsInputs
             }
-
-            // Pular (consumir como trigger de um frame)
-            jump = inputs != null && inputs.jump;
-            if (inputs != null) inputs.jump = false; // consome o pulo para não ficar travado
+            jump = _jumpInputBufferTimer > 0f;
+            if (_jumpInputBufferTimer > 0f)
+                _jumpInputBufferTimer -= Time.deltaTime;
         }
 
         // Inicialização: cacheia referências e configura RootMotion quando desejado
@@ -160,9 +227,26 @@ namespace Player
             if (playerCamera == null && Camera.main != null)
                 playerCamera = Camera.main.transform;
 
+            _smoothedMoveDirection = Vector3.zero;
+            _moveInputVelocity = Vector3.zero;
+
             // Configura mid-air jumps (double jump)
             maxMidAirJumps = Mathf.Max(0, _maxMidAirJumpsLocal);
             _prevMidAirJumpCount = 0;
+
+            // Inicializa o atraso do FreeFall
+            _fallTimeoutDelta = _fallTimeout;
+
+            // Ajusta tolerâncias de pulo (pré/pós chão) para melhorar responsividade de re-jumps
+            jumpPreGroundedToleranceTime = _jumpPreGroundedToleranceLocal;
+            jumpPostGroundedToleranceTime = _jumpPostGroundedToleranceLocal;
+
+            // Mantém a altura base do pulo do ECM alinhada ao pulo no chão
+            baseJumpHeight = Mathf.Max(0f, _groundJumpHeight);
+
+            // Ativa avisos do Animator para ajudar a detectar parâmetros faltantes
+            if (animator != null)
+                animator.logWarnings = true;
 
             // Sincroniza flag de root motion com a configuração local
             useRootMotion = _useRootMotionController;
@@ -192,6 +276,132 @@ namespace Player
 
             // Aplica configuração local de mid-air jumps
             maxMidAirJumps = Mathf.Max(0, _maxMidAirJumpsLocal);
+
+            // Clampa timeout de queda
+            _fallTimeout = Mathf.Max(0f, _fallTimeout);
+
+            // Aplica tolerâncias locais de pulo
+            jumpPreGroundedToleranceTime = _jumpPreGroundedToleranceLocal;
+            jumpPostGroundedToleranceTime = _jumpPostGroundedToleranceLocal;
+
+            _moveInputSmoothTime = Mathf.Max(0f, _moveInputSmoothTime);
+
+            // Clampa alturas de pulo e sincroniza o pulo no chão com o ECM
+            _groundJumpHeight = Mathf.Max(0f, _groundJumpHeight);
+            _midAirJumpHeight = Mathf.Max(0f, _midAirJumpHeight);
+            baseJumpHeight = _groundJumpHeight;
+
+            // Ativa avisos do Animator para ajudar a detectar parâmetros faltantes
+            if (animator != null)
+                animator.logWarnings = true;
+
+            // Sincroniza flag de root motion com a configuração local
+            useRootMotion = _useRootMotionController;
+
+            // Se root motion estiver habilitado, garanta a existência do RootMotionController
+            if (useRootMotion && rootMotionController == null)
+                rootMotionController = GetComponentInChildren<RootMotionController>();
+
+            // Se o RootMotionController não foi encontrado, desabilitar root motion para evitar NullReference
+            if (useRootMotion && rootMotionController == null)
+            {
+                useRootMotion = false;
+                Debug.LogWarning($"{nameof(ECMSaciController)}: useRootMotion habilitado, mas RootMotionController não encontrado. Desabilitando root motion.");
+            }
+        }
+
+        protected override void UpdateRotation()
+        {
+            // Se usando root motion com rotação pelo animator, delega ao base
+            if (useRootMotion && useRootMotionRotation)
+            {
+                base.UpdateRotation();
+                return;
+            }
+
+            if (_rotateToMoveDirection && !useRootMotion)
+            {
+                Vector3 flatDir = moveDirection; flatDir.y = 0f;
+                if (flatDir.sqrMagnitude > 0.0004f)
+                {
+                    float targetYaw = Mathf.Atan2(flatDir.x, flatDir.z) * Mathf.Rad2Deg;
+                    float currentYaw = transform.eulerAngles.y;
+                    if (_rotationSmoothTime > 0f)
+                    {
+                        float newYaw = Mathf.SmoothDampAngle(currentYaw, targetYaw, ref _rotationYawVelocity, _rotationSmoothTime);
+                        transform.rotation = Quaternion.Euler(0f, newYaw, 0f);
+                    }
+                    else
+                    {
+                        transform.rotation = Quaternion.Euler(0f, targetYaw, 0f);
+                    }
+                }
+            }
+            else
+            {
+                base.UpdateRotation();
+            }
+        }
+
+        private float GroundJumpImpulse => Mathf.Sqrt(2f * Mathf.Max(0f, _groundJumpHeight) * movement.gravity.magnitude);
+        private float MidAirJumpImpulse  => Mathf.Sqrt(2f * Mathf.Max(0f, _midAirJumpHeight)  * movement.gravity.magnitude);
+
+        // Usa impulso distinto para pulo no chão
+        protected override void Jump()
+        {
+            if (isJumping)
+            {
+                if (!movement.wasGrounded && movement.isGrounded)
+                    _isJumping = false;
+            }
+
+            if (movement.isGrounded)
+                _jumpUngroundedTimer = 0.0f;
+            else
+                _jumpUngroundedTimer += Time.deltaTime;
+
+            if (!_jump || !_canJump)
+                return;
+
+            if (_jumpButtonHeldDownTimer > jumpPreGroundedToleranceTime)
+                return;
+
+            if (!movement.isGrounded && _jumpUngroundedTimer > jumpPostGroundedToleranceTime)
+                return;
+
+            _canJump = false;
+            _isJumping = true;
+            _updateJumpTimer = true;
+
+            _jumpUngroundedTimer = jumpPostGroundedToleranceTime;
+
+            movement.ApplyVerticalImpulse(GroundJumpImpulse);
+            movement.DisableGrounding();
+        }
+
+        // Usa impulso distinto para pulo no ar
+        protected override void MidAirJump()
+        {
+            if (_midAirJumpCount > 0 && movement.isGrounded)
+                _midAirJumpCount = 0;
+
+            if (!_jump || !_canJump)
+                return;
+
+            if (movement.isGrounded)
+                return;
+
+            if (_midAirJumpCount >= maxMidAirJumps)
+                return;
+
+            _midAirJumpCount++;
+
+            _canJump = false;
+            _isJumping = true;
+            _updateJumpTimer = true;
+
+            movement.ApplyVerticalImpulse(MidAirJumpImpulse);
+            movement.DisableGrounding();
         }
     }
 }

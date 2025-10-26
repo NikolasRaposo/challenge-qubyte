@@ -76,6 +76,18 @@ namespace Gameplay.Platform {
         /// </summary>
         protected abstract void ActivatePlatform();
         
+        // Habilita/Desabilita o Renderer dos visuais e também os Colliders dos filhos
+        protected void SetVisualsEnabled(bool enabled) {
+            if (platformVisuals == null) return;
+            platformVisuals.enabled = enabled;
+            var visualsRoot = platformVisuals.gameObject;
+            var childColliders = visualsRoot.GetComponentsInChildren<Collider>(true);
+            foreach (var col in childColliders) {
+                if (col == platformCollider) continue; // evita desabilitar o collider raiz gerenciado separadamente
+                col.enabled = enabled;
+            }
+        }
+        
         /// <summary>
         /// Etapa 1 do Respawn: Reseta o estado da plataforma de forma invisível.
         /// </summary>
@@ -91,7 +103,7 @@ namespace Gameplay.Platform {
 
             if (platformVisuals != null) {
                 if(enableDebugLogs) Debug.Log($"[PlatformBase.PrepareForRespawn] Disabling visuals.", this);
-                platformVisuals.enabled = false;
+                SetVisualsEnabled(false);
             }
             if(enableDebugLogs) Debug.Log($"[PlatformBase.PrepareForRespawn] Disabling platform collider.", this);
             platformCollider.enabled = false;
@@ -120,7 +132,7 @@ namespace Gameplay.Platform {
 
             if (platformVisuals != null) {
                 if(enableDebugLogs) Debug.Log($"[PlatformBase.ReactivatePlatform] Enabling visuals.", this);
-                platformVisuals.enabled = true;
+                SetVisualsEnabled(true);
             }
 
             if (animateRespawn) {

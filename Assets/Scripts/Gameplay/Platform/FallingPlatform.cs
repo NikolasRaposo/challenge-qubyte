@@ -72,7 +72,7 @@ namespace Gameplay.Platform {
                 Debug.Log($"[FallingPlatform.OnCollisionEnter] Platform collided with '{collision.gameObject.name}'. Initiating early respawn.", this);
 
             if (platformVisuals != null) {
-                platformVisuals.enabled = false;
+                SetVisualsEnabled(false);
             }
             platformCollider.enabled = false;
         }
