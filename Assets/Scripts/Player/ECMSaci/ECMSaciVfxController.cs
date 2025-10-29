@@ -135,19 +135,14 @@ namespace Player
         {
             bool groundedNow = saci.movement.isGrounded;
             float vy = saci.movement.velocity.y;
-
-            if (!groundedNow)
-            {
-                // Acumula tempo no ar
-                _ungroundedTime += Time.deltaTime;
-            }
+            // Tempo no ar é preferencialmente lido do controlador ECM do Saci
 
             // Checa transição: estava no ar e agora está no chão
             if (!_prevGrounded && groundedNow)
             {
-                float timeAir = _ungroundedTime; // guarda tempo no ar antes de resetar
-                // Impacto: usa velocidade vertical do último frame no ar (descendente)
-                float impactSpeed = _prevVerticalSpeed < 0f ? -_prevVerticalSpeed : 0f;
+                float timeAir = saci != null ? saci.UngroundedTime : _ungroundedTime; // guarda tempo no ar antes de resetar
+                // Impacto: usa velocidade descendente capturada pelo controlador do Saci
+                float impactSpeed = saci != null ? saci.GroundImpactDownwardSpeed : (_prevVerticalSpeed < 0f ? -_prevVerticalSpeed : 0f);
                 float sinceLastLand = Time.time - _lastLandTime;
                 float sinceLastMidAirJump = Time.time - _lastMidAirJumpTime;
 
@@ -161,8 +156,8 @@ namespace Player
                     _lastLandTime = Time.time;
                 }
 
-                // Reset após avaliar transição
-                _ungroundedTime = 0f;
+                // Reset é feito no controlador do Saci; mantemos fallback local apenas quando saci for nulo
+                if (saci == null) _ungroundedTime = 0f;
             }
         }
 

@@ -78,6 +78,26 @@ namespace Player
         [Tooltip("Tempo mínimo (s) entre pulo no chão e pulo duplo.")]
         [SerializeField] private float _midAirJumpCooldownAfterGroundJump = 0.3f;
         private float _lastGroundJumpTime = -9999f;
+
+        // Métricas de impacto no chão (expostas para VFX e gameplay)
+        private bool _prevGroundedRuntime;
+        private float _prevVerticalSpeedRuntime;
+        private float _ungroundedTimeRuntime;
+        private float _lastGroundImpactDownwardSpeed;
+        private float _lastGroundImpactTime;
+
+        // Propriedades públicas de leitura
+        public float GroundImpactDownwardSpeed => _lastGroundImpactDownwardSpeed;
+        public float UngroundedTime => _ungroundedTimeRuntime;
+        public float PrevVerticalSpeed => _prevVerticalSpeedRuntime;
+        public float LastGroundImpactTime => _lastGroundImpactTime;
+
+        [Header("Debug")]
+        [Tooltip("Quando ligado, imprime logs de velocidade vertical e impactos no console.")]
+        [SerializeField] private bool _logVerticalVelocityDebug = false;
+        [Tooltip("Intervalo mínimo entre logs enquanto no ar (segundos).")]
+        [SerializeField] private float _debugLogInterval = 0.25f;
+        private float _nextDebugLogTime = 0f;
         // Ajusta a velocidade alvo com base no estado (caminhando/correndo)
         protected override Vector3 CalcDesiredVelocity()
         {
@@ -108,6 +128,26 @@ namespace Player
             if (Mathf.Abs(vy) < _verticalVelocityDeadzone)
                 vy = 0f;
             animator.SetFloat("VerticalVelocity", vy);
+
+            // Runtime: métricas de impacto no chão e tempo no ar
+            bool groundedNow = movement.isGrounded;
+            if (!groundedNow)
+            {
+                _ungroundedTimeRuntime += Time.deltaTime;
+            }
+            // Transição ar -> chão: captura velocidade de impacto descendente
+            if (!_prevGroundedRuntime && groundedNow)
+            {
+                float impactSpeedDown = _prevVerticalSpeedRuntime < 0f ? -_prevVerticalSpeedRuntime : 0f;
+                _lastGroundImpactDownwardSpeed = impactSpeedDown;
+                _lastGroundImpactTime = Time.time;
+                _ungroundedTimeRuntime = 0f;
+
+                if (_logVerticalVelocityDebug)
+                {
+                    Debug.Log($"[SaciDebug] Ground Impact | speedDown={_lastGroundImpactDownwardSpeed:F2} | sinceLastImpact={(Time.time - _lastGroundImpactTime):F2}");
+                }
+            }
 
             // FreeFall: precisa ser mais preciso que apenas sair do chão
             // Critério: no ar e movendo verticalmente (|vy| > deadzone). 
@@ -165,6 +205,17 @@ namespace Player
 
             // Placeholder para futuro: manter IsCrouching alinhado ao plano
             animator.SetBool("IsCrouching", isCrouching);
+
+            // Atualiza caches para próxima iteração
+            _prevGroundedRuntime = groundedNow;
+            _prevVerticalSpeedRuntime = movement.velocity.y;
+
+            // Logs em runtime enquanto no ar (com throttle)
+            if (_logVerticalVelocityDebug && !groundedNow && Time.time >= _nextDebugLogTime)
+            {
+                Debug.Log($"[SaciDebug] Airborne | vy={movement.velocity.y:F2} | ungroundedTime={_ungroundedTimeRuntime:F2}");
+                _nextDebugLogTime = Time.time + Mathf.Max(0.05f, _debugLogInterval);
+            }
         }
 
         // Mapeia input direto do StarterAssetsInputs
