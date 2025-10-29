@@ -49,12 +49,17 @@ namespace Player
         [SerializeField] private float minUngroundedTimeForLand = 0.1f;
         [Tooltip("Velocidade vertical mínima para disparar aterrissagem.")]
         [SerializeField] private float minLandingDownwardSpeed = 2.0f;
+        [Tooltip("Cooldown mínimo (s) entre execuções do VFX de aterrissagem.")]
+        [SerializeField] private float minLandCooldown = 0.25f;
+        [Tooltip("Tempo mínimo desde o último pulo no ar para permitir VFX de aterrissagem.")]
+        [SerializeField] private float minTimeSinceMidAirJumpForLand = 0.2f;
 
         private int _prevAnimatorMidAirJumpCount;
         private bool _prevGrounded;
         private float _prevVerticalSpeed;
         private float _ungroundedTime;
         private float _lastLandTime;
+        private float _lastMidAirJumpTime;
         private Quaternion _doubleJumpInitialLocalRotation;
         private Transform _landOriginalParent;
         private Vector3 _landInitialLocalPosition;
@@ -141,9 +146,16 @@ namespace Player
             if (!_prevGrounded && groundedNow)
             {
                 float timeAir = _ungroundedTime; // guarda tempo no ar antes de resetar
-                float downwardSpeed = Mathf.Max(-_prevVerticalSpeed, -vy); // usa velocidade vertical anterior para pegar impacto
+                // Impacto: usa velocidade vertical do último frame no ar (descendente)
+                float impactSpeed = _prevVerticalSpeed < 0f ? -_prevVerticalSpeed : 0f;
+                float sinceLastLand = Time.time - _lastLandTime;
+                float sinceLastMidAirJump = Time.time - _lastMidAirJumpTime;
 
-                if (landVfx != null && timeAir >= minUngroundedTimeForLand && downwardSpeed >= minLandingDownwardSpeed)
+                if (landVfx != null
+                    && timeAir >= minUngroundedTimeForLand
+                    && impactSpeed >= minLandingDownwardSpeed
+                    && sinceLastLand >= minLandCooldown
+                    && sinceLastMidAirJump >= minTimeSinceMidAirJumpForLand)
                 {
                     PlayOneShot(landVfx, saci.movement.groundPoint, Quaternion.LookRotation(Vector3.ProjectOnPlane(transform.forward, saci.movement.groundNormal), saci.movement.groundNormal));
                     _lastLandTime = Time.time;
@@ -185,6 +197,9 @@ namespace Player
         {
             if (doubleJumpVfx == null)
                 return;
+
+            // Marca o instante do último pulo no ar para filtrar aterrissagens suaves
+            _lastMidAirJumpTime = Time.time;
 
             if (alignDoubleJumpToImpulse)
             {
@@ -290,6 +305,23 @@ namespace Player
                 ps.Play(true);
 
                 // Desparenta após disparar para não seguir movimento do jogador
+                t.SetParent(null, true);
+                return;
+            }
+
+            // Comportamento especial para morte: tocar e desparentar para permanecer visível no mundo
+            if (ps == deathVfx)
+            {
+                var t = ps.transform;
+                // Se houver execução anterior, pare e limpe para evitar sobreposição
+                if (ps.isPlaying || ps.IsAlive(true))
+                    ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+                // Posiciona e rotaciona em mundo conforme ponto de spawn
+                t.SetPositionAndRotation(position, rotation);
+
+                // Toca e solta do parent para não acompanhar o personagem
+                ps.Play(true);
                 t.SetParent(null, true);
                 return;
             }

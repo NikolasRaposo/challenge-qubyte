@@ -73,6 +73,11 @@ namespace Player
         [SerializeField] private float _groundJumpHeight = 1.8f;
         [Tooltip("Altura base do pulo no ar (m).")]
         [SerializeField] private float _midAirJumpHeight = 1.5f;
+
+        [Header("Pulo (Cooldowns)")]
+        [Tooltip("Tempo mínimo (s) entre pulo no chão e pulo duplo.")]
+        [SerializeField] private float _midAirJumpCooldownAfterGroundJump = 0.3f;
+        private float _lastGroundJumpTime = -9999f;
         // Ajusta a velocidade alvo com base no estado (caminhando/correndo)
         protected override Vector3 CalcDesiredVelocity()
         {
@@ -143,7 +148,8 @@ namespace Player
             animator.SetBool("FreeFall", freeFall);
 
             // Mid-air jump helpers para o Animator
-            bool canDoubleJump = !movement.isGrounded && _midAirJumpCount < maxMidAirJumps;
+            bool canDoubleJump = !movement.isGrounded && _midAirJumpCount < maxMidAirJumps
+                                  && (Time.time - _lastGroundJumpTime) >= _midAirJumpCooldownAfterGroundJump;
             animator.SetBool("CanDoubleJump", canDoubleJump);
             animator.SetInteger("MidAirJumpCount", _midAirJumpCount);
             if (!movement.isGrounded && _midAirJumpCount > _prevMidAirJumpCount)
@@ -291,6 +297,9 @@ namespace Player
             _midAirJumpHeight = Mathf.Max(0f, _midAirJumpHeight);
             baseJumpHeight = _groundJumpHeight;
 
+            // Clampa cooldown para evitar valores negativos
+            _midAirJumpCooldownAfterGroundJump = Mathf.Max(0f, _midAirJumpCooldownAfterGroundJump);
+
             // Ativa avisos do Animator para ajudar a detectar parâmetros faltantes
             if (animator != null)
                 animator.logWarnings = true;
@@ -375,6 +384,9 @@ namespace Player
 
             _jumpUngroundedTimer = jumpPostGroundedToleranceTime;
 
+            // Marca tempo do último pulo no chão para cooldown do pulo duplo
+            _lastGroundJumpTime = Time.time;
+
             movement.ApplyVerticalImpulse(GroundJumpImpulse);
             movement.DisableGrounding();
         }
@@ -392,6 +404,10 @@ namespace Player
                 return;
 
             if (_midAirJumpCount >= maxMidAirJumps)
+                return;
+
+            // Respeita cooldown entre pulo no chão e pulo duplo
+            if ((Time.time - _lastGroundJumpTime) < _midAirJumpCooldownAfterGroundJump)
                 return;
 
             _midAirJumpCount++;
