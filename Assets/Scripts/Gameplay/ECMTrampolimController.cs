@@ -14,6 +14,15 @@ namespace Gameplay
         [Header("Debug")]
         [Tooltip("Quando ligado, imprime logs de interação e impulso do trampolim.")]
         [SerializeField] private bool debugLogs = false;
+        [Header("Debug Toggles")]
+        [Tooltip("Logs detalhados de avaliação de contato (Top/Side, dot, vy, etc.)")]
+        [SerializeField] private bool debugContactLogs = false;
+        [Tooltip("Logs de medição e uso da altura pré-contato (raycast e impulso por altura)")]
+        [SerializeField] private bool debugHeightLogs = false;
+        [Tooltip("Logs de JumpBoost (captura adiantada e aplicação imediata)")]
+        [SerializeField] private bool debugJumpBoostLogs = false;
+        [Tooltip("Logs do fallback para Rigidbody (impulso aplicado, lateral, etc.)")]
+        [SerializeField] private bool debugRBLogs = false;
         [Header("Contact Detection")]
         [Tooltip("Limiar mínimo do dot(normal, up) para considerar contato por cima.")]
         [Range(0f, 1f)]
@@ -82,37 +91,33 @@ namespace Gameplay
         [Range(-45f, 45f)]
         public float launchAngle;
 
-        [Header("Impact Scaling")]
-        [Tooltip("Velocidade vertical mínima de descida para começar a escalar o impulso.")]
-        [Range(0f, 30f)]
-        public float minDownwardSpeed = 0.5f;
+        [Header("Height-Based Impulse")]
+        [Tooltip("Escala o impulso com base na altura máxima medida antes do contato via raycast.")]
+        [SerializeField] private bool useHeightBasedImpulse = true;
+        [Tooltip("Altura máxima considerada (m). A altura 0 m mapeia para 'minLaunchForce' e esta altura mapeia para 'launchForce'.")]
+        [Range(1f, 100f)]
+        [SerializeField] private float heightMaxMeters = 5f;
+        [Tooltip("Usa curva para mapear altura normalizada (0..1) para ganho entre min e max impulse.")]
+        [SerializeField] private bool useHeightCurve = false;
+        [SerializeField] private AnimationCurve heightCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
-        [Tooltip("Velocidade vertical máxima de descida para atingir o impulso máximo.")]
-        [Range(0.5f, 50f)]
-        public float maxDownwardSpeed = 15f;
-
-        [Tooltip("Usa escala proporcional direta: impulso = min + k * downward (clamp em max).")]
-        [SerializeField] private bool useProportionalImpulse = false;
-        [Tooltip("Ganho por unidade de velocidade descendente quando escala proporcional está ativa.")]
-        [Range(0f, 10f)]
-        [SerializeField] private float impulsePerDownwardUnit = 1.0f;
-
-        [Tooltip("Usa uma curva para mapear t (0..1) em escala do impulso.")]
-        [SerializeField] private bool useImpactCurve = false;
-        [SerializeField] private AnimationCurve impactCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+        [Header("Boost Tuning")]
+        [Tooltip("Multiplicador do teto de 'launchForce' quando NÃO houve boost (0.7 = reduz 30%).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float noBoostMaxMultiplier = 0.7f;
+        [Tooltip("Garante que o impulso final não ultrapasse 'launchForce' mesmo com boost.")]
+        [SerializeField] private bool clampFinalImpulseToMax = true;
 
         [Header("Jump Assist Window")]
         [Tooltip("Quando ligado, abre uma pequena janela para somar o pulo do jogador ao impulso do trampolim.")]
         [SerializeField] private bool useJumpBoostWindow = true;
-        [Tooltip("Duração da janela para detectar o pulo após o contato (segundos).")]
-        [Range(0f, 1f)]
-        [SerializeField] private float jumpBoostWindowSeconds = 0.15f;
+        [Tooltip("Quando verdadeiro, desativa a heurística de OnTriggerStay e usa apenas o trigger dedicado de avanço.")]
+        [SerializeField] private bool useAdvanceTriggerOnly = true;
+        [Tooltip("Permite duplo-pulo imediato após contato com o trampolim (ignora cooldown entre pulo no chão e duplo-pulo).")]
+        [SerializeField] private bool allowImmediateDoubleJumpAfterTrampoline = true;
         [Tooltip("Tempo adiantado (pré-contato) para capturar o pulo enquanto o jogador está descendo e prestes a tocar o trampolim.")]
         [Range(0f, 0.5f)]
         [SerializeField] private float preContactAdvanceSeconds = 0.12f;
-        [Tooltip("Extensão extra da janela após o fim da animação do trampolim (segundos).")]
-        [Range(0f, 0.5f)]
-        [SerializeField] private float postAnimationExtraSeconds = 0.10f;
         [Tooltip("Distância vertical máxima acima do trampolim para iniciar a janela adiantada.")]
         [Range(0f, 1.5f)]
         [SerializeField] private float advanceMaxDistance = 0.6f;
@@ -127,6 +132,19 @@ namespace Gameplay
         // Estado interno para janela adiantada (pré-contato)
         private readonly System.Collections.Generic.Dictionary<ECMSaciController, bool> queuedAdvanceBoost = new System.Collections.Generic.Dictionary<ECMSaciController, bool>();
         private readonly System.Collections.Generic.HashSet<ECMSaciController> advanceWindowOpen = new System.Collections.Generic.HashSet<ECMSaciController>();
+        // Debounce: evita aplicar efeito múltiplas vezes no mesmo frame por colisões repetidas
+        private readonly System.Collections.Generic.Dictionary<ECMSaciController, int> lastEffectFrame = new System.Collections.Generic.Dictionary<ECMSaciController, int>();
+        private readonly System.Collections.Generic.Dictionary<ECMSaciController, float> lastEffectTime = new System.Collections.Generic.Dictionary<ECMSaciController, float>();
+        [Tooltip("Lockout curto entre usos por jogador para impedir múltiplas ativações em sequência.")]
+        [Range(0f, 0.5f)]
+        [SerializeField] private float effectLockoutSeconds = 0.08f;
+        // Medição de altura pré-contato reportada pelo player (raycast)
+        private readonly System.Collections.Generic.Dictionary<ECMSaciController, float> preContactMaxHeight = new System.Collections.Generic.Dictionary<ECMSaciController, float>();
+        // Timestamp da última vez que a altura foi reportada para cada jogador
+        private readonly System.Collections.Generic.Dictionary<ECMSaciController, float> lastHeightReportTime = new System.Collections.Generic.Dictionary<ECMSaciController, float>();
+        [Tooltip("Tempo máximo (segundos) para manter altura armazenada sem novos reports. Após esse tempo, a altura é resetada.")]
+        [Range(0.5f, 5f)]
+        [SerializeField] private float heightStorageTimeoutSeconds = 2f;
 
         private Vector3 _originalScale;
         private bool _isTrampolineActive = true;
@@ -154,11 +172,37 @@ namespace Gameplay
             }
         }
 
+        private void Update()
+        {
+            // Limpa alturas armazenadas que expiraram por timeout
+            CleanupExpiredHeightStorage();
+        }
+
+        private void CleanupExpiredHeightStorage()
+        {
+            var keysToRemove = new System.Collections.Generic.List<ECMSaciController>();
+            foreach (var kvp in lastHeightReportTime)
+            {
+                if (Time.time - kvp.Value > heightStorageTimeoutSeconds)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+            
+            foreach (var key in keysToRemove)
+            {
+                preContactMaxHeight.Remove(key);
+                lastHeightReportTime.Remove(key);
+                if (debugHeightLogs)
+                    Debug.Log($"[TrampoDebug] Altura armazenada expirou para jogador após {heightStorageTimeoutSeconds}s sem reports", this);
+            }
+        }
+
         private void OnCollisionEnter(Collision collision)
         {
             if (!trampolineEnabled)
             {
-                if (debugLogs) Debug.Log("[TrampoDebug] Trampolim desabilitado (trampolineEnabled=false)", this);
+                if (debugContactLogs) Debug.Log("[TrampoDebug] Trampolim desabilitado (trampolineEnabled=false)", this);
                 return;
             }
             if (!_isTrampolineActive) return;
@@ -166,7 +210,7 @@ namespace Gameplay
             bool layerOk = interactiveLayers == 0 || ((interactiveLayers.value & (1 << collision.gameObject.layer)) != 0);
             if (!layerOk)
             {
-                if (debugLogs) Debug.Log($"[TrampoDebug] Bloqueado por Layer: {LayerMask.LayerToName(collision.gameObject.layer)}", this);
+                if (debugContactLogs) Debug.Log($"[TrampoDebug] Bloqueado por Layer: {LayerMask.LayerToName(collision.gameObject.layer)}", this);
                 return;
             }
 
@@ -196,7 +240,7 @@ namespace Gameplay
                 || (approachDot < -minApproachDownwardSpeed)
                 || (heightRelative >= minAboveHeight);
 
-            if (debugLogs)
+            if (debugContactLogs)
             {
                 string result = contactFromAbove ? "Top" : "Side";
                 Debug.Log($"[TrampoDebug] Avaliação contato | maxDot={maxDot:F2} | saciVy={(float.IsNaN(saciVy) ? "n/a" : saciVy.ToString("F2"))} | approachDot={approachDot:F2} | heightRel={heightRelative:F2} | resultado={result}", this);
@@ -216,7 +260,7 @@ namespace Gameplay
         {
             if (!trampolineEnabled)
             {
-                if (debugLogs) Debug.Log("[TrampoDebug] Trampolim desabilitado (trampolineEnabled=false) [Trigger]", this);
+                if (debugContactLogs) Debug.Log("[TrampoDebug] Trampolim desabilitado (trampolineEnabled=false) [Trigger]", this);
                 return;
             }
             if (!_isTrampolineActive) return;
@@ -224,12 +268,12 @@ namespace Gameplay
             bool layerOk = interactiveLayers == 0 || ((interactiveLayers.value & (1 << other.gameObject.layer)) != 0);
             if (!layerOk)
             {
-                if (debugLogs) Debug.Log($"[TrampoDebug] Trigger bloqueado por Layer: {LayerMask.LayerToName(other.gameObject.layer)}", this);
+                if (debugContactLogs) Debug.Log($"[TrampoDebug] Trigger bloqueado por Layer: {LayerMask.LayerToName(other.gameObject.layer)}", this);
                 return;
             }
 
             // Para trigger, não há contatos; assume entrada válida e aplica efeito
-            if (debugLogs) Debug.Log("[TrampoDebug] Trigger enter | aplicando efeito", this);
+            if (debugContactLogs) Debug.Log("[TrampoDebug] Trigger enter | aplicando efeito", this);
             ApplyTrampolineEffect(other.transform);
 
             if (singleUse)
@@ -243,82 +287,95 @@ namespace Gameplay
             // Prioriza ECM
             if (targetObject.TryGetComponent(out ECMSaciController saci) && saci.movement != null)
             {
+                // Evita efeitos duplicados causados por múltiplas colisões no mesmo frame
+                if (lastEffectFrame.TryGetValue(saci, out var frame) && frame == Time.frameCount)
+                    return;
+                lastEffectFrame[saci] = Time.frameCount;
+
+                // Lockout curto entre frames consecutivos para evitar re-aplicação
+                if (lastEffectTime.TryGetValue(saci, out var lastT) && (Time.time - lastT) < effectLockoutSeconds)
+                    return;
+                lastEffectTime[saci] = Time.time;
+
                 var mv = saci.movement;
                 var up = saci.transform.up;
-                var verticalSpeed = Vector3.Dot(mv.velocity, up);
-                // Calcula velocidade de impacto descendente preferindo métrica do controlador do Saci
-                float downwardSpeed = saci != null ? Mathf.Max(0f, saci.GroundImpactDownwardSpeed) : Mathf.Max(0f, -verticalSpeed);
-                float t = Mathf.InverseLerp(minDownwardSpeed, maxDownwardSpeed, downwardSpeed);
+                // Determina se houve boost adiantado
+                bool hadQueuedAdvance = useJumpBoostWindow && queuedAdvanceBoost.ContainsKey(saci) && queuedAdvanceBoost[saci];
+                float effectiveMax = hadQueuedAdvance ? launchForce : (launchForce * noBoostMaxMultiplier);
                 float appliedImpulse;
-                if (useProportionalImpulse)
+                bool usedHeight = false;
+                // Preferência: impulso baseado na altura máxima medida antes do contato
+                if (useHeightBasedImpulse && preContactMaxHeight.TryGetValue(saci, out var maxH))
                 {
-                    appliedImpulse = Mathf.Clamp(minLaunchForce + impulsePerDownwardUnit * downwardSpeed, minLaunchForce, launchForce);
+                    float hClamped = Mathf.Clamp(maxH, 0f, heightMaxMeters);
+                    float hT = heightMaxMeters > 0f ? (hClamped / heightMaxMeters) : 0f;
+                    float curveT = (useHeightCurve && heightCurve != null) ? Mathf.Clamp01(heightCurve.Evaluate(Mathf.Clamp01(hT))) : Mathf.Clamp01(hT);
+                    appliedImpulse = Mathf.Lerp(minLaunchForce, effectiveMax, curveT);
+                    usedHeight = true;
+                    if (debugHeightLogs)
+                        Debug.Log($"[TrampoDebug] Impulso por Altura | maxH={maxH:F2} | hClamped={hClamped:F2} | hT={hT:F2} | curveT={curveT:F2} | effMax={effectiveMax:F2} | impulse={appliedImpulse:F2}", this);
+                    preContactMaxHeight.Remove(saci);
                 }
                 else
                 {
-                    float curveT = (useImpactCurve && impactCurve != null) ? Mathf.Clamp01(impactCurve.Evaluate(Mathf.Clamp01(t))) : Mathf.Clamp01(t);
-                    appliedImpulse = Mathf.Lerp(minLaunchForce, launchForce, curveT);
+                    // Sem medição de altura, aplica impulso mínimo para segurança
+                    appliedImpulse = minLaunchForce;
                 }
                 // Preserva e multiplica velocidade horizontal
                 Vector3 lateral = Vector3.ProjectOnPlane(mv.velocity, up) * horizontalVelocityMultiplier;
                 // Zera vertical para garantir altura consistente e aplica impulso vertical
                 mv.velocity = new Vector3(lateral.x, 0f, lateral.z);
-                mv.ApplyVerticalImpulse(appliedImpulse);
-                // Libera grounding brevemente para permitir que o impulso "descole" do chão
-                mv.DisableGrounding();
-                // Boost imediato se o pulo já está em buffer no momento do contato
-                bool hadQueuedAdvance = useJumpBoostWindow && queuedAdvanceBoost.ContainsKey(saci) && queuedAdvanceBoost[saci];
-                if (useJumpBoostWindow && (saci.jump || hadQueuedAdvance))
+                // Calcula boost opcional e clampa ao teto absoluto se configurado
+                float finalImpulse = appliedImpulse;
+                if (useJumpBoostWindow && hadQueuedAdvance)
                 {
                     float boostImpulse = saci.jumpImpulse * jumpBoostImpulseFactor;
-                    mv.ApplyVerticalImpulse(boostImpulse);
+                    finalImpulse = appliedImpulse + boostImpulse;
+                    if (clampFinalImpulseToMax)
+                        finalImpulse = Mathf.Min(launchForce, finalImpulse);
                     if (consumeJumpInputOnBoost) saci.jump = false;
-                    if (hadQueuedAdvance)
-                    {
-                        queuedAdvanceBoost[saci] = false;
-                    }
-                    if (debugLogs)
-                        Debug.Log($"[TrampoDebug] JumpBoost imediato | queuedAdvance={hadQueuedAdvance} | boostImpulse={boostImpulse:F2} | baseImpulse={appliedImpulse:F2}", this);
-                }
-                else if (useJumpBoostWindow)
-                {
-                    // Abre janela de tempo para detectar pulo e somar boost
-                    StartCoroutine(TrampolineJumpBoostWindow(saci, appliedImpulse));
-                    if (debugLogs)
-                        Debug.Log($"[TrampoDebug] Janela de JumpBoost aberta por {(jumpBoostWindowSeconds + postAnimationExtraSeconds):F2}s (pós-contato)", this);
+                    // Consome e limpa o estado da janela adiantada
+                    queuedAdvanceBoost.Remove(saci);
+                    advanceWindowOpen.Remove(saci);
+                    if (debugJumpBoostLogs)
+                        Debug.Log($"[TrampoDebug] JumpBoost aplicado | boostImpulse={boostImpulse:F2} | finalImpulse={finalImpulse:F2} | baseImpulse={appliedImpulse:F2}", this);
                 }
 
-                if (debugLogs)
+                mv.ApplyVerticalImpulse(finalImpulse);
+                // Libera grounding brevemente para permitir que o impulso "descole" do chão
+                mv.DisableGrounding();
+                // Caso não haja pulo adiantado, não abre janela pós-contato (removido para evitar impulso no ar)
+
+                // Em qualquer contato, encerramos a janela adiantada caso ainda esteja aberta
+                advanceWindowOpen.Remove(saci);
+
+                // Ao tocar o trampolim, remove supressão externa de pulo para normalizar controles
+                saci.SetExternalJumpSuppression(false);
+
+                // Reabilita duplo-pulo imediatamente, se configurado
+                if (allowImmediateDoubleJumpAfterTrampoline)
+                    saci.ResetGroundJumpCooldown();
+
+                if (debugContactLogs)
                 {
-                    Debug.Log($"[TrampoDebug] ECM aplicado | downward={downwardSpeed:F2} | t={t:F2} | impulse={appliedImpulse:F2} | mode={(useProportionalImpulse ? "proportional" : (useImpactCurve ? "curve" : "linear"))} | lateral={lateral.magnitude:F2}", this);
+                    string mode = usedHeight ? "height" : "min";
+                    Debug.Log($"[TrampoDebug] ECM aplicado | impulseFinal={finalImpulse:F2} | mode={mode} | hadBoost={hadQueuedAdvance} | lateral={lateral.magnitude:F2}", this);
                 }
             }
             else if (targetObject.TryGetComponent(out Rigidbody rb))
             {
                 // Fallback para objetos com Rigidbody padrão
                 var up = transform.up;
-                var rbVerticalSpeed = Vector3.Dot(rb.linearVelocity, up);
-                float downwardSpeed = Mathf.Max(0f, -rbVerticalSpeed);
-                float t = Mathf.InverseLerp(minDownwardSpeed, maxDownwardSpeed, downwardSpeed);
-                float appliedImpulse;
-                if (useProportionalImpulse)
-                {
-                    appliedImpulse = Mathf.Clamp(minLaunchForce + impulsePerDownwardUnit * downwardSpeed, minLaunchForce, launchForce);
-                }
-                else
-                {
-                    float curveT = (useImpactCurve && impactCurve != null) ? Mathf.Clamp01(impactCurve.Evaluate(Mathf.Clamp01(t))) : Mathf.Clamp01(t);
-                    appliedImpulse = Mathf.Lerp(minLaunchForce, launchForce, curveT);
-                }
+                float appliedImpulse = launchForce;
 
                 Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z) * horizontalVelocityMultiplier;
                 Vector3 launchDirection = Quaternion.Euler(-launchAngle, 0, 0) * Vector3.up;
                 rb.linearVelocity = horizontalVelocity;
                 rb.AddForce(launchDirection * appliedImpulse, ForceMode.Impulse);
 
-                if (debugLogs)
+                if (debugRBLogs)
                 {
-                    Debug.Log($"[TrampoDebug] RB aplicado | downward={downwardSpeed:F2} | t={t:F2} | impulse={appliedImpulse:F2} | mode={(useProportionalImpulse ? "proportional" : (useImpactCurve ? "curve" : "linear"))} | lateral={horizontalVelocity.magnitude:F2}", this);
+                    Debug.Log($"[TrampoDebug] RB aplicado | impulse={appliedImpulse:F2} | lateral={horizontalVelocity.magnitude:F2}", this);
                 }
             }
 
@@ -326,32 +383,98 @@ namespace Gameplay
             if (useSound && trampolineSound != null) AudioSource.PlayClipAtPoint(trampolineSound, transform.position, soundVolume);
         }
 
-        private IEnumerator TrampolineJumpBoostWindow(ECMSaciController saci, float baseImpulse)
+        // Report da altura pré-contato vindo do player (raycast constante)
+        public void ReportPreContactHeight(ECMSaciController saci, float distance)
+        {
+            if (saci == null) return;
+            float clamped = Mathf.Clamp(distance, 0f, heightMaxMeters);
+            if (!preContactMaxHeight.TryGetValue(saci, out var current))
+                preContactMaxHeight[saci] = clamped;
+            else
+                preContactMaxHeight[saci] = Mathf.Max(current, clamped);
+            
+            // Atualiza timestamp do último report
+            lastHeightReportTime[saci] = Time.time;
+            
+            if (debugHeightLogs)
+                Debug.Log($"[TrampoDebug] ReportPreContactHeight | dist={distance:F2} | storedMax={preContactMaxHeight[saci]:F2}", this);
+        }
+
+        // Reseta altura armazenada para um jogador específico (chamado quando aterrissa fora do trampolim)
+        public void ResetStoredHeight(ECMSaciController saci)
+        {
+            if (saci == null) return;
+            bool hadStoredHeight = preContactMaxHeight.ContainsKey(saci);
+            preContactMaxHeight.Remove(saci);
+            lastHeightReportTime.Remove(saci);
+            if (debugHeightLogs && hadStoredHeight)
+                Debug.Log("[TrampoDebug] Altura armazenada resetada (aterrissagem fora do trampolim)", this);
+        }
+
+        // Janela pós-contato removida: todo boost deve ser capturado apenas via trigger adiantado
+
+        // Notificação externa (via trigger de avanço) para abrir janela adiantada
+        public void NotifyAdvanceTriggerEnter(ECMSaciController saci)
+        {
+            NotifyAdvanceTriggerEnter(saci, -1f);
+        }
+
+        // Permite definir uma duração customizada para a janela adiantada
+        public void NotifyAdvanceTriggerEnter(ECMSaciController saci, float overrideDurationSeconds)
+        {
+            if (!useJumpBoostWindow) return;
+            if (saci == null || saci.movement == null) return;
+
+            if (advanceWindowOpen.Contains(saci)) return;
+            advanceWindowOpen.Add(saci);
+
+            if (overrideDurationSeconds > 0f)
+                StartCoroutine(TrampolineAdvanceJumpWindowCustom(saci, overrideDurationSeconds));
+            else
+                StartCoroutine(TrampolineAdvanceJumpWindow(saci));
+
+            if (debugJumpBoostLogs)
+                Debug.Log($"[TrampoDebug] Janela de JumpBoost adiantada via Trigger aberta por {(overrideDurationSeconds > 0f ? overrideDurationSeconds : preContactAdvanceSeconds):F2}s", this);
+        }
+
+        // Versão customizada da janela adiantada (via trigger), com duração configurável
+        private IEnumerator TrampolineAdvanceJumpWindowCustom(ECMSaciController saci, float duration)
         {
             float start = Time.time;
-            float duration = jumpBoostWindowSeconds + postAnimationExtraSeconds;
             while (Time.time - start <= duration)
             {
                 if (saci == null || saci.movement == null)
+                {
+                    advanceWindowOpen.Remove(saci);
+                    // Ao sair por invalidação, libera supressão (se estiver ativa)
+                    saci.SetExternalJumpSuppression(false);
                     yield break;
+                }
 
-                // Detecta pulo dentro da janela (usa buffer do ECMSaciController)
                 if (saci.jump)
                 {
-                    float boostImpulse = saci.jumpImpulse * jumpBoostImpulseFactor;
-                    saci.movement.ApplyVerticalImpulse(boostImpulse);
-                    if (consumeJumpInputOnBoost) saci.jump = false;
-                    if (debugLogs)
-                        Debug.Log($"[TrampoDebug] JumpBoost (janela pós-contato) | dt={(Time.time - start):F3}s | boostImpulse={boostImpulse:F2} | baseImpulse={baseImpulse:F2}", this);
+                    queuedAdvanceBoost[saci] = true;
+                    if (consumeJumpInputOnAdvance)
+                    {
+                        // Consome e suprime pulo até o contato para evitar duplo-pulo no ar
+                        saci.ClearJumpBufferAndConsumeInput();
+                        saci.SetExternalJumpSuppression(true);
+                    }
+                    if (debugJumpBoostLogs)
+                        Debug.Log($"[TrampoDebug] JumpBoost adiantado (via Trigger) | dt={(Time.time - start):F3}s | queuedAdvance=true", this);
+                    advanceWindowOpen.Remove(saci);
                     yield break;
                 }
                 yield return null;
             }
+            advanceWindowOpen.Remove(saci);
+            // Janela expirou sem contato/pulo: libera supressão para restaurar controles
+            saci.SetExternalJumpSuppression(false);
         }
 
         private void OnTriggerStay(Collider other)
         {
-            if (!useJumpBoostWindow) return;
+            if (!useJumpBoostWindow || useAdvanceTriggerOnly) return;
             var saci = other.GetComponentInParent<ECMSaciController>();
             if (saci == null || saci.movement == null) return;
 
@@ -365,7 +488,7 @@ namespace Gameplay
             {
                 advanceWindowOpen.Add(saci);
                 StartCoroutine(TrampolineAdvanceJumpWindow(saci));
-                if (debugLogs)
+                if (debugJumpBoostLogs)
                     Debug.Log($"[TrampoDebug] Janela de JumpBoost adiantada aberta por {preContactAdvanceSeconds:F2}s | heightRel={heightRel:F2} | vy={vy:F2}", this);
             }
         }
@@ -378,14 +501,21 @@ namespace Gameplay
                 if (saci == null || saci.movement == null)
                 {
                     advanceWindowOpen.Remove(saci);
+                    // Ao sair por invalidação, libera supressão (se estiver ativa)
+                    saci.SetExternalJumpSuppression(false);
                     yield break;
                 }
 
                 if (saci.jump)
                 {
                     queuedAdvanceBoost[saci] = true;
-                    if (consumeJumpInputOnAdvance) saci.jump = false;
-                    if (debugLogs)
+                    if (consumeJumpInputOnAdvance)
+                    {
+                        // Consome e suprime pulo até o contato para evitar duplo-pulo no ar
+                        saci.ClearJumpBufferAndConsumeInput();
+                        saci.SetExternalJumpSuppression(true);
+                    }
+                    if (debugJumpBoostLogs)
                         Debug.Log($"[TrampoDebug] JumpBoost adiantado (pré-contato) | dt={(Time.time - start):F3}s | queuedAdvance=true", this);
                     advanceWindowOpen.Remove(saci);
                     yield break;
@@ -393,6 +523,20 @@ namespace Gameplay
                 yield return null;
             }
             advanceWindowOpen.Remove(saci);
+            // Janela expirou sem contato/pulo: libera supressão para restaurar controles
+            saci.SetExternalJumpSuppression(false);
+        }
+
+        // Notificação de saída do trigger dedicado: encerra janela e libera supressão/janela
+        public void NotifyAdvanceTriggerExit(ECMSaciController saci)
+        {
+            if (saci == null) return;
+            advanceWindowOpen.Remove(saci);
+            if (queuedAdvanceBoost.ContainsKey(saci))
+                queuedAdvanceBoost.Remove(saci);
+            saci.SetExternalJumpSuppression(false);
+            if (debugJumpBoostLogs)
+                Debug.Log("[TrampoDebug] Saída do trigger adiantado: supressão liberada e janela encerrada", this);
         }
 
         private void PlayTrampolineAnimation()

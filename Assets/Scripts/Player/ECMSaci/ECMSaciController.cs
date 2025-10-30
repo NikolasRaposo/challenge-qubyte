@@ -62,6 +62,10 @@ namespace Player
         [SerializeField] private float _jumpInputBufferTime = 0.1f;
         private float _jumpInputBufferTimer = 0f;
 
+        [Header("Pulo (Supressão)")]
+        [Tooltip("Quando verdadeiro, suprime completamente o processamento de pulo/jump enquanto ativo.")]
+        [SerializeField] private bool _suppressJumpInput = false;
+
         [Header("Pulo (Tolerâncias)")]
         [Tooltip("Janela para pressionar pulo antes de encostar no chão e ainda validar.")]
         [SerializeField] private float _jumpPreGroundedToleranceLocal = 0.35f;
@@ -73,6 +77,10 @@ namespace Player
         [SerializeField] private float _groundJumpHeight = 1.8f;
         [Tooltip("Altura base do pulo no ar (m).")]
         [SerializeField] private float _midAirJumpHeight = 1.5f;
+
+        [Header("Modo Spline Path")]
+        [Tooltip("Quando ativo, o Saci segue uma spline e desativa o movimento normal.")]
+        [SerializeField] private bool _inSplinePathMode = false;
 
         [Header("Pulo (Cooldowns)")]
         [Tooltip("Tempo mínimo (s) entre pulo no chão e pulo duplo.")]
@@ -142,6 +150,10 @@ namespace Player
                 _lastGroundImpactDownwardSpeed = impactSpeedDown;
                 _lastGroundImpactTime = Time.time;
                 _ungroundedTimeRuntime = 0f;
+
+                // Fallback de segurança: ao tocar o chão, libere qualquer supressão externa de pulo
+                if (_suppressJumpInput)
+                    SetExternalJumpSuppression(false);
 
                 if (_logVerticalVelocityDebug)
                 {
@@ -234,6 +246,15 @@ namespace Player
                 return;
             }
 
+            // Modo spline: congela movimento e pulo enquanto segue a animação da spline
+            if (_inSplinePathMode)
+            {
+                moveDirection = Vector3.zero;
+                jump = false;
+                if (inputs != null) inputs.jump = false;
+                return;
+            }
+
             // Direção de movimento a partir do StarterAssetsInputs (relativa à câmera se disponível)
             Vector2 move = inputs != null ? inputs.move : Vector2.zero;
             Vector3 worldDir;
@@ -259,15 +280,25 @@ namespace Player
             // Rotação aplicada em UpdateRotation (override) para evitar duplicidade
 
             // Pular com buffer para evitar perda entre Update/FixedUpdate e facilitar re-jumps ao tocar o chão
-            bool rawJump = inputs != null && inputs.jump;
-            if (rawJump)
+            if (_suppressJumpInput)
             {
-                _jumpInputBufferTimer = _jumpInputBufferTime;
-                if (inputs != null) inputs.jump = false; // consome o pulo do StarterAssetsInputs
+                // Enquanto suprimido, zera input e buffer para impedir pulo/duplo-pulo
+                if (inputs != null) inputs.jump = false;
+                _jumpInputBufferTimer = 0f;
+                jump = false;
             }
-            jump = _jumpInputBufferTimer > 0f;
-            if (_jumpInputBufferTimer > 0f)
-                _jumpInputBufferTimer -= Time.deltaTime;
+            else
+            {
+                bool rawJump = inputs != null && inputs.jump;
+                if (rawJump)
+                {
+                    _jumpInputBufferTimer = _jumpInputBufferTime;
+                    if (inputs != null) inputs.jump = false; // consome o pulo do StarterAssetsInputs
+                }
+                jump = _jumpInputBufferTimer > 0f;
+                if (_jumpInputBufferTimer > 0f)
+                    _jumpInputBufferTimer -= Time.deltaTime;
+            }
         }
 
         // Inicialização: cacheia referências e configura RootMotion quando desejado
@@ -318,6 +349,62 @@ namespace Player
                 useRootMotion = false;
                 Debug.LogWarning($"{nameof(ECMSaciController)}: useRootMotion habilitado, mas RootMotionController não encontrado. Desabilitando root motion.");
             }
+        }
+
+        // Entrar no modo spline: pausa o ECM e congela física via Pause()
+        public void EnterSplinePathMode()
+        {
+            _inSplinePathMode = true;
+            // Não restaurar velocidades ao sair (evita reintroduzir velocidade residual)
+            restoreVelocityOnResume = false;
+            pause = true;
+
+            // Atualiza Animator para refletir modo spline
+            if (animator != null)
+                animator.SetBool("InSplineGameMode", true);
+        }
+
+        // Sair do modo spline: retoma o ECM via Pause(false)
+        public void ExitSplinePathMode()
+        {
+            // Ao sair do modo spline, não restaurar a velocidade salva
+            // para evitar reintroduzir velocidade residual da entrada
+            restoreVelocityOnResume = false;
+            _inSplinePathMode = false;
+            pause = false;
+
+            // Atualiza Animator para refletir saída do modo spline
+            if (animator != null)
+                animator.SetBool("InSplineGameMode", false);
+        }
+
+        // --- API pública para supressão/consumo de pulo ---
+        // Ativa/desativa supressão de pulo por integradores externos (ex.: trampolim)
+        public void SetExternalJumpSuppression(bool suppress)
+        {
+            _suppressJumpInput = suppress;
+            if (suppress)
+            {
+                // Ao ativar, consome qualquer estado de pulo remanescente
+                if (inputs != null) inputs.jump = false;
+                _jumpInputBufferTimer = 0f;
+                jump = false;
+            }
+        }
+
+        // Consome imediatamente o input de pulo e limpa o buffer do controlador
+        public void ClearJumpBufferAndConsumeInput()
+        {
+            if (inputs != null) inputs.jump = false;
+            _jumpInputBufferTimer = 0f;
+            jump = false;
+        }
+
+        // Permite reabilitar duplo-pulo imediatamente após impulsos externos (ex.: trampolim)
+        public void ResetGroundJumpCooldown()
+        {
+            // Coloca lastGroundJump suficientemente no passado para não bloquear mid-air jump
+            _lastGroundJumpTime = Time.time - (_midAirJumpCooldownAfterGroundJump + 1f);
         }
 
         // Validação de campos expostos
