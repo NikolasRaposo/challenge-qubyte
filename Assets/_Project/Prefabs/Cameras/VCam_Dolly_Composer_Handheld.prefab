@@ -10,9 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6521261447712951773}
   - component: {fileID: 4797726511224667503}
-  - component: {fileID: 8375290127566546176}
   m_Layer: 0
-  m_Name: VirtualCam_1_3D
+  m_Name: VCam_Dolly_Composer_Handheld
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -73,22 +72,6 @@ MonoBehaviour:
         m_Calls: []
   m_LegacyBlendHint: 0
   m_ComponentOwner: {fileID: 9216508278778523435}
---- !u!114 &8375290127566546176
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 18444348305843137}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb7194dc27b9df64c8beca7482ee8e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerIndex: -1
-  AutoEnableInputs: 1
-  XYAxis: {fileID: -5630151704836100654, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  ZAxis: {fileID: 0}
 --- !u!1 &6131628437829274139
 GameObject:
   m_ObjectHideFlags: 0

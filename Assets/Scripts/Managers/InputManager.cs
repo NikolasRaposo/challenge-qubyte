@@ -8,28 +8,35 @@ namespace Managers {
         UI,
         BlockInput,
     }
+
     public class InputManager : MonoBehaviour {
         public static InputManager Instance { get; private set; }
         private StarterAssets _controls;
+        public Vector2 Move { get; private set; }
+        public Vector2 Look { get; private set; }
+        public bool Jump { get; private set; }
+        public bool Sprint { get; private set; }
         public event Action OnTornado, OnPause, OnProjetarTornado;
 
         private void Awake() {
             if (Instance != null && Instance != this) Destroy(gameObject);
-            else Instance = this;
+            else {
+                Instance = this;
+                DontDestroyOnLoad(gameObject); // Garante que ele persista entre cenas
+            }
             _controls = new StarterAssets();
             SetContext(InputContext.Player);
         }
+
         private void OnEnable() => _controls.Enable();
         private void OnDisable() => _controls.Disable();
-        public void SetPlayerContext() {
-            SetContext(InputContext.Player);
-        }
-        public void SetUiContext() {
-            SetContext(InputContext.UI);
-        }
-        public void SetBlockInputContext() {
-            SetContext(InputContext.BlockInput);
-        }
+
+        // --- MÉTODOS PÚBLICOS DE CONTROLE DE CONTEXTO ---
+        public void SetPlayerContext() => SetContext(InputContext.Player);
+        public void SetUiContext() => SetContext(InputContext.UI);
+        public void SetBlockInputContext() => SetContext(InputContext.BlockInput);
+
+        // --- LÓGICA DE MUDANÇA DE CONTEXTO ---
         private void SetContext(InputContext context) {
             ClearAllBindings();
             _controls.Disable();
@@ -43,23 +50,77 @@ namespace Managers {
                     UnlockCursor();
                     break;
                 case InputContext.BlockInput:
+                    // Não faz bind de nada e libera o cursor
                     UnlockCursor();
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(context), context, null);
             }
         }
+
         private void SetPlayerEvents() {
             _controls.Player.Enable();
+            
+            // Binds de Eventos (Ações de 1 frame)
             _controls.Player.Tornado.performed += TornadoOnPerformed;
             _controls.Player.ProjetarTornado.performed += ProjetarTornadoOnPerformed;
             _controls.Player.Pause.performed += PauseOnPerformed;
+            _controls.Player.Jump.performed += JumpOnPerformed;
+
+            // Binds de Estado Contínuo (Valores que mudam)
+            _controls.Player.Move.performed += MoveOnPerformed;
+            _controls.Player.Move.canceled += MoveOnCanceled;
+            _controls.Player.Look.performed += LookOnPerformed;
+            _controls.Player.Look.canceled += LookOnCanceled;
+            _controls.Player.Sprint.performed += SprintOnPerformed;
+            _controls.Player.Sprint.canceled += SprintOnCanceled;
         }
+
         private void SeUIEvents() {
             _controls.UI.Enable();
             _controls.UI.Pause.performed += PauseOnPerformed;
         }
 
+        // --- Handlers de Input (Atualizam os valores) ---
+        private void MoveOnPerformed(InputAction.CallbackContext ctx) => Move = ctx.ReadValue<Vector2>();
+        private void MoveOnCanceled(InputAction.CallbackContext ctx) => Move = Vector2.zero;
+        private void LookOnPerformed(InputAction.CallbackContext ctx) => Look = ctx.ReadValue<Vector2>();
+        private void LookOnCanceled(InputAction.CallbackContext ctx) => Look = Vector2.zero;
+        private void SprintOnPerformed(InputAction.CallbackContext ctx) => Sprint = true;
+        private void SprintOnCanceled(InputAction.CallbackContext ctx) => Sprint = false;
+        private void JumpOnPerformed(InputAction.CallbackContext ctx) => Jump = true;
+        
+        // --- Handlers de Eventos (Disparam os C# Events) ---
+        private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
+        private void ProjetarTornadoOnPerformed(InputAction.CallbackContext obj) => OnProjetarTornado?.Invoke();
+        private void PauseOnPerformed(InputAction.CallbackContext obj) => OnPause?.Invoke();
+
+        // --- MÉTODO DE "CONSUMO" DE INPUT ---
+        // O ThirdPersonController vai chamar isso após pular
+        public void ConsumeJumpInput() => Jump = false;
+        
+        // --- Limpeza ---
+        private void ClearAllBindings() {
+            ClearPlayerBindings();
+            ClearUiBindings();
+        }
+
+        private void ClearPlayerBindings() {
+            _controls.Player.Tornado.performed -= TornadoOnPerformed;
+            _controls.Player.ProjetarTornado.performed -= ProjetarTornadoOnPerformed;
+            _controls.Player.Pause.performed -= PauseOnPerformed;
+            _controls.Player.Jump.performed -= JumpOnPerformed;
+            _controls.Player.Move.performed -= MoveOnPerformed;
+            _controls.Player.Move.canceled -= MoveOnCanceled;
+            _controls.Player.Look.performed -= LookOnPerformed;
+            _controls.Player.Look.canceled -= LookOnCanceled;
+            _controls.Player.Sprint.performed -= SprintOnPerformed;
+            _controls.Player.Sprint.canceled -= SprintOnCanceled;
+        }
+        
+        private void ClearUiBindings() {
+           _controls.UI.Pause.performed -= PauseOnPerformed;
+        }
+        
+        // --- Gerenciamento do Cursor ---
         private static void LockCursor() {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -67,21 +128,6 @@ namespace Managers {
         private static void UnlockCursor() {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-        }
-        private void ProjetarTornadoOnPerformed(InputAction.CallbackContext obj) => OnProjetarTornado?.Invoke();
-        private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
-        private void PauseOnPerformed(InputAction.CallbackContext obj) => OnPause?.Invoke();
-        private void ClearAllBindings() {
-            ClearPlayerBindings();
-            ClearUiBindings();
-        }
-        private void ClearPlayerBindings() {
-            _controls.Player.Tornado.performed -= TornadoOnPerformed;
-            _controls.Player.ProjetarTornado.performed -= ProjetarTornadoOnPerformed;
-            _controls.Player.Pause.performed -= PauseOnPerformed;
-        }
-        private void ClearUiBindings() {
-           _controls.UI.Pause.performed -= PauseOnPerformed;
         }
     }
 }

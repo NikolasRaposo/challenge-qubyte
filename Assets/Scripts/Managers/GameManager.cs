@@ -174,6 +174,7 @@ namespace Managers {
             //SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
+        [Obsolete("Obsolete")]
         public void GoToMainMenu() {
             // Loads the main menu scene. Make sure you have a scene named "MainMenu"
             // or change the string to the correct name.
