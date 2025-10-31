@@ -128,6 +128,9 @@ namespace Gameplay
         [SerializeField] private float jumpBoostImpulseFactor = 1.0f;
         [Tooltip("Quando ligado, consome o input de pulo ao aplicar o boost para evitar duplicidade com Jump().")]
         [SerializeField] private bool consumeJumpInputOnBoost = true;
+        [Tooltip("Fail-safe: tempo máximo para manter supressão após capturar pulo adiantado sem impacto. Após esse tempo a supressão é liberada.")]
+        [Range(0.05f, 1.0f)]
+        [SerializeField] private float advanceSuppressionFailSafeSeconds = 0.35f;
 
         // Estado interno para janela adiantada (pré-contato)
         private readonly System.Collections.Generic.Dictionary<ECMSaciController, bool> queuedAdvanceBoost = new System.Collections.Generic.Dictionary<ECMSaciController, bool>();
@@ -463,6 +466,8 @@ namespace Gameplay
                     if (debugJumpBoostLogs)
                         Debug.Log($"[TrampoDebug] JumpBoost adiantado (via Trigger) | dt={(Time.time - start):F3}s | queuedAdvance=true", this);
                     advanceWindowOpen.Remove(saci);
+                    // Fail-safe: se não houver impacto em breve, libere supressão automaticamente
+                    StartCoroutine(AdvanceSuppressionFailSafe(saci));
                     yield break;
                 }
                 yield return null;
@@ -518,6 +523,8 @@ namespace Gameplay
                     if (debugJumpBoostLogs)
                         Debug.Log($"[TrampoDebug] JumpBoost adiantado (pré-contato) | dt={(Time.time - start):F3}s | queuedAdvance=true", this);
                     advanceWindowOpen.Remove(saci);
+                    // Fail-safe: se não houver impacto em breve, libere supressão automaticamente
+                    StartCoroutine(AdvanceSuppressionFailSafe(saci));
                     yield break;
                 }
                 yield return null;
@@ -525,6 +532,26 @@ namespace Gameplay
             advanceWindowOpen.Remove(saci);
             // Janela expirou sem contato/pulo: libera supressão para restaurar controles
             saci.SetExternalJumpSuppression(false);
+        }
+
+        // Fail-safe: se a captura adiantada ocorrer mas não houver impacto em curto prazo,
+        // libere a supressão e limpe o estado enfileirado para evitar travas.
+        private IEnumerator AdvanceSuppressionFailSafe(ECMSaciController saci)
+        {
+            float start = Time.time;
+            while (Time.time - start <= advanceSuppressionFailSafeSeconds)
+            {
+                // Se o estado de fila foi removido (impacto aplicado ou saída do trigger), encerramos
+                if (!queuedAdvanceBoost.ContainsKey(saci))
+                    yield break;
+                yield return null;
+            }
+            // Tempo esgotado sem impacto: libera supressão e limpa fila
+            saci.SetExternalJumpSuppression(false);
+            if (queuedAdvanceBoost.ContainsKey(saci))
+                queuedAdvanceBoost.Remove(saci);
+            if (debugJumpBoostLogs)
+                Debug.Log($"[TrampoDebug] Fail-safe: supressão liberada por timeout ({advanceSuppressionFailSafeSeconds:F2}s) sem impacto", this);
         }
 
         // Notificação de saída do trigger dedicado: encerra janela e libera supressão/janela
