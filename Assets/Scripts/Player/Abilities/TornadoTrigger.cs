@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Boss;
+using Enemies;
 using Gameplay;
 using UnityEngine;
 
@@ -46,7 +46,7 @@ namespace Player.Powers
             }
             
             // Try to find the 'CapeloboBoss' component.
-            if (other.gameObject.TryGetComponent(out CapeloboBoss boss))
+            if (other.gameObject.TryGetComponent(out BossContext boss))
             {
                 Debug.Log($"Tornado hit the BOSS: {other.name}");
                 boss.TakeDamage();

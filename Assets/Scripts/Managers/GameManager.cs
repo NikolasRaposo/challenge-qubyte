@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using Boss;
+using Enemies;
 using Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -31,7 +31,7 @@ namespace Managers {
         
         [Header("Boss Battle")]
         [Tooltip("A reference to the boss controller script in the scene.")]
-        public CapeloboBoss bossController;
+        public BossContext bossContextController;
         
         private Vector3 _lastCheckpointPosition;
         private PlayerHealth _playerHealth;
@@ -54,8 +54,8 @@ namespace Managers {
                 _lastCheckpointPosition = player.transform.position;
                 _playerHealth = player.GetComponent<PlayerHealth>();
             } 
-            if (bossController != null) {
-                bossController.OnBossDefeated += HandleBossDefeated;
+            if (bossContextController != null) {
+                bossContextController.OnBossDefeated += HandleBossContextDefeated;
             }
             InputManager.Instance.OnPause += TogglePause;
             
@@ -89,8 +89,8 @@ namespace Managers {
             if (InputManager.Instance != null) {
                 InputManager.Instance.OnPause -= TogglePause;
             }
-            if (bossController != null) {
-                bossController.OnBossDefeated -= HandleBossDefeated;
+            if (bossContextController != null) {
+                bossContextController.OnBossDefeated -= HandleBossContextDefeated;
             }
         }
         /// <summary>
@@ -110,8 +110,8 @@ namespace Managers {
             
             playerLives--;
             OnLivesUpdated?.Invoke(playerLives); 
-            if (bossController) {
-                bossController.ResetBattle();
+            if (bossContextController) {
+                bossContextController.ResetBattle();
             }
             if (playerLives > 0) {
                 StartCoroutine(RespawnSequence());
@@ -206,7 +206,7 @@ namespace Managers {
         {
             Application.Quit();
         }
-        private void HandleBossDefeated() {
+        private void HandleBossContextDefeated() {
             CompleteLevel();
         }
     }

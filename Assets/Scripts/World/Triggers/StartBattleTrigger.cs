@@ -1,4 +1,4 @@
-using Boss;
+using Enemies;
 using Managers;
 using UnityEngine;
 namespace World.Triggers
@@ -13,7 +13,7 @@ namespace World.Triggers
     {
         [Header("References")]
         [Tooltip("Drag the boss GameObject here. It must have the CapeloboBoss script on it.")]
-        [SerializeField] private CapeloboBoss bossController;
+        [SerializeField] private BossContext bossContextController;
 
         // Flag to ensure the trigger only fires once.
         private bool _hasBeenTriggered;
@@ -59,7 +59,7 @@ namespace World.Triggers
             }
 
             // A safety check to ensure the boss has been assigned in the Inspector.
-            if (bossController == null) {
+            if (bossContextController == null) {
                 Debug.LogError("Boss Controller has not been assigned to the StartBattleTrigger!", gameObject);
                 return;
             }
@@ -70,7 +70,7 @@ namespace World.Triggers
             Debug.Log("Player entered the battle arena. Starting the boss fight!");
             
             // Call the public method on the boss script to start the battle.
-            bossController.StartBattle();
+            bossContextController.StartBattle();
 
             _triggerCollider.enabled = false;
         }

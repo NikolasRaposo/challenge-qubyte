@@ -1,27 +1,28 @@
+using Enemies;
 using UnityEngine;
 
-// Este script não é um MonoBehaviour, e sim um StateMachineBehaviour.
-// Ele não vai em um GameObject, mas sim em um estado do Animator.
+// Este script nï¿½o ï¿½ um MonoBehaviour, e sim um StateMachineBehaviour.
+// Ele nï¿½o vai em um GameObject, mas sim em um estado do Animator.
 public class AttackStateExitBehaviour : StateMachineBehaviour
 {
-    // OnStateExit é chamado pela engine do Unity quando a animação do estado TERMINA
-    // e o Animator está fazendo a transição para outro estado.
+    // OnStateExit ï¿½ chamado pela engine do Unity quando a animaï¿½ï¿½o do estado TERMINA
+    // e o Animator estï¿½ fazendo a transiï¿½ï¿½o para outro estado.
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         // 1. Precisamos encontrar o script principal do nosso chefe.
-        //    O GetComponent no animator vai procurar no mesmo GameObject onde o Animator está.
+        //    O GetComponent no animator vai procurar no mesmo GameObject onde o Animator estï¿½.
         //    Lembre-se de substituir "BossController" pelo nome real do seu script de chefe.
-        Boss.CapeloboBoss bossController = animator.GetComponent<Boss.CapeloboBoss>();
+        BossContext bossContextController = animator.GetComponent<BossContext>();
 
-        // 2. Se encontramos o script, chamamos um método público nele para avisar
-        //    que a animação de ataque acabou.
-        if (bossController != null)
+        // 2. Se encontramos o script, chamamos um mï¿½todo pï¿½blico nele para avisar
+        //    que a animaï¿½ï¿½o de ataque acabou.
+        if (bossContextController != null)
         {
-            bossController.OnAttackAnimationFinished();
+            bossContextController.OnAttackAnimationFinished();
         }
         else
         {
-            Debug.LogError("Não foi possível encontrar o script 'BossController' no objeto " + animator.gameObject.name);
+            Debug.LogError("Nï¿½o foi possï¿½vel encontrar o script 'BossController' no objeto " + animator.gameObject.name);
         }
     }
 }
