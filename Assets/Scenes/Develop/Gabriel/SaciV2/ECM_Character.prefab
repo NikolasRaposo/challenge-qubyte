@@ -5169,7 +5169,7 @@ MonoBehaviour:
   _groundMask:
     serializedVersion: 2
     m_Bits: 257
-  _groundLimit: 60
+  _groundLimit: 75
   _stepOffset: 0.15
   _ledgeOffset: 0
   _castDistance: 0.22
@@ -5188,10 +5188,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxLateralSpeed: 10
   _maxRiseSpeed: 20
-  _maxFallSpeed: 20
+  _maxFallSpeed: 14
   _useGravity: 1
   _gravity: {x: 0, y: -25, z: 0}
-  _slideOnSteepSlope: 0
+  _slideOnSteepSlope: 1
   _slopeLimit: 45
   _slideGravityMultiplier: 2
   _snapToGround: 1
@@ -5210,13 +5210,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _speed: 2.5
   _angularSpeed: 540
-  _acceleration: 50
+  _acceleration: 35
   _deceleration: 20
   _groundFriction: 8
   _useBrakingFriction: 0
   _brakingFriction: 8
   _airFriction: 0.73
-  _airControl: 0.2
+  _airControl: 0.361
   _canCrouch: 0
   _standingHeight: 2
   _crouchingHeight: 1
@@ -5581,7 +5581,7 @@ PrefabInstance:
     - target: {fileID: 3873496181207135886, guid: 583d62b3ba934a8478a439ead3816a5f,
         type: 3}
       propertyPath: m_Name
-      value: MagicBuffYellow2 Variant
+      value: DoubleJumpVFX
       objectReference: {fileID: 0}
     - target: {fileID: 3873496181207135886, guid: 583d62b3ba934a8478a439ead3816a5f,
         type: 3}
@@ -5629,7 +5629,9 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 3873496181207074582, guid: 583d62b3ba934a8478a439ead3816a5f, type: 3}
+    - {fileID: 3875275341448392674, guid: 583d62b3ba934a8478a439ead3816a5f, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 583d62b3ba934a8478a439ead3816a5f, type: 3}
@@ -5790,15 +5792,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 421518, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 0.054
       objectReference: {fileID: 0}
     - target: {fileID: 421518, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.168
+      value: 0.008
       objectReference: {fileID: 0}
     - target: {fileID: 421518, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.322
+      value: -0.07
       objectReference: {fileID: 0}
     - target: {fileID: 421518, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
       propertyPath: m_LocalRotation.w
@@ -5831,6 +5833,14 @@ PrefabInstance:
     - target: {fileID: 19852826, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
       propertyPath: playOnAwake
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 19852826, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 19852826, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
+      propertyPath: InitialModule.startSize.minScalar
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 19919694, guid: 552b7b5872bf41745810a0b7bdabf440, type: 3}
       propertyPath: m_Materials.Array.size
