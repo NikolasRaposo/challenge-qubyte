@@ -27,8 +27,12 @@ namespace Player {
             if (_isDead) return;
             _isDead = true;
 
-            // Play visual effects
-            if (deathVFX != null) {
+            // Visual effects: delegar para ECMSaciVfxController (se presente),
+            // fallback para Instantiate se não houver controlador
+            var vfxController = GetComponent<Player.ECMSaciVfxController>();
+            if (vfxController != null) {
+                vfxController.OnDeath();
+            } else if (deathVFX != null) {
                 Instantiate(deathVFX, transform.position, Quaternion.identity);
             }
 

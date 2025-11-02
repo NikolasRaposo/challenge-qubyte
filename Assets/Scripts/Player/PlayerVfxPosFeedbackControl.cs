@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using Gameplay;
+using Player;
 using UnityEngine;
 
 public class PlayerVfxPosFeedbackControl : MonoBehaviour
@@ -8,6 +10,8 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
     [SerializeField] private GameObject feedbackVisualObject;
     [SerializeField] private float maxRaycastDistance = 50f;
     [SerializeField] private LayerMask groundLayerMask = -1;
+    [SerializeField] private LayerMask trampolineLayerMask = 0; // defina para Layer "Trampolim" no Inspector
+    [SerializeField] private float trampolineRayRadius = 0.75f; // amplia detecção lateral do trampolim
     [SerializeField] private float groundCheckDistance = 0.1f;
     [SerializeField] private float updateFrequency = 0.02f; // 50 FPS para otimização
     
@@ -22,18 +26,35 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
     private CharacterController characterController;
     private Rigidbody playerRigidbody;
     private bool isGrounded;
+    private bool wasGrounded; // Para detectar transição de ar para chão
     private float lastUpdateTime;
     
     // Variáveis para interpolação suave
     private Vector3 targetPosition;
     private Quaternion targetRotation;
     private bool hasValidTarget;
+
+    // Cache do componente ECMSaciController para reset de altura
+    private ECMSaciController saciController;
     
     void Start() {
         // Tenta obter o CharacterController primeiro, depois Rigidbody
         characterController = GetComponent<CharacterController>();
         if (characterController == null) {
             playerRigidbody = GetComponent<Rigidbody>();
+        }
+        
+        // Cache do ECMSaciController para reset de altura
+        saciController = GetComponent<ECMSaciController>();
+        
+        // Ajusta máscaras para evitar ruído: garante mask de Trampolim e exclui Trampolim do ground
+        int trampLayer = LayerMask.NameToLayer("Trampolim");
+        if (trampolineLayerMask.value == 0 && trampLayer >= 0) {
+            trampolineLayerMask = LayerMask.GetMask("Trampolim");
+        }
+        if (trampLayer >= 0) {
+            // Remove o layer Trampolim da máscara de chão para não marcar grounded antes do contato
+            groundLayerMask &= ~(1 << trampLayer);
         }
         
         // Esconde o feedback visual inicialmente e desacopla do pai
@@ -63,6 +84,8 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
     
     private void CheckGroundStatus()
     {
+        wasGrounded = isGrounded; // Salva estado anterior
+        
         if (characterController != null)
         {
             // Usa CharacterController.isGrounded se disponível
@@ -78,6 +101,15 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
         {
             // Fallback: sempre considera como no ar se não há componente de movimento
             isGrounded = false;
+        }
+        
+        // Detecta aterrissagem no chão normal (transição de ar para chão)
+        if (!wasGrounded && isGrounded && saciController != null)
+        {
+            // Libera qualquer supressão de pulo ao tocar o chão para restaurar o controle
+            saciController.SetExternalJumpSuppression(false);
+            // Jogador acabou de aterrissar no chão normal, reseta altura armazenada em todos os trampolins
+            ResetStoredHeightInAllTrampolines();
         }
     }
     
@@ -136,7 +168,7 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
     {
         Vector3 rayOrigin = transform.position;
         RaycastHit hit;
-        
+        // Primeiro, raycast para o chão (feedback visual)
         if (Physics.Raycast(rayOrigin, Vector3.down, out hit, maxRaycastDistance, groundLayerMask))
         {
             // Calcula a posição alvo no ponto de impacto do raycast
@@ -171,6 +203,48 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
             {
                 feedbackVisualObject.SetActive(false);
             }
+        }
+
+        // Segundo, raycast dedicado para trampolim (anti-ruído)
+        RaycastHit trampHit;
+        // Força colisão com triggers para detectar trampolins configurados como triggers
+        bool trampHitOk = Physics.Raycast(rayOrigin, Vector3.down, out trampHit, maxRaycastDistance, trampolineLayerMask, QueryTriggerInteraction.Collide);
+        if (!trampHitOk && trampolineRayRadius > 0f)
+        {
+            // Fallback: SphereCast para ampliar detecção quando se aproxima pela lateral
+            trampHitOk = Physics.SphereCast(rayOrigin, trampolineRayRadius, Vector3.down, out trampHit, maxRaycastDistance, trampolineLayerMask, QueryTriggerInteraction.Collide);
+        }
+        if (trampHitOk)
+        {
+            var trampoline = trampHit.collider != null ? trampHit.collider.GetComponentInParent<ECMTrampolineController>() : null;
+            if (trampoline != null)
+            {
+                var saci = GetComponent<ECMSaciController>();
+                if (saci != null)
+                {
+                    // Reporta apenas quando está descendo para evitar valores durante subida
+                    float vy = (saci.movement != null) ? saci.movement.velocity.y : 0f;
+                    if (vy < 0f)
+                    {
+                        trampoline.ReportPreContactHeight(saci, trampHit.distance);
+                    }
+                    else
+                    {
+                        Debug.Log($"[TrampoDebug] Raycast parou: vy={vy:F2} (não está descendo)", this);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Reseta altura armazenada em todos os trampolins quando o jogador aterrissa no chão normal
+    private void ResetStoredHeightInAllTrampolines()
+    {
+        // Encontra todos os trampolins na cena e reseta a altura armazenada
+        ECMTrampolineController[] trampolines = FindObjectsOfType<ECMTrampolineController>();
+        foreach (var trampoline in trampolines)
+        {
+            trampoline.ResetStoredHeight(saciController);
         }
     }
     

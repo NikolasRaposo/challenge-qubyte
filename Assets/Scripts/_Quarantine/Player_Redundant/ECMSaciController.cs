@@ -62,6 +62,10 @@ namespace Player
         [SerializeField] private float _jumpInputBufferTime = 0.1f;
         private float _jumpInputBufferTimer = 0f;
 
+        [Header("Pulo (Supressão)")]
+        [Tooltip("Quando verdadeiro, suprime completamente o processamento de pulo/jump enquanto ativo.")]
+        [SerializeField] private bool _suppressJumpInput = false;
+
         [Header("Pulo (Tolerâncias)")]
         [Tooltip("Janela para pressionar pulo antes de encostar no chão e ainda validar.")]
         [SerializeField] private float _jumpPreGroundedToleranceLocal = 0.35f;
@@ -73,6 +77,35 @@ namespace Player
         [SerializeField] private float _groundJumpHeight = 1.8f;
         [Tooltip("Altura base do pulo no ar (m).")]
         [SerializeField] private float _midAirJumpHeight = 1.5f;
+
+        [Header("Modo Spline Path")]
+        [Tooltip("Quando ativo, o Saci segue uma spline e desativa o movimento normal.")]
+        [SerializeField] private bool _inSplinePathMode = false;
+
+        [Header("Pulo (Cooldowns)")]
+        [Tooltip("Tempo mínimo (s) entre pulo no chão e pulo duplo.")]
+        [SerializeField] private float _midAirJumpCooldownAfterGroundJump = 0.3f;
+        private float _lastGroundJumpTime = -9999f;
+
+        // Métricas de impacto no chão (expostas para VFX e gameplay)
+        private bool _prevGroundedRuntime;
+        private float _prevVerticalSpeedRuntime;
+        private float _ungroundedTimeRuntime;
+        private float _lastGroundImpactDownwardSpeed;
+        private float _lastGroundImpactTime;
+
+        // Propriedades públicas de leitura
+        public float GroundImpactDownwardSpeed => _lastGroundImpactDownwardSpeed;
+        public float UngroundedTime => _ungroundedTimeRuntime;
+        public float PrevVerticalSpeed => _prevVerticalSpeedRuntime;
+        public float LastGroundImpactTime => _lastGroundImpactTime;
+
+        [Header("Debug")]
+        [Tooltip("Quando ligado, imprime logs de velocidade vertical e impactos no console.")]
+        [SerializeField] private bool _logVerticalVelocityDebug = false;
+        [Tooltip("Intervalo mínimo entre logs enquanto no ar (segundos).")]
+        [SerializeField] private float _debugLogInterval = 0.25f;
+        private float _nextDebugLogTime = 0f;
         // Ajusta a velocidade alvo com base no estado (caminhando/correndo)
         protected override Vector3 CalcDesiredVelocity()
         {
@@ -103,6 +136,30 @@ namespace Player
             if (Mathf.Abs(vy) < _verticalVelocityDeadzone)
                 vy = 0f;
             animator.SetFloat("VerticalVelocity", vy);
+
+            // Runtime: métricas de impacto no chão e tempo no ar
+            bool groundedNow = movement.isGrounded;
+            if (!groundedNow)
+            {
+                _ungroundedTimeRuntime += Time.deltaTime;
+            }
+            // Transição ar -> chão: captura velocidade de impacto descendente
+            if (!_prevGroundedRuntime && groundedNow)
+            {
+                float impactSpeedDown = _prevVerticalSpeedRuntime < 0f ? -_prevVerticalSpeedRuntime : 0f;
+                _lastGroundImpactDownwardSpeed = impactSpeedDown;
+                _lastGroundImpactTime = Time.time;
+                _ungroundedTimeRuntime = 0f;
+
+                // Fallback de segurança: ao tocar o chão, libere qualquer supressão externa de pulo
+                if (_suppressJumpInput)
+                    SetExternalJumpSuppression(false);
+
+                if (_logVerticalVelocityDebug)
+                {
+                    Debug.Log($"[SaciDebug] Ground Impact | speedDown={_lastGroundImpactDownwardSpeed:F2} | sinceLastImpact={(Time.time - _lastGroundImpactTime):F2}");
+                }
+            }
 
             // FreeFall: precisa ser mais preciso que apenas sair do chão
             // Critério: no ar e movendo verticalmente (|vy| > deadzone). 
@@ -143,7 +200,8 @@ namespace Player
             animator.SetBool("FreeFall", freeFall);
 
             // Mid-air jump helpers para o Animator
-            bool canDoubleJump = !movement.isGrounded && _midAirJumpCount < maxMidAirJumps;
+            bool canDoubleJump = !movement.isGrounded && _midAirJumpCount < maxMidAirJumps
+                                  && (Time.time - _lastGroundJumpTime) >= _midAirJumpCooldownAfterGroundJump;
             animator.SetBool("CanDoubleJump", canDoubleJump);
             animator.SetInteger("MidAirJumpCount", _midAirJumpCount);
             if (!movement.isGrounded && _midAirJumpCount > _prevMidAirJumpCount)
@@ -159,6 +217,17 @@ namespace Player
 
             // Placeholder para futuro: manter IsCrouching alinhado ao plano
             animator.SetBool("IsCrouching", isCrouching);
+
+            // Atualiza caches para próxima iteração
+            _prevGroundedRuntime = groundedNow;
+            _prevVerticalSpeedRuntime = movement.velocity.y;
+
+            // Logs em runtime enquanto no ar (com throttle)
+            if (_logVerticalVelocityDebug && !groundedNow && Time.time >= _nextDebugLogTime)
+            {
+                Debug.Log($"[SaciDebug] Airborne | vy={movement.velocity.y:F2} | ungroundedTime={_ungroundedTimeRuntime:F2}");
+                _nextDebugLogTime = Time.time + Mathf.Max(0.05f, _debugLogInterval);
+            }
         }
 
         // Mapeia input direto do StarterAssetsInputs
@@ -174,6 +243,15 @@ namespace Player
                 moveDirection = Vector3.zero;
                 jump = false;
                 if (inputs != null) inputs.jump = false; // garante que não fique travado ao sair para UI
+                return;
+            }
+
+            // Modo spline: congela movimento e pulo enquanto segue a animação da spline
+            if (_inSplinePathMode)
+            {
+                moveDirection = Vector3.zero;
+                jump = false;
+                if (inputs != null) inputs.jump = false;
                 return;
             }
 
@@ -202,15 +280,25 @@ namespace Player
             // Rotação aplicada em UpdateRotation (override) para evitar duplicidade
 
             // Pular com buffer para evitar perda entre Update/FixedUpdate e facilitar re-jumps ao tocar o chão
-            bool rawJump = inputs != null && inputs.jump;
-            if (rawJump)
+            if (_suppressJumpInput)
             {
-                _jumpInputBufferTimer = _jumpInputBufferTime;
-                if (inputs != null) inputs.jump = false; // consome o pulo do StarterAssetsInputs
+                // Enquanto suprimido, zera input e buffer para impedir pulo/duplo-pulo
+                if (inputs != null) inputs.jump = false;
+                _jumpInputBufferTimer = 0f;
+                jump = false;
             }
-            jump = _jumpInputBufferTimer > 0f;
-            if (_jumpInputBufferTimer > 0f)
-                _jumpInputBufferTimer -= Time.deltaTime;
+            else
+            {
+                bool rawJump = inputs != null && inputs.jump;
+                if (rawJump)
+                {
+                    _jumpInputBufferTimer = _jumpInputBufferTime;
+                    if (inputs != null) inputs.jump = false; // consome o pulo do StarterAssetsInputs
+                }
+                jump = _jumpInputBufferTimer > 0f;
+                if (_jumpInputBufferTimer > 0f)
+                    _jumpInputBufferTimer -= Time.deltaTime;
+            }
         }
 
         // Inicialização: cacheia referências e configura RootMotion quando desejado
@@ -263,6 +351,62 @@ namespace Player
             }
         }
 
+        // Entrar no modo spline: pausa o ECM e congela física via Pause()
+        public void EnterSplinePathMode()
+        {
+            _inSplinePathMode = true;
+            // Não restaurar velocidades ao sair (evita reintroduzir velocidade residual)
+            restoreVelocityOnResume = false;
+            pause = true;
+
+            // Atualiza Animator para refletir modo spline
+            if (animator != null)
+                animator.SetBool("InSplineGameMode", true);
+        }
+
+        // Sair do modo spline: retoma o ECM via Pause(false)
+        public void ExitSplinePathMode()
+        {
+            // Ao sair do modo spline, não restaurar a velocidade salva
+            // para evitar reintroduzir velocidade residual da entrada
+            restoreVelocityOnResume = false;
+            _inSplinePathMode = false;
+            pause = false;
+
+            // Atualiza Animator para refletir saída do modo spline
+            if (animator != null)
+                animator.SetBool("InSplineGameMode", false);
+        }
+
+        // --- API pública para supressão/consumo de pulo ---
+        // Ativa/desativa supressão de pulo por integradores externos (ex.: trampolim)
+        public void SetExternalJumpSuppression(bool suppress)
+        {
+            _suppressJumpInput = suppress;
+            if (suppress)
+            {
+                // Ao ativar, consome qualquer estado de pulo remanescente
+                if (inputs != null) inputs.jump = false;
+                _jumpInputBufferTimer = 0f;
+                jump = false;
+            }
+        }
+
+        // Consome imediatamente o input de pulo e limpa o buffer do controlador
+        public void ClearJumpBufferAndConsumeInput()
+        {
+            if (inputs != null) inputs.jump = false;
+            _jumpInputBufferTimer = 0f;
+            jump = false;
+        }
+
+        // Permite reabilitar duplo-pulo imediatamente após impulsos externos (ex.: trampolim)
+        public void ResetGroundJumpCooldown()
+        {
+            // Coloca lastGroundJump suficientemente no passado para não bloquear mid-air jump
+            _lastGroundJumpTime = Time.time - (_midAirJumpCooldownAfterGroundJump + 1f);
+        }
+
         // Validação de campos expostos
         public override void OnValidate()
         {
@@ -290,6 +434,9 @@ namespace Player
             _groundJumpHeight = Mathf.Max(0f, _groundJumpHeight);
             _midAirJumpHeight = Mathf.Max(0f, _midAirJumpHeight);
             baseJumpHeight = _groundJumpHeight;
+
+            // Clampa cooldown para evitar valores negativos
+            _midAirJumpCooldownAfterGroundJump = Mathf.Max(0f, _midAirJumpCooldownAfterGroundJump);
 
             // Ativa avisos do Animator para ajudar a detectar parâmetros faltantes
             if (animator != null)
@@ -375,6 +522,9 @@ namespace Player
 
             _jumpUngroundedTimer = jumpPostGroundedToleranceTime;
 
+            // Marca tempo do último pulo no chão para cooldown do pulo duplo
+            _lastGroundJumpTime = Time.time;
+
             movement.ApplyVerticalImpulse(GroundJumpImpulse);
             movement.DisableGrounding();
         }
@@ -392,6 +542,10 @@ namespace Player
                 return;
 
             if (_midAirJumpCount >= maxMidAirJumps)
+                return;
+
+            // Respeita cooldown entre pulo no chão e pulo duplo
+            if ((Time.time - _lastGroundJumpTime) < _midAirJumpCooldownAfterGroundJump)
                 return;
 
             _midAirJumpCount++;
