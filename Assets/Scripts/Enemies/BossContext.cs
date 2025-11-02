@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.AI;
 // Required for the NavMeshAgent
 
-
 namespace Enemies {
     /// <summary>
     /// Controls the behavior for the Capelobo boss fight.
