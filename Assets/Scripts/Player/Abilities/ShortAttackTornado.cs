@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using Managers;
+using Player.Abilities;
 
 namespace Player.Powers
 {
