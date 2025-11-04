@@ -13,8 +13,9 @@ namespace Enemies.BossStates {
             if (BossContext.EnableDebugLogs) Debug.LogWarning($"[TauntingState] Entered. Boss is VULNERABLE for {BossContext.TauntDuration}s.");
             BossContext.FacePlayer();
             animator.SetTrigger(BossContext.Taunt);
+            BossContext.Audio.PlayTaunt();
             _tauntCoroutine = BossContext.StartCoroutine(TauntRoutine());
-            _vulnerabilityFlashCoroutine = BossContext.StartCoroutine(BossContext.VulnerableFlashLoop());
+            BossContext.VFX.StartVulnerableLoop();
         }
 
         public override void Exit() {
@@ -22,10 +23,7 @@ namespace Enemies.BossStates {
             if (_tauntCoroutine != null) {
                 BossContext.StopCoroutine(_tauntCoroutine);
             }
-            if (_vulnerabilityFlashCoroutine != null) {
-                BossContext.StopCoroutine(_vulnerabilityFlashCoroutine);
-            }
-            BossContext.ResetFlashMaterial();
+            BossContext.VFX.StopAllFlashes();
             animator.ResetTrigger(BossContext.Taunt);
         }
 
@@ -43,10 +41,11 @@ namespace Enemies.BossStates {
         /// </summary>
         public override void OnTakeDamage() {
             if (BossContext.EnableDebugLogs) Debug.LogWarning($"[TauntingState] OnTakeDamage: SUCCESS! Boss was hit while vulnerable.");
+            BossContext.Audio.PlayVulnerableHit();
             BossContext.CurrentHealth--;
             if (BossContext.EnableDebugLogs) Debug.Log($"[TauntingState] Health remaining: {BossContext.CurrentHealth}");
             BossContext.StopAllCoroutines();
-            BossContext.ResetFlashMaterial();
+            BossContext.VFX.StopAllFlashes();
             if (BossContext.CurrentHealth <= 0) {
                 if (BossContext.EnableDebugLogs) Debug.Log($"[TauntingState] Boss defeated. Switching to DefeatedState.");
                 BossContext.ChangeState(BossContext.DefeatedState);

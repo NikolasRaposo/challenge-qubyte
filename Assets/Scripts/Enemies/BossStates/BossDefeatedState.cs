@@ -11,11 +11,9 @@ namespace Enemies.BossStates
 
         public override void Enter() {
             if (BossContext.EnableDebugLogs) Debug.LogWarning($"[DefeatedState] Entered. Boss is defeated. Stopping NavAgent and firing event.");
-            // Stop everything
             BossContext.StopAllCoroutines();
             navAgent.isStopped = true;
-
-            // Play animation and fire event
+            BossContext.Audio.PlayDefeated();
             animator.SetTrigger(BossContext.Defeated);
             BossContext.InvokeOnBossDefeated();
         }

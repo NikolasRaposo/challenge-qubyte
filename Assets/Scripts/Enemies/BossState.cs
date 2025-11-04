@@ -46,12 +46,8 @@ namespace Enemies
         public virtual void OnTakeDamage()
         {
             if (BossContext.EnableDebugLogs) Debug.Log($"[State:{GetType().Name}] OnTakeDamage (Default: Boss is invulnerable. Flashing.)");
-            
-            // Default behavior: flash if not already flashing
-            if (!BossContext.IsFlashing)
-            {
-                BossContext.StartCoroutine(BossContext.InvulnerableFlashRoutine());
-            }
+            BossContext.Audio.PlayVulnerableHit();
+            BossContext.VFX.StartInvulnerableFlash();
         }
 
         /// <summary>

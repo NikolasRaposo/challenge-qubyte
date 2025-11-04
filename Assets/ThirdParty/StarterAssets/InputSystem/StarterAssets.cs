@@ -379,6 +379,17 @@ public partial class @StarterAssets: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""0ef608a6-4f64-4acc-acf0-acdc0587421f"",
+                    ""path"": ""<Gamepad>/start"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""5f67b925-2823-4551-b753-60b7ae2c6e07"",
                     ""path"": ""<Gamepad>/buttonNorth"",
                     ""interactions"": """",

@@ -34,17 +34,7 @@ namespace Enemies {
         [Tooltip("The player's transform, used as the target for chasing and attacks.")]
         [SerializeField]
         private Transform playerTarget;
-        [Tooltip("An array of all the renderers on the boss model. Used for visual effects like flashing.")]
-        [SerializeField]
-        private Renderer[] bossRenderers;
-        [Header("Audio Sources")]
-        [Tooltip("AudioSource para sons de 'um-shot' (impactos, gritos, etc.).")]
-        [SerializeField]
-        private AudioSource sfxAudioSource;
-        [Tooltip("AudioSource para sons em 'loop' (ex: stun).")]
-        [SerializeField]
-        private AudioSource statusEffectAudioSource;
-        
+
         [Header("Movement")]
         [Tooltip("The movement speed of the boss when chasing the player.")]
         [SerializeField]
@@ -91,42 +81,7 @@ namespace Enemies {
         [Tooltip("The radius of the spin attack check.")]
         [SerializeField]
         private float spinAttackRadius = 3f;
-
-        [Header("Attack Effects")]
-        [Tooltip("VFX a ser instanciado no local do soco.")]
-        [SerializeField]
-        private GameObject punchImpactVFX;
-        [Tooltip("SFX a ser tocado no impacto do soco.")]
-        [SerializeField]
-        private AudioClip punchImpactSFX;
         
-        [Tooltip("VFX a ser instanciado na posição do chefe no ataque giratório.")]
-        [SerializeField]
-        private GameObject spinImpactVFX;
-        [Tooltip("SFX a ser tocado no impacto do ataque giratório.")]
-        [SerializeField]
-        private AudioClip spinImpactSFX;
-
-        [Header("Stun Effects")]
-        [Tooltip("Objeto filho que contém o VFX de 'estrelinhas' do stun. Será ativado/desativado.")]
-        public GameObject stunVFX; // Feito público para os Estados
-        [Tooltip("SFX de 'passarinhos' em loop para tocar durante o stun.")]
-        public AudioClip stunSFX; // Feito público para os Estados
-
-        [Header("VFX Settings")]
-        [Tooltip("Cor para o flash de 'vulnerável' (Taunt).")]
-        [SerializeField]
-        private Color vulnerableColor = Color.yellow;
-        [Tooltip("Velocidade do pisca-pisca de vulnerabilidade (ex: 0.3s).")]
-        [SerializeField]
-        private float vulnerableFlashRate = 0.3f;
-        
-        // --- Component References (Exposed via properties) ---
-        public NavMeshAgent NavAgent { get; private set; }
-        public Animator Animator { get; private set; }
-        public AudioSource StatusEffectAudioSource => statusEffectAudioSource;
-
-        // --- State Variables (Exposed via properties) ---
         public Transform PlayerTarget => playerTarget;
         public float ChaseSpeed => chaseSpeed;
         public float AttackRange => attackRange;
@@ -135,15 +90,13 @@ namespace Enemies {
         public float TauntDuration => tauntDuration;
         public float StunDuration => stunDuration;
         public float StunRecoveryTime => stunRecoveryTime;
+        public bool EnableDebugLogs => enableDebugLogs; 
+        public NavMeshAgent NavAgent { get; private set; }
+        public Animator Animator { get; private set; }
+        public BossAudio Audio { get; private set; }
+        public BossVFX VFX { get; private set; }
         public int CurrentHealth { get; set; }
         public int CurrentAttackCount { get; set; }
-        public bool IsFlashing { get; set; }
-        public bool EnableDebugLogs => enableDebugLogs; // Public getter for states
-
-        // --- State Machine ---
-        private BossState _currentState;
-
-        // --- State Instances ---
         public BossState IdleState { get; private set; }
         public BossState ChasingState { get; private set; }
         public BossState AttackingState { get; private set; }
@@ -153,7 +106,7 @@ namespace Enemies {
         public BossState RecoveringState { get; private set; }
         public BossState DefeatedState { get; private set; }
 
-        // --- Private Internal ---
+        private BossState _currentState;
         private Vector3 _startPosition;
         private Quaternion _startRotation;
 
@@ -164,7 +117,9 @@ namespace Enemies {
         {
             NavAgent = GetComponent<NavMeshAgent>();
             Animator = GetComponent<Animator>();
-
+            Audio = GetComponent<BossAudio>();
+            VFX = GetComponent<BossVFX>();
+            
             _startPosition = transform.position;
             _startRotation = transform.rotation;
 
@@ -178,15 +133,13 @@ namespace Enemies {
             RecoveringState = new BossRecoveringState(this);
             DefeatedState = new BossDefeatedState(this);
             
-            if (stunVFX != null) stunVFX.SetActive(false);
             if (enableDebugLogs) Debug.Log($"[BossContext] Awake: All states initialized.");
         }
 
         /// <summary>
         /// Sets up the boss's initial health and enters the Idle state.
         /// </summary>
-        private void Start()
-        {
+        private void Start() {
             CurrentHealth = maxHealth;
             NavAgent.speed = chaseSpeed;
             NavAgent.isStopped = true;
@@ -199,8 +152,7 @@ namespace Enemies {
         /// <summary>
         /// The main logic loop. Delegates all logic to the current state.
         /// </summary>
-        private void Update()
-        {
+        private void Update() {
             // The entire Update loop is just this one line!
             _currentState?.Tick();
         }
@@ -209,31 +161,21 @@ namespace Enemies {
         /// Centralized method to transition between states.
         /// </summary>
         /// <param name="newState">The state to transition to.</param>
-        public void ChangeState(BossState newState)
-        {
+        public void ChangeState(BossState newState) {
             if (_currentState == newState) return;
-            
             if (enableDebugLogs) Debug.Log($"[BossContext] Changing state: {_currentState?.GetType().Name} -> {newState.GetType().Name}");
-
-            // Call Exit logic on the old state
             _currentState?.Exit();
-
-            // Set the new state
             _currentState = newState;
-
-            // Call Enter logic on the new state
             _currentState.Enter();
         }
 
         /// <summary>
         /// Public method to be called by another script to start the fight.
         /// </summary>
-        public void StartBattle()
-        {
+        public void StartBattle() {
             if (enableDebugLogs) Debug.Log($"[BossContext] StartBattle() called. Current state: {_currentState.GetType().Name}");
             // Only start if we are currently idle
-            if (_currentState == IdleState)
-            {
+            if (_currentState == IdleState) {
                 ChangeState(ChasingState);
             }
         }
@@ -242,8 +184,7 @@ namespace Enemies {
         /// Public method to be called when the boss is hit.
         /// Delegates the "how to react" logic to the current state.
         /// </summary>
-        public void TakeDamage()
-        {
+        public void TakeDamage() {
             if (enableDebugLogs) Debug.Log($"[BossContext] TakeDamage() called. Delegating to state: {_currentState.GetType().Name}");
             _currentState.OnTakeDamage();
         }
@@ -251,41 +192,30 @@ namespace Enemies {
         /// <summary>
         /// Resets the boss to its initial state to restart the battle.
         /// </summary>
-        public void ResetBattle()
-        {
+        public void ResetBattle() {
             if (enableDebugLogs) Debug.LogWarning($"[BossContext] RESET BATTLE called. Stopping coroutines and resetting all stats.");
             // Stop all running logic
             StopAllCoroutines();
-
-            // Reset state variables
+            Audio.StopAllAudio();
+            VFX.StopAllVFX();
             CurrentHealth = maxHealth;
             CurrentAttackCount = 0;
-            IsFlashing = false;
-
-            // Teleport back to start position
-            NavAgent.enabled = false; // Disable agent to teleport
+            NavAgent.enabled = false;
             transform.position = _startPosition;
             transform.rotation = _startRotation;
             NavAgent.enabled = true;
-
-            // Reset animator
             Animator.ResetTrigger(Hit);
             Animator.ResetTrigger(Defeated);
             Animator.ResetTrigger(Stunned);
             Animator.SetBool(IsWalking, false);
-
-            // Reset to idle state
             ChangeState(IdleState);
         }
-
-        // --- Public Methods (Called by Animation Events) ---
 
         /// <summary>
         /// Called by an Animation Event.
         /// Delegates the "what to do next" logic to the current state.
         /// </summary>
-        public void OnAttackAnimationFinished()
-        {
+        public void OnAttackAnimationFinished() {
             if (enableDebugLogs) Debug.Log($"[BossContext] AnimationEvent: OnAttackAnimationFinished() received. Delegating to state: {_currentState.GetType().Name}");
             _currentState.OnAnimationFinished();
         }
@@ -296,27 +226,18 @@ namespace Enemies {
         public void DealPunchDamage() {
             if (enableDebugLogs) Debug.Log($"[BossContext] AnimationEvent: DealPunchDamage() at frame.");
             CurrentAttackCount++;
-            
-            Collider[] hits = Physics.OverlapBox(punchHitbox.position, punchHitboxSize / 2, transform.rotation);
-            bool hasHit = false;
-            
-            foreach (Collider hit in hits) {
-                if (hit.TryGetComponent(out PlayerHealth playerHealth)) {
-                    if (enableDebugLogs) Debug.Log($"[BossContext] Punch HIT player: {hit.name}");
-                    playerHealth.Die();
-                    hasHit = true; 
-                    break;
-                }
+            var hits = Physics.OverlapBox(punchHitbox.position, punchHitboxSize / 2, transform.rotation);
+            var hasHit = false;
+            foreach (var hit in hits) {
+                if (!hit.TryGetComponent(out PlayerHealth playerHealth)) continue;
+                if (enableDebugLogs) Debug.Log($"[BossContext] Punch HIT player: {hit.name}");
+                playerHealth.Die();
+                hasHit = true; 
+                break;
             }
-
-            if (hasHit) {
-                if (punchImpactSFX != null && sfxAudioSource != null) {
-                    sfxAudioSource.PlayOneShot(punchImpactSFX);
-                }
-                if (punchImpactVFX != null) {
-                    Instantiate(punchImpactVFX, punchHitbox.position, punchHitbox.rotation);
-                }
-            }
+            if (!hasHit) return;
+            Audio.PlayPunchImpact();
+            VFX.PlayPunchImpact(punchHitbox.position, punchHitbox.rotation);
         }
 
         /// <summary>
@@ -325,28 +246,20 @@ namespace Enemies {
         public void DealSpinDamage() {
             if (enableDebugLogs) Debug.Log($"[BossContext] AnimationEvent: DealSpinDamage() at frame.");
             CurrentAttackCount++;
-            Collider[] hits = Physics.OverlapSphere(transform.position, spinAttackRadius);
-            bool hasHit = false;
-            foreach (Collider hit in hits) {
-                if (hit.TryGetComponent(out PlayerHealth playerHealth)) {
-                    if (enableDebugLogs) Debug.Log($"[BossContext] Spin HIT player: {hit.name}");
-                    playerHealth.Die();
-                    hasHit = true;
-                    break; 
-                }
+            var hits = Physics.OverlapSphere(transform.position, spinAttackRadius);
+            var hasHit = false;
+            foreach (var hit in hits) {
+                if (!hit.TryGetComponent(out PlayerHealth playerHealth)) continue;
+                if (enableDebugLogs) Debug.Log($"[BossContext] Spin HIT player: {hit.name}");
+                playerHealth.Die();
+                hasHit = true;
+                break;
             }
-            if (hasHit) {
-                if (spinImpactSFX != null && sfxAudioSource != null) {
-                    sfxAudioSource.PlayOneShot(spinImpactSFX);
-                }
-                if (spinImpactVFX != null) {
-                    Instantiate(spinImpactVFX, transform.position, transform.rotation);
-                }
-            }
+            if (!hasHit) return;
+            Audio.PlaySpinImpact();
+            VFX.PlaySpinImpact(transform.position, transform.rotation);
         }
-
-        // --- Helper Methods (Used by States) ---
-
+        
         /// <summary>
         /// Helper method to make the boss turn to face the player.
         /// </summary>
@@ -359,68 +272,31 @@ namespace Enemies {
         }
 
         /// <summary>
-        /// A public coroutine that flashes the material.
-        /// Can be called by any state.
-        /// </summary>
-        public IEnumerator InvulnerableFlashRoutine()
-        {
-            if (enableDebugLogs) Debug.Log($"[BossContext] Started InvulnerableFlashRoutine.");
-            IsFlashing = true;
-
-            foreach (var r in bossRenderers)
-            {
-                r.material.EnableKeyword("_EMISSION");
-                r.material.SetColor(EmissionColor, Color.white);
-            }
-
-            yield return new WaitForSeconds(0.1f);
-
-            foreach (var r in bossRenderers)
-            {
-                r.material.SetColor(EmissionColor, Color.black);
-            }
-
-            IsFlashing = false;
-        }
-        /// <summary>
-        /// Coroutine para piscar o chefe (enquanto vulnerável).
-        /// </summary>
-        public IEnumerator VulnerableFlashLoop()
-        {
-            if (enableDebugLogs) Debug.Log($"[BossContext] Started VulnerableFlashLoop.");
-            while (true)
-            {
-                // Liga o flash
-                foreach (var r in bossRenderers)
-                {
-                    r.material.EnableKeyword("_EMISSION");
-                    r.material.SetColor(EmissionColor, vulnerableColor);
-                }
-                yield return new WaitForSeconds(vulnerableFlashRate);
-                
-                // Desliga o flash
-                ResetFlashMaterial();
-                yield return new WaitForSeconds(vulnerableFlashRate);
-            }
-        }
-        /// <summary>
-        /// Reseta o material de flash para o padrão (preto).
-        /// </summary>
-        public void ResetFlashMaterial()
-        {
-            foreach (var r in bossRenderers)
-            {
-                r.material.SetColor(EmissionColor, Color.black);
-            }
-        }
-
-        /// <summary>
         /// Public method for the Defeated state to invoke the event.
         /// </summary>
-        public void InvokeOnBossDefeated()
-        {
+        public void InvokeOnBossDefeated() {
             if (enableDebugLogs) Debug.Log($"[BossContext] Invoking OnBossDefeated event.");
             OnBossDefeated?.Invoke();
+        }
+        /// <summary>
+        /// Called by an Animation Event during the walk cycle.
+        /// </summary>
+        public void OnFootstep() {
+            Audio.PlayFootstep();
+        }
+
+        /// <summary>
+        /// Called by an Animation Event at the start of the punch.
+        /// </summary>
+        public void OnPunchAttackStart() {
+            Audio.PlayPunchAttack();
+        }
+
+        /// <summary>
+        /// Called by an Animation Event at the start of the spin.
+        /// </summary>
+        public void OnSpinAttackStart() {
+            Audio.PlaySpinAttack();
         }
 
         /// <summary>

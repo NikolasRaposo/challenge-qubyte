@@ -154,20 +154,13 @@ namespace Managers {
         /// </summary>
         public void CompleteLevel() {
             Debug.Log("Level Completed!");
-
             // Show the level complete UI panel
             if (levelCompletePanel != null) {
                 levelCompletePanel.SetActive(true);
             }
-
             // Freeze the game
             Time.timeScale = 0f;
-
-            // You might want to disable player input here as well
-            if(player != null) {
-                // This assumes you are using the new Input System with PlayerInput component
-                player.GetComponent<UnityEngine.InputSystem.PlayerInput>().enabled = false;
-            }
+            InputManager.Instance.SetUiContext();
         }
         public void RestartLevel() {
             // Reloads the currently active scene.
@@ -183,12 +176,7 @@ namespace Managers {
 
             // Pausa o jogo
             Time.timeScale = 0f;
-
-            // Bloqueia o input do player
-            if (player != null) {
-                var playerInput = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
-                if (playerInput != null) playerInput.enabled = false;
-            }
+            
             InputManager.Instance.SetUiContext();
 
             // Mostra a UI de menu

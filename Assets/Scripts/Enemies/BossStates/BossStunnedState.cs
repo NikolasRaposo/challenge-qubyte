@@ -10,24 +10,14 @@ namespace Enemies.BossStates
     {
         public BossStunnedState(BossContext bossContext) : base(bossContext) {}
 
-        public override void Enter()
-        {
+        public override void Enter() {
             if (BossContext.EnableDebugLogs) Debug.Log($"[StunnedState] Entered. Playing Stun animation and waiting for it to finish.");
             animator.SetTrigger(BossContext.Stunned);
-            
-            if (BossContext.stunVFX != null) {
-                BossContext.stunVFX.SetActive(true);
-            }
-            
-            if (BossContext.stunSFX != null && BossContext.StatusEffectAudioSource != null) {
-                BossContext.StatusEffectAudioSource.clip = BossContext.stunSFX;
-                BossContext.StatusEffectAudioSource.loop = true;
-                BossContext.StatusEffectAudioSource.Play();
-            }
+            BossContext.VFX.ShowStunEffect();
+            BossContext.Audio.PlayStunLoop();
         }
 
-        public override void Exit()
-        {
+        public override void Exit() {
             if (BossContext.EnableDebugLogs) Debug.Log($"[StunnedState] Exited.");
         }
         
