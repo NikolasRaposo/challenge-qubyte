@@ -8541,7 +8541,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 41517ebea3d470e49849da187c221121, type: 2}
+      objectReference: {fileID: 2100000, guid: 78a1f99ebf53f0e499adaea8bea793c5, type: 2}
     - target: {fileID: 1439488123136745166, guid: 197345cf54f0eb9428d481e3e235cfde,
         type: 3}
       propertyPath: m_Mesh
@@ -9147,6 +9147,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: SplinePathGameMode
       objectReference: {fileID: 0}
+    - target: {fileID: 2137519088900525009, guid: 197345cf54f0eb9428d481e3e235cfde,
+        type: 3}
+      propertyPath: m_Duration
+      value: 18.058384
+      objectReference: {fileID: 0}
     - target: {fileID: 8544033674777513354, guid: 197345cf54f0eb9428d481e3e235cfde,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -9165,7 +9170,22 @@ PrefabInstance:
     - target: {fileID: 8748008251602618667, guid: 197345cf54f0eb9428d481e3e235cfde,
         type: 3}
       propertyPath: m_Shape
-      value: 706137196210159712
+      value: 706137210644332545
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748008251602618667, guid: 197345cf54f0eb9428d481e3e235cfde,
+        type: 3}
+      propertyPath: m_Radius
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748008251602618667, guid: 197345cf54f0eb9428d481e3e235cfde,
+        type: 3}
+      propertyPath: 'managedReferences[706137210644332545]'
+      value: Unity.Splines UnityEngine.Splines.ExtrusionShapes.Circle
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748008251602618667, guid: 197345cf54f0eb9428d481e3e235cfde,
+        type: 3}
+      propertyPath: managedReferences[706137210644332545].m_Sides
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 9166831780104164788, guid: 197345cf54f0eb9428d481e3e235cfde,
         type: 3}
