@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using Boss;
+using Enemies;
 using Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -31,7 +31,7 @@ namespace Managers {
         
         [Header("Boss Battle")]
         [Tooltip("A reference to the boss controller script in the scene.")]
-        public CapeloboBoss bossController;
+        public BossContext bossContextController;
         
         private Vector3 _lastCheckpointPosition;
         private PlayerHealth _playerHealth;
@@ -54,8 +54,8 @@ namespace Managers {
                 _lastCheckpointPosition = player.transform.position;
                 _playerHealth = player.GetComponent<PlayerHealth>();
             } 
-            if (bossController != null) {
-                bossController.OnBossDefeated += HandleBossDefeated;
+            if (bossContextController != null) {
+                bossContextController.OnBossDefeated += HandleBossContextDefeated;
             }
             InputManager.Instance.OnPause += TogglePause;
             
@@ -89,8 +89,8 @@ namespace Managers {
             if (InputManager.Instance != null) {
                 InputManager.Instance.OnPause -= TogglePause;
             }
-            if (bossController != null) {
-                bossController.OnBossDefeated -= HandleBossDefeated;
+            if (bossContextController != null) {
+                bossContextController.OnBossDefeated -= HandleBossContextDefeated;
             }
         }
         /// <summary>
@@ -110,8 +110,8 @@ namespace Managers {
             
             playerLives--;
             OnLivesUpdated?.Invoke(playerLives); 
-            if (bossController) {
-                bossController.ResetBattle();
+            if (bossContextController) {
+                bossContextController.ResetBattle();
             }
             if (playerLives > 0) {
                 StartCoroutine(RespawnSequence());
@@ -154,26 +154,20 @@ namespace Managers {
         /// </summary>
         public void CompleteLevel() {
             Debug.Log("Level Completed!");
-
             // Show the level complete UI panel
             if (levelCompletePanel != null) {
                 levelCompletePanel.SetActive(true);
             }
-
             // Freeze the game
             Time.timeScale = 0f;
-
-            // You might want to disable player input here as well
-            if(player != null) {
-                // This assumes you are using the new Input System with PlayerInput component
-                player.GetComponent<UnityEngine.InputSystem.PlayerInput>().enabled = false;
-            }
+            InputManager.Instance.SetUiContext();
         }
         public void RestartLevel() {
             // Reloads the currently active scene.
             //SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
+        [Obsolete("Obsolete")]
         public void GoToMainMenu() {
             // Loads the main menu scene. Make sure you have a scene named "MainMenu"
             // or change the string to the correct name.
@@ -182,12 +176,7 @@ namespace Managers {
 
             // Pausa o jogo
             Time.timeScale = 0f;
-
-            // Bloqueia o input do player
-            if (player != null) {
-                var playerInput = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
-                if (playerInput != null) playerInput.enabled = false;
-            }
+            
             InputManager.Instance.SetUiContext();
 
             // Mostra a UI de menu
@@ -205,7 +194,7 @@ namespace Managers {
         {
             Application.Quit();
         }
-        private void HandleBossDefeated() {
+        private void HandleBossContextDefeated() {
             CompleteLevel();
         }
     }

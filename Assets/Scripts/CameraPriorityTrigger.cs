@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Cinemachine;
 
@@ -32,6 +33,7 @@ public class CameraPriorityTrigger : MonoBehaviour
         GetComponent<Collider>().isTrigger = true;
     }
 
+    [Obsolete("Obsolete")]
     private void OnTriggerEnter(Collider other)
     {
         // A lógica só é executada se o objeto com a tag "Player" entrar no trigger

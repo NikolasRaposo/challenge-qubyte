@@ -49,11 +49,6 @@ namespace Player {
                 GetComponentInChildren<Renderer>().enabled = false;
             }
 
-            // Disable player controls
-            // Assumes you are using the ThirdPersonController from StarterAssets
-            GetComponent<ThirdPersonController>().enabled = false;
-            GetComponent<CharacterController>().enabled = false;
-
             // Tell the GameManager to start the respawn process after a delay
             StartCoroutine(NotifyGameManagerOfRespawn());
         }
@@ -77,10 +72,6 @@ namespace Player {
             } else {
                 GetComponentInChildren<Renderer>().enabled = true;
             }
-        
-            // Re-enable controls
-            GetComponent<ThirdPersonController>().enabled = true;
-            GetComponent<CharacterController>().enabled = true;
 
             // Reset the death flag
             _isDead = false;
