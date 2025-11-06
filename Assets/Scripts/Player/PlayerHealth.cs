@@ -1,4 +1,5 @@
 using System.Collections;
+using Gameplay;
 using Managers;
 using UnityEngine;
 
@@ -13,50 +14,37 @@ namespace Player {
 
         [Tooltip("Sound to play when the player dies.")]
         public AudioClip deathSfx;
-
+        
         [Tooltip("The main visual representation of the player that will be hidden upon death.")]
-        public GameObject playerModel; // Arraste o modelo 3D do Saci aqui
-
+        public GameObject playerModel;
+        
         private bool _isDead;
 
         /// <summary>
         /// Triggers the player's death sequence.
         /// </summary>
         public void Die() {
-            // Prevent the Die() function from being called multiple times
             if (_isDead) return;
             _isDead = true;
-
-            // Visual effects: delegar para ECMSaciVfxController (se presente),
-            // fallback para Instantiate se não houver controlador
+            RumbleManager.Instance?.PlayPlayerDeathRumble();
             var vfxController = GetComponent<Player.ECMSaciVfxController>();
             if (vfxController != null) {
                 vfxController.OnDeath();
             } else if (deathVFX != null) {
                 Instantiate(deathVFX, transform.position, Quaternion.identity);
             }
-
-            // Play sound effects
             if (deathSfx != null) {
                 AudioSource.PlayClipAtPoint(deathSfx, transform.position);
             }
-
-            // Hide the player model
             if (playerModel != null) {
                 playerModel.SetActive(false);
             } else {
-                // Fallback: try to disable the renderer on this object
                 GetComponentInChildren<Renderer>().enabled = false;
             }
-
-            // Tell the GameManager to start the respawn process after a delay
             StartCoroutine(NotifyGameManagerOfRespawn());
         }
-
         private static IEnumerator NotifyGameManagerOfRespawn() {
-            // Wait for a moment before respawning
             yield return new WaitForSeconds(2f);
-
             if (GameManager.Instance) {
                 GameManager.Instance.RespawnPlayer();
             }
@@ -66,14 +54,11 @@ namespace Player {
         /// Resets the player's state for respawning.
         /// </summary>
         public void PrepareForRespawn() {
-            // Show the player model again
             if (playerModel) {
                 playerModel.SetActive(true);
             } else {
                 GetComponentInChildren<Renderer>().enabled = true;
             }
-
-            // Reset the death flag
             _isDead = false;
         }
     }

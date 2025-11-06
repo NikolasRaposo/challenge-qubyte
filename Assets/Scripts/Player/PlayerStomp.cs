@@ -1,4 +1,5 @@
 using Enemy;
+using Gameplay;
 using UnityEngine;
 
 namespace Player
@@ -103,16 +104,10 @@ namespace Player
         /// <summary>
         /// Aplica o 'quique' (bounce) no jogador após um stomp bem-sucedido.
         /// </summary>
-        private void PerformBounce()
-        {
-            // Faz o jogador quicar para cima
+        private void PerformBounce() {
+            RumbleManager.Instance?.PlayStompRumble();
             saciController.movement.ApplyVerticalImpulse(bounceForce);
-            
-            // Reseta o pulo duplo do jogador
             saciController.ResetGroundJumpCooldown();
-            
-            // Opcional: Toca um som de "stomp"
-            // (Você pode adicionar um AudioSource/AudioClip aqui)
         }
     }
 }

@@ -7088,6 +7088,7 @@ GameObject:
   - component: {fileID: 8479831815579182425}
   - component: {fileID: 6131142231498930235}
   - component: {fileID: 8317106474388479618}
+  - component: {fileID: 8479831815579182426}
   m_Layer: 0
   m_Name: --- DONT DESTROY ON LOAD ---
   m_TagString: Untagged
@@ -9789,6 +9790,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8479831815579182426
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5862159758209415662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff1c204ff6d1d084186b581a4b55920d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _enableRumble: 1
+  _stompPreset:
+    Low: 0.2
+    High: 0.2
+    Duration: 0.1
+  _reflectPreset:
+    Low: 0.1
+    High: 0.4
+    Duration: 0.2
+  _counterPreset:
+    Low: 0.5
+    High: 0.5
+    Duration: 0.25
+  _bossHitPreset:
+    Low: 0.8
+    High: 0.8
+    Duration: 0.3
+  _playerDeathPreset:
+    Low: 1
+    High: 1
+    Duration: 0.5
 --- !u!224 &8494766809982331979
 RectTransform:
   m_ObjectHideFlags: 0
