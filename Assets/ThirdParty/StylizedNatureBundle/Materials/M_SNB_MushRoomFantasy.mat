@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_SNB_MushRoomFantasy
+  m_Shader: {fileID: 4800000, guid: 2596cc0ca2072a44b85861fcbd7c0c88, type: 3}
+  m_Parent: {fileID: 2100000, guid: caeabcbef928bef4ea2bd221056b5460, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _DiffuseSmoothnessA:
+        m_Texture: {fileID: 2800000, guid: f160ba52b7c28db47b3c442255fdde1f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Normal:
+        m_Texture: {fileID: 2800000, guid: 8716445c84414b548949e9bd3e05ccee, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _GrassAmount: 0
+    - _NormalStrength: 1
+    - _RocksBrightness: 0.719
+    - _SmoothnessStrength: 0.58
+    m_Colors:
+    - _RocksColorVariation: {r: 1, g: 0.31309366, b: 0.16509432, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
