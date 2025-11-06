@@ -1,0 +1,20 @@
+{
+    "name": "Unity.UnityBlenderControl.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:8dfebe96105e5dd9d8e90448f3bd3b73",
+        "Unity.ProBuilder",
+        "Unity.ProBuilder.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

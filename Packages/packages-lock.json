@@ -7,6 +7,12 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.roxdevvv.unityblendercontrol": {
+      "version": "file:com.roxdevvv.unityblendercontrol@8cf99a0ee90b",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -133,6 +139,17 @@
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
+    },
+    "com.unity.probuilder": {
+      "version": "file:com.unity.probuilder@9b6693f09f97",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.shadergraph": "17.0.3",
+        "com.unity.settings-manager": "1.0.3",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0"
+      }
     },
     "com.unity.recorder": {
       "version": "5.1.2",
@@ -307,6 +324,13 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "wischeropp.jonas.scene-view-pie-menu": {
+      "version": "https://github.com/JonasWischeropp/unity-scene-view-pie-menu.git#1.1.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "1e28a225eca69a2abf4a791c7b11220c69dc4866"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
