@@ -2,6 +2,10 @@ using System;
 using System.Globalization;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.ProBuilder;
+using UnityEditor.ProBuilder;
+using System.Linq;
+using System.Collections.Generic;
 
 public static class BlenderHelper
 {
@@ -179,13 +183,67 @@ public static class BlenderHelper
 
     public static Vector3 GetTransformationCenter(Vector3 averagePosition, Bounds bounds)
     {
-        return BlenderManager.CurrentPivotPoint switch
+        switch (BlenderManager.CurrentPivotPoint)
         {
-            BlenderManager.PivotPoint.ActiveElement => Selection.activeGameObject.transform.position,
-            BlenderManager.PivotPoint.MedianPoint => averagePosition,
-            BlenderManager.PivotPoint.BoundingBoxCenter => bounds.center,
-            BlenderManager.PivotPoint.IndividualOrigins => averagePosition,
-            _ => throw new ArgumentOutOfRangeException(nameof(BlenderManager.PivotPoint))
-        };
+            case BlenderManager.PivotPoint.ActiveElement:
+                // If editing ProBuilder elements, use the active element center as pivot.
+                // Fallback to the active transform position when no PB selection is available.
+                {
+                    var go = Selection.activeGameObject;
+                    if (go != null && go.TryGetComponent<ProBuilderMesh>(out var mesh))
+                    {
+                        try
+                        {
+                            // Prefer face, then edge, then vertex when available.
+                            if (mesh.selectedFaceCount > 0)
+                            {
+                                var face = mesh.GetSelectedFaces().Last();
+                                var centerLocal = ComputeCentroid(mesh.positions, face.distinctIndexes);
+                                return mesh.transform.TransformPoint(centerLocal);
+                            }
+                            if (mesh.selectedEdgeCount > 0)
+                            {
+                                var edge = mesh.selectedEdges.Last();
+                                var centerLocal = (mesh.positions[edge.a] + mesh.positions[edge.b]) * 0.5f;
+                                return mesh.transform.TransformPoint(centerLocal);
+                            }
+                            if (mesh.selectedVertexCount > 0)
+                            {
+                                var vi = mesh.selectedVertices.First();
+                                return mesh.transform.TransformPoint(mesh.positions[vi]);
+                            }
+                        }
+                        catch { /* fall through to transform position */ }
+                    }
+                    return Selection.activeTransform != null ? Selection.activeTransform.position : averagePosition;
+                }
+
+            case BlenderManager.PivotPoint.MedianPoint:
+                return averagePosition;
+
+            case BlenderManager.PivotPoint.BoundingBoxCenter:
+                return bounds.center;
+
+            case BlenderManager.PivotPoint.IndividualOrigins:
+                return averagePosition;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(BlenderManager.PivotPoint));
+        }
+    }
+
+    // Compute centroid (mean of vertices) in local space for a set of indices.
+    // This places the pivot on the face plane and matches Blender's median behavior.
+    static Vector3 ComputeCentroid(IList<Vector3> positions, IEnumerable<int> indices)
+    {
+        Vector3 sum = Vector3.zero;
+        int count = 0;
+        foreach (var i in indices)
+        {
+            if (i < 0 || i >= positions.Count) continue;
+            sum += positions[i];
+            count++;
+        }
+        return count > 0 ? sum / count : Vector3.zero;
     }
 }

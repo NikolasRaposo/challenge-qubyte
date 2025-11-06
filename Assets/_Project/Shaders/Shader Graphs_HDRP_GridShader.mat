@@ -50,6 +50,14 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Triplanar_7d1baa6b4e95478fb395c8ce60f488d9_Texture_1_Texture2D:
+        m_Texture: {fileID: 2800000, guid: 20b7ead25c594394f8675e03e9be1259, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Triplanar_f833f76fa64342409194560f9a5f3a3e_Texture_1_Texture2D:
+        m_Texture: {fileID: 2800000, guid: 6aae0f592807068499eb683d55806674, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -70,7 +78,7 @@ Material:
     - Vector1_1d125ece77b3467cb38fceed94bc3307: 5.59
     - Vector1_1f2e805564624a7e9de49769cffb3516: 1
     - Vector1_29cc0d1bca804c469cc378cb2909eec2: 1
-    - Vector1_408be6ba290c487d92c36bd96ef536f8: 0.22
+    - Vector1_408be6ba290c487d92c36bd96ef536f8: 0.1
     - Vector1_460ffa4bae104b48914a44b28551646f: 0
     - Vector1_49788e15aefd43d4b3665cea74fcc218: 1
     - Vector1_abbb0e4cc2de402ba9515ca2c2436fb3: 0
@@ -83,15 +91,15 @@ Material:
     - _Normal_Start: 0.676
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _RockBright: 3
-    - _Specular: 0.5
+    - _RockBright: 2.75
+    - _Specular: 0.21
     - _TileTex2: -0.31
     m_Colors:
-    - Color_1: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 0}
-    - Color_1d2e51f2e41f4b9aa299c21b9e01bce9: {r: 0.21698111, g: 0.21698111, b: 0.21698111,
+    - Color_1: {r: 0.3679245, g: 0.28635633, b: 0.28635633, a: 0}
+    - Color_1d2e51f2e41f4b9aa299c21b9e01bce9: {r: 0.11320752, g: 0.11320752, b: 0.11320752,
         a: 0}
     - Color_e721205f01134817a55c87ba777f7c1f: {r: 1, g: 1, b: 1, a: 1}
     - Vector2_517d66196aef4293bf28c15ca7118d2f: {r: 0, g: 0, b: 0, a: 0}
-    - _GrassColor: {r: 0, g: 1, b: 0.8334408, a: 0}
+    - _GrassColor: {r: 0.49063826, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -20,14 +20,14 @@ public class BlenderScale : BlenderTransformMode {
     Bounds bounds;
 
     public override bool ShouldTrigger(Event evt) {
-        // Soft-check para 'S' sem consumir imediatamente
+        // Soft-check for 'S' without consuming immediately
         if (!BlenderHelper.IsKeyDown(evt, KeyCode.S))
             return false;
         if (BlenderHelper.IsModifierPressed(evt) || BlenderHelper.RightMouseHeld)
             return false;
 
-        // Se estivermos no contexto do ProBuilder com seleção de elementos válida,
-        // NÃO consumir o evento aqui para permitir que o PBScale assuma.
+        // If we are in ProBuilder context with a valid element selection,
+        // do NOT consume the event here to allow PBScale to take over.
         #if UNITY_EDITOR
         var ctxType = UnityEditor.EditorTools.ToolManager.activeContextType;
         bool proBuilderContext = false;
@@ -42,7 +42,7 @@ public class BlenderScale : BlenderTransformMode {
                 foreach (var go in Selection.gameObjects) {
                     if (go.TryGetComponent<ProBuilderMesh>(out var mesh)) {
                         if (mesh.selectedVertexCount > 0 || mesh.selectedEdgeCount > 0 || mesh.selectedFaceCount > 0) {
-                            // Há seleção PB válida: deixar o PBScale lidar com 'S'
+                            // Valid PB selection: let PBScale handle 'S'
                             return false;
                         }
                     }
@@ -51,7 +51,7 @@ public class BlenderScale : BlenderTransformMode {
         }
         #endif
 
-        // Fora do editmode do ProBuilder (ou sem seleção PB válida), consumir e acionar escala de objeto
+        // Outside ProBuilder edit mode (or without a valid PB selection), consume and trigger object scale
         evt.Use();
         return true;
     }

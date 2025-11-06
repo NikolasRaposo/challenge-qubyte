@@ -113,8 +113,8 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0
     - _GlossyReflections: 1
-    - _GrassAmount: 3.15
-    - _GrassLevel: 1
+    - _GrassAmount: 2.39
+    - _GrassLevel: 5.85
     - _HeightBrightness: 0
     - _HeightGradient: 0
     - _HeightStartGradient: 0
@@ -139,8 +139,9 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color0: {r: 0.5828111, g: 0.735849, b: 0.2603236, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
-    - _GrassColor: {r: 0.4328686, g: 0.6698113, b: 0.1990477, a: 0}
+    - _GrassColor: {r: 0, g: 0.7924528, b: 0.04443668, a: 0}
     - _RocksColorVariation: {r: 0, g: 0, b: 0, a: 0}
     - _TrunkColorVariation: {r: 0, g: 0, b: 0, a: 0}
     - _Vector0: {r: 10, g: 10, b: 0, a: 0}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

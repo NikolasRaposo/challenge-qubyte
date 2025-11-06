@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEditor.ProBuilder;
 using static TransformModeManager;
+using PHandleUtility = UnityEngine.ProBuilder.HandleUtility;
+using System.Linq;
 
 public class BlenderPBMove : BlenderTransformMode {
     struct MeshData {
@@ -13,10 +15,12 @@ public class BlenderPBMove : BlenderTransformMode {
         public Vector3 InitialMouseWorld;
         public Vector3 LocalAxis;
         public Vector3 LastAppliedOffset; // world space offset applied so far
+        public Quaternion ElementRotation; // rotation aligned with active element selection
     }
 
     private List<MeshData> _meshData;
     private Vector3 _globalAverage;
+    private Bounds _selectionBounds;
 
     public override bool ShouldTrigger(Event evt) {
         // Soft-check for G without consuming the event.
@@ -66,29 +70,33 @@ public class BlenderPBMove : BlenderTransformMode {
         _meshData = new List<MeshData>();
         var mode = ProBuilderEditor.selectMode;
         _globalAverage = Vector3.zero;
+        _selectionBounds.SetMinMax(Vector3.positiveInfinity, Vector3.negativeInfinity);
         int contributingCount = 0;
 
         foreach (var go in Selection.gameObjects) {
             if (!go.TryGetComponent<ProBuilderMesh>(out var mesh))
                 continue;
 
-            var indices = new List<int>();
-            if ((mode & SelectMode.Vertex) != 0) {
-                mesh.GetCoincidentVertices(mesh.selectedVertices, indices);
-            } else if ((mode & SelectMode.Edge) != 0) {
-                mesh.GetCoincidentVertices(mesh.selectedEdges, indices);
-            } else if ((mode & SelectMode.Face) != 0) {
-                mesh.GetCoincidentVertices(mesh.GetSelectedFaces(), indices);
-            }
-
-            if (indices.Count == 0)
+            // Alinhar ao fluxo do ProBuilder: expandir para vértices coincidentes
+            // com base na seleção atual, garantindo que grupos compartilhados
+            // sejam movidos juntos (após Extrude, os grupos são separados corretamente).
+            var baseSelection = CollectSelectedIndicesNonCoincident(mesh, mode);
+            if (baseSelection.Count == 0)
                 continue;
+
+            // Expande explicitamente para coincidentes como o ProBuilder faz
+            var coincident = mesh.GetCoincidentVertices(baseSelection);
+            // Mantém apenas índices distintos
+            var indices = new List<int>(new HashSet<int>(coincident));
 
             // Compute initial average world position for selected indices
             var world = mesh.VerticesInWorldSpace();
             Vector3 avg = Vector3.zero;
             foreach (var i in indices)
+            {
                 avg += world[i];
+                _selectionBounds.Encapsulate(world[i]);
+            }
             avg /= indices.Count;
 
             var md = new MeshData {
@@ -96,7 +104,8 @@ public class BlenderPBMove : BlenderTransformMode {
                 SelectedIndexes = indices.ToArray(),
                 InitialAverageWorld = avg,
                 InitialMouseWorld = GetWorldMouse(avg),
-                LocalAxis = BlenderHelper.GetObjectAxis(mesh.transform, BlenderManager.CurrentAxisVector),
+                ElementRotation = ComputeElementRotation(mesh),
+                LocalAxis = ComputeLocalAxis(mesh, GetBaseAxis()),
                 LastAppliedOffset = Vector3.zero
             };
             _meshData.Add(md);
@@ -113,7 +122,7 @@ public class BlenderPBMove : BlenderTransformMode {
         foreach (var md in _meshData) {
             if (md.LastAppliedOffset != Vector3.zero) {
                 md.Mesh.TranslateVerticesInWorldSpace(md.SelectedIndexes, -md.LastAppliedOffset);
-                md.Mesh.Refresh(RefreshMask.Normals | RefreshMask.Bounds);
+                md.Mesh.Refresh(RefreshMask.Normals | RefreshMask.UV | RefreshMask.Bounds);
             }
         }
         ProBuilderEditor.Refresh(false);
@@ -123,7 +132,7 @@ public class BlenderPBMove : BlenderTransformMode {
     public override void Apply() {
         // Finalize changes
         foreach (var md in _meshData) {
-            md.Mesh.Refresh(RefreshMask.Normals | RefreshMask.Bounds);
+            md.Mesh.Refresh(RefreshMask.Normals | RefreshMask.UV | RefreshMask.Bounds);
         }
         ProBuilderEditor.Refresh(false);
         _meshData = null;
@@ -166,6 +175,9 @@ public class BlenderPBMove : BlenderTransformMode {
             var delta = targetOffset - md.LastAppliedOffset;
             if (delta != Vector3.zero) {
                 md.Mesh.TranslateVerticesInWorldSpace(md.SelectedIndexes, delta);
+                // Mantém o comportamento do editor ProBuilder: sincroniza malha e caches
+                md.Mesh.ToMesh();
+                md.Mesh.Refresh(RefreshMask.Normals | RefreshMask.UV | RefreshMask.Bounds);
                 md.LastAppliedOffset = targetOffset;
             }
 
@@ -174,10 +186,11 @@ public class BlenderPBMove : BlenderTransformMode {
     }
 
     public override void OnAxisChange() {
-        // Update local axis for each mesh
+        // Update local axis for each mesh (respect Element orientation when active)
         for (int i = 0; i < _meshData.Count; i++) {
             var md = _meshData[i];
-            md.LocalAxis = BlenderHelper.GetObjectAxis(md.Mesh.transform, BlenderManager.CurrentAxisVector);
+            md.ElementRotation = ComputeElementRotation(md.Mesh);
+            md.LocalAxis = ComputeLocalAxis(md.Mesh, GetBaseAxis());
             _meshData[i] = md;
         }
     }
@@ -191,11 +204,14 @@ public class BlenderPBMove : BlenderTransformMode {
             case BlenderManager.AxisMode.Unlocked:
                 break;
             case BlenderManager.AxisMode.Global:
-                BlenderManager.DrawAxisLine(_globalAverage, BlenderManager.CurrentAxisVector, true);
+                BlenderManager.DrawAxisLine(_globalAverage, GetBaseAxis(), true);
                 break;
             case BlenderManager.AxisMode.Local:
+                // Draw local axis lines from the actual pivot center for visual consistency
+                Vector3 center = BlenderHelper.GetTransformationCenter(_globalAverage, _selectionBounds);
                 foreach (var md in _meshData) {
-                    BlenderManager.DrawAxisLine(md.InitialAverageWorld, md.LocalAxis, Selection.activeGameObject == md.Mesh.gameObject);
+                    var axis = GetAxis(md);
+                    BlenderManager.DrawAxisLine(center, axis, Selection.activeGameObject == md.Mesh.gameObject);
                 }
                 break;
         }
@@ -204,7 +220,7 @@ public class BlenderPBMove : BlenderTransformMode {
     Vector3 GetAxis(MeshData md) {
         return BlenderManager.CurrentAxisMode switch {
             BlenderManager.AxisMode.Local => md.LocalAxis,
-            BlenderManager.AxisMode.Global => BlenderManager.CurrentAxisVector,
+            BlenderManager.AxisMode.Global => GetBaseAxis(),
             _ => Vector3.zero
         };
     }
@@ -217,6 +233,46 @@ public class BlenderPBMove : BlenderTransformMode {
         return sceneViewCamera.ScreenToWorldPoint(new Vector3(mouse.x, mouse.y, z));
     }
 
+    Quaternion ComputeElementRotation(ProBuilderMesh mesh) {
+        // Always try to align to the active element selection; fall back to object rotation
+        try {
+            if (mesh.selectedFaceCount > 0) {
+                var face = mesh.GetSelectedFaces().LastOrDefault();
+                if (face != null)
+                    return PHandleUtility.GetFaceRotation(mesh, HandleOrientation.ActiveElement, new List<Face> { face });
+            }
+            if (mesh.selectedEdgeCount > 0) {
+                var edge = mesh.selectedEdges.Last();
+                return PHandleUtility.GetEdgeRotation(mesh, HandleOrientation.ActiveElement, new List<Edge> { edge });
+            }
+            if (mesh.selectedVertexCount > 0) {
+                var vi = mesh.selectedVertices.Last();
+                return PHandleUtility.GetVertexRotation(mesh, HandleOrientation.ActiveElement, new List<int> { vi });
+            }
+        } catch { /* fallback */ }
+        return mesh.transform.rotation;
+    }
+
+    Vector3 ComputeLocalAxis(ProBuilderMesh mesh, Vector3 baseAxis) {
+        // Use element rotation if available; otherwise use object axis
+        try {
+            var rot = ComputeElementRotation(mesh);
+            if (rot != mesh.transform.rotation)
+                return rot * baseAxis;
+        } catch { /* ignore */ }
+        return BlenderHelper.GetObjectAxis(mesh.transform, baseAxis);
+    }
+
+    // Base axis: use CurrentAxis directly (swap já aplicado ao definir CurrentAxis)
+    Vector3 GetBaseAxis() {
+        switch (BlenderManager.CurrentAxis) {
+            case BlenderManager.Axis.X: return Vector3.right;
+            case BlenderManager.Axis.Y: return Vector3.up;
+            case BlenderManager.Axis.Z: return Vector3.forward;
+            default: return Vector3.one;
+        }
+    }
+
     Vector3 SnapVector(Vector3 v, Vector3 snap) {
         if (snap.x == 0f && snap.y == 0f && snap.z == 0f)
             return v;
@@ -225,5 +281,22 @@ public class BlenderPBMove : BlenderTransformMode {
             Mathf.Round(v.y / (snap.y == 0f ? 1f : snap.y)) * (snap.y == 0f ? 0f : snap.y),
             Mathf.Round(v.z / (snap.z == 0f ? 1f : snap.z)) * (snap.z == 0f ? 0f : snap.z)
         );
+    }
+
+    // Collect selected vertex indices without expanding to coincident vertices.
+    // This prevents moving unselected but overlapping vertices (e.g., right after an Extrude).
+    List<int> CollectSelectedIndicesNonCoincident(ProBuilderMesh mesh, SelectMode mode) {
+        var set = new HashSet<int>();
+        if ((mode & SelectMode.Vertex) != 0) {
+            foreach (var vi in mesh.selectedVertices) set.Add(vi);
+        } else if ((mode & SelectMode.Edge) != 0) {
+            foreach (var e in mesh.selectedEdges) { set.Add(e.a); set.Add(e.b); }
+        } else if ((mode & SelectMode.Face) != 0) {
+            foreach (var f in mesh.GetSelectedFaces()) {
+                if (f == null || f.distinctIndexes == null) continue;
+                foreach (var vi in f.distinctIndexes) set.Add(vi);
+            }
+        }
+        return new List<int>(set);
     }
 }
