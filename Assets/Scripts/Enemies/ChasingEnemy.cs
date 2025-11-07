@@ -48,6 +48,7 @@ namespace Enemy {
         private Animator _animator;
         private Collider _collider;
         private Rigidbody _rigidbody;
+        private PlayerHealth _playerHealth;
 
         // --- Flags de Estado ---
         private bool _isAttacking = false;
@@ -76,6 +77,9 @@ namespace Enemy {
                 GameObject player = GameObject.FindWithTag("Player");
                 if (player != null) playerTarget = player.transform;
             }
+            if (playerTarget != null) {
+                _playerHealth = playerTarget.GetComponent<PlayerHealth>();
+            }
 
             // Garante que a Hitbox está desligada no começo
             if (attackHitbox == null) {
@@ -92,8 +96,8 @@ namespace Enemy {
         }
 
         private void Update() {
-            // ... (Update não muda)
-            if (_isDefeated || _isAttacking || playerTarget == null) {
+            // Pausa lógica se o inimigo estiver derrotado, já atacando, sem alvo ou se o jogador estiver morto
+            if (_isDefeated || _isAttacking || playerTarget == null || (_playerHealth != null && _playerHealth.IsDead)) {
                 if (_navAgent.enabled && !_isAttacking) {
                     _navAgent.isStopped = true;
                 }
@@ -119,17 +123,18 @@ namespace Enemy {
             IsPreparingAttack = true;
             yield return new WaitForSeconds(prepareDuration);
             IsPreparingAttack = false;
-            
-            if (_isDefeated) { _animator.speed = 1.0f; yield break; }
+
+            if (_isDefeated || (_playerHealth != null && _playerHealth.IsDead)) { _animator.speed = 1.0f; _isAttacking = false; _attackCoroutine = null; yield break; }
 
             // --- JANELA DE PULO (LUNGE) ---
             IsVulnerable = true; 
             _lungePauseFlag = false;
             _animator.SetTrigger(Attack);
             
-            yield return new WaitUntil(() => _lungePauseFlag || _isDefeated);
-            
-            if (_isDefeated) { _animator.speed = 1.0f; yield break; }
+            // Aguarda o momento do pulo ou aborta se morrer
+            yield return new WaitUntil(() => _lungePauseFlag || _isDefeated || (_playerHealth != null && _playerHealth.IsDead));
+
+            if (_isDefeated || (_playerHealth != null && _playerHealth.IsDead)) { _animator.speed = 1.0f; _isAttacking = false; _attackCoroutine = null; yield break; }
 
             // *** MUDANÇA: Ativa a Hitbox ANTES de mover ***
             attackHitbox.ResetHitbox(); // Limpa a lista de "já atingidos"

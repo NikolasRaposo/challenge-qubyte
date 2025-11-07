@@ -80,8 +80,10 @@ namespace Enemy {
             if (!collision.gameObject.CompareTag("Player")) return;
             // Try to get the PlayerHealth component from the collided object
             if (collision.gameObject.TryGetComponent(out PlayerHealth playerHealth)) {
-                // If found, call the Die() method
-                playerHealth.Die();
+                // Só chama Die() se o jogador ainda não estiver morto
+                if (!playerHealth.IsDead) {
+                    playerHealth.Die();
+                }
             }
         }
         /// <summary>

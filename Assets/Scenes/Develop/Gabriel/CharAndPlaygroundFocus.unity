@@ -7319,7 +7319,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c92d17befa114a3cbfd56ff962e5be35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bossController: {fileID: 0}
+  bossContextController: {fileID: 0}
 --- !u!114 &4494067121178422156
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9323,7 +9323,7 @@ MonoBehaviour:
   playerLives: 3
   player: {fileID: 4055714393889219029}
   levelCompletePanel: {fileID: 6845435143043810627}
-  bossController: {fileID: 0}
+  bossContextController: {fileID: 0}
 --- !u!224 &6138443802057896028
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12656,8 +12656,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6965538517216451655}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.08134812, y: 0.73347706, z: 0.66890746, w: -0.08920065}
-  m_LocalPosition: {x: 22.61451, y: -0.55618334, z: -5.9037623}
+  m_LocalRotation: {x: 0.66140467, y: -0.090000995, z: -0.080414295, w: -0.74025494}
+  m_LocalPosition: {x: 22.65943, y: -0.5580923, z: -5.7217946}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -12982,20 +12982,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23813ca186ce24548b5c0e7800619280, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentState: 0
+  enableDebugLogs: 1
   playerTarget: {fileID: 1611226024304033360}
-  bossRenderers: []
   chaseSpeed: 4
   attackRange: 2.5
+  attackCooldown: 1.5
   attacksBeforeTaunt: 3
   tauntDuration: 20
   stunDuration: 2
+  stunRecoveryTime: 1.5
   maxHealth: 3
   punchHitbox: {fileID: 5545923484519660824}
   punchHitboxSize: {x: 1, y: 1, z: 1}
   spinAttackRadius: 3
-  punchImpactVFX: {fileID: 0}
-  spinImpactVFX: {fileID: 0}
 --- !u!222 &7336220399426118864
 CanvasRenderer:
   m_ObjectHideFlags: 0

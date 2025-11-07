@@ -101,7 +101,13 @@ namespace Gameplay {
                 _canBeAttracted = true;
                 // If the coin is already inside a magnetic field, activate magnetism now.
                 if (_lastMagneticTrigger) {
-                    ActivateMagnetism(_lastMagneticTrigger.transform.parent);
+                    // Resolve attraction point from the MagnetField and set it before activating magnetism
+                    Transform magnetField = _lastMagneticTrigger.transform;
+                    Transform resolvedPoint = ResolveAttractionPointFromMagnet(magnetField);
+                    if (resolvedPoint) {
+                        customAttractionPoint = resolvedPoint;
+                    }
+                    ActivateMagnetism(magnetField.parent);
                 }
             }
         
@@ -137,7 +143,13 @@ namespace Gameplay {
             else if (other.CompareTag("MagneticTrigger")) {
                 _lastMagneticTrigger = other; // Store reference to the trigger.
                 if (_canBeAttracted) {
-                    ActivateMagnetism(other.transform.parent); // The player is the parent of the trigger.
+                    // Resolve attraction point from the MagnetField and set it before activating magnetism
+                    Transform magnetField = other.transform;
+                    Transform resolvedPoint = ResolveAttractionPointFromMagnet(magnetField);
+                    if (resolvedPoint) {
+                        customAttractionPoint = resolvedPoint;
+                    }
+                    ActivateMagnetism(magnetField.parent); // The player is the parent of the trigger.
                 }
             }
         }
@@ -176,6 +188,25 @@ namespace Gameplay {
         
             // Use the custom attraction point if available, otherwise use the player's transform.
             _currentAttractionPoint = customAttractionPoint ? customAttractionPoint : _targetPlayer;
+        }
+
+        /// <summary>
+        /// Resolve a custom attraction point from the given MagnetField transform.
+        /// Prefer a child named "AttractionPoint"; fallback to the first child; returns null if none.
+        /// </summary>
+        private Transform ResolveAttractionPointFromMagnet(Transform magnetField) {
+            if (!magnetField) return null;
+
+            // Try to find a specifically named child first
+            for (int i = 0; i < magnetField.childCount; i++) {
+                Transform child = magnetField.GetChild(i);
+                if (child && child.name == "AttractionPoint") {
+                    return child;
+                }
+            }
+
+            // Fallback to first child if available
+            return magnetField.childCount > 0 ? magnetField.GetChild(0) : null;
         }
 
         /// <summary>

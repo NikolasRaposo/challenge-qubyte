@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Gameplay;
 
 namespace Managers {
     public enum InputContext {
@@ -29,7 +30,12 @@ namespace Managers {
         }
 
         private void OnEnable() => _controls.Enable();
-        private void OnDisable() => _controls.Disable();
+        private void OnDisable()
+        {
+            _controls.Disable();
+            // Failsafe: ao desabilitar o gerenciador de input, interrompe vibração
+            RumbleManager.Instance?.StopAllRumble();
+        }
 
         // --- MÉTODOS PÚBLICOS DE CONTROLE DE CONTEXTO ---
         public void SetPlayerContext() => SetContext(InputContext.Player);
@@ -48,10 +54,14 @@ namespace Managers {
                 case InputContext.UI:
                     SeUIEvents();
                     UnlockCursor();
+                    // Failsafe: ao entrar no contexto de UI, interrompe vibração
+                    RumbleManager.Instance?.StopAllRumble();
                     break;
                 case InputContext.BlockInput:
                     // Não faz bind de nada e libera o cursor
                     UnlockCursor();
+                    // Failsafe: ao bloquear input, interrompe vibração
+                    RumbleManager.Instance?.StopAllRumble();
                     break;
             }
         }

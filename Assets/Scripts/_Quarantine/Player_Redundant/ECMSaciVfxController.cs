@@ -65,6 +65,10 @@ namespace Player
         private Vector3 _landInitialLocalPosition;
         private Quaternion _landInitialLocalRotation;
         private Vector3 _landInitialLocalScale;
+        private Transform _deathOriginalParent;
+        private Vector3 _deathInitialLocalPosition;
+        private Quaternion _deathInitialLocalRotation;
+        private Vector3 _deathInitialLocalScale;
 
         private void Awake()
         {
@@ -90,6 +94,15 @@ namespace Player
                 _landInitialLocalPosition = lt.localPosition;
                 _landInitialLocalRotation = lt.localRotation;
                 _landInitialLocalScale = lt.localScale;
+            }
+
+            if (deathVfx != null)
+            {
+                var dt = deathVfx.transform;
+                _deathOriginalParent = dt.parent;
+                _deathInitialLocalPosition = dt.localPosition;
+                _deathInitialLocalRotation = dt.localRotation;
+                _deathInitialLocalScale = dt.localScale;
             }
         }
 
@@ -304,7 +317,7 @@ namespace Player
                 return;
             }
 
-            // Comportamento especial para morte: tocar e desparentar para permanecer visível no mundo
+            // Comportamento especial para morte: restaurar posição relativa ao jogador, tocar e desparentar
             if (ps == deathVfx)
             {
                 var t = ps.transform;
@@ -312,11 +325,17 @@ namespace Player
                 if (ps.isPlaying || ps.IsAlive(true))
                     ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-                // Posiciona e rotaciona em mundo conforme ponto de spawn
-                t.SetPositionAndRotation(position, rotation);
+                // Reposiciona sob o pai original e restaura transform local inicial
+                if (_deathOriginalParent != null)
+                    t.SetParent(_deathOriginalParent, false);
+                t.localPosition = _deathInitialLocalPosition;
+                t.localRotation = _deathInitialLocalRotation;
+                t.localScale = _deathInitialLocalScale;
 
-                // Toca e solta do parent para não acompanhar o personagem
+                // Toca novamente
                 ps.Play(true);
+
+                // Desparenta após disparar para permanecer visível no mundo no ponto de morte
                 t.SetParent(null, true);
                 return;
             }
@@ -334,7 +353,8 @@ namespace Player
         public void OnDeath()
         {
             if (deathVfx != null)
-                PlayOneShot(deathVfx, vfxSpawnPoint != null ? vfxSpawnPoint.position : transform.position, Quaternion.identity);
+                // Preserva a posição/rotação atuais do VFX ao desparentar
+                PlayOneShot(deathVfx, deathVfx.transform.position, deathVfx.transform.rotation);
 
             // Parar poeira imediatamente
             if (walkDust != null)

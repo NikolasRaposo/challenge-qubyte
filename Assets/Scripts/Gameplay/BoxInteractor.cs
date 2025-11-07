@@ -178,16 +178,27 @@ namespace Gameplay
         /// <param name="target">The Transform of the object to launch.</param>
         private void ApplyTrampolineEffect(Transform target)
         {
-            // Try to get the player controller component to apply a controlled force.
+            // 1) ECM controller (preferido no projeto atual)
+            if (target.TryGetComponent(out ECMSaciController saci))
+            {
+                saci.movement.ApplyVerticalImpulse(trampolineForce);
+                saci.ResetGroundJumpCooldown();
+                return;
+            }
+
+            // 2) Starter Assets (fallback)
             if (target.TryGetComponent(out ThirdPersonController player))
             {
                 player.ApplyUpwardForce(trampolineForce);
+                return;
             }
-            // As a fallback, try to apply force to a Rigidbody.
-            else if (target.TryGetComponent(out Rigidbody rb))
+
+            // 3) Rigidbody (fallback genérico)
+            if (target.TryGetComponent(out Rigidbody rb))
             {
                 // Reset vertical velocity to ensure a consistent jump height.
-                rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+                var v = rb.linearVelocity;
+                rb.linearVelocity = new Vector3(v.x, 0f, v.z);
                 rb.AddForce(Vector3.up * trampolineForce, ForceMode.VelocityChange);
             }
         }

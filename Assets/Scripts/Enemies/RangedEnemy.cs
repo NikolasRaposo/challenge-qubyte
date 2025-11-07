@@ -47,6 +47,7 @@ namespace Enemy
         private Rigidbody _rigidbody;
         private bool _isOnCooldown = false; // Flag para gerenciar o cooldown
         private bool _isDefeated = false;
+        private PlayerHealth _playerHealth;
 
         // --- Animator Hashes ---
         // Você terá 3 estados: Idle, PreAttack, Attack
@@ -66,6 +67,10 @@ namespace Enemy
                 GameObject player = GameObject.FindWithTag("Player");
                 if (player != null) playerTarget = player.transform;
             }
+            if (playerTarget != null)
+            {
+                _playerHealth = playerTarget.GetComponent<PlayerHealth>();
+            }
 
             if (firePoint == null)
             {
@@ -75,8 +80,8 @@ namespace Enemy
 
         private void Update()
         {
-            // Se estiver morto, em cooldown ou sem alvo, não faz nada
-            if (_isDefeated || _isOnCooldown || playerTarget == null)
+            // Se estiver morto, em cooldown, sem alvo ou se o jogador estiver morto, não faz nada
+            if (_isDefeated || _isOnCooldown || playerTarget == null || (_playerHealth != null && _playerHealth.IsDead))
             {
                 return;
             }
@@ -114,7 +119,7 @@ namespace Enemy
         /// </summary>
         public void AnimationEvent_FireProjectile()
         {
-            if (projectilePrefab == null || _isDefeated) return;
+            if (projectilePrefab == null || _isDefeated || (_playerHealth != null && _playerHealth.IsDead)) return;
             
             Vector3 fireDirection;
             if (playerTarget != null)

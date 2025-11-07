@@ -4,6 +4,7 @@ using Enemies;
 using Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Gameplay;
 
 namespace Managers {
     /// <summary>
@@ -69,6 +70,8 @@ namespace Managers {
             UIManager.Instance.TogglePauseMenu(_isPaused);
             if (_isPaused) {
                 InputManager.Instance.SetUiContext();
+                // Failsafe: garante que qualquer vibração seja interrompida ao pausar
+                RumbleManager.Instance?.StopAllRumble();
             } else {
                 InputManager.Instance.SetPlayerContext();
             }
@@ -92,6 +95,8 @@ namespace Managers {
             if (bossContextController != null) {
                 bossContextController.OnBossDefeated -= HandleBossContextDefeated;
             }
+            // Failsafe: ao destruir o GameManager (troca de cena, etc.), interrompe vibração
+            RumbleManager.Instance?.StopAllRumble();
         }
         /// <summary>
         /// Updates the position where the player will respawn.
@@ -125,6 +130,8 @@ namespace Managers {
         private IEnumerator RespawnSequence() {
             // Block player input while the countdown is running.
             InputManager.Instance.SetBlockInputContext();
+            // Failsafe: interrompe qualquer vibração antes do countdown de respawn
+            RumbleManager.Instance?.StopAllRumble();
             // Tell the UIManager to show the countdown and wait for it to finish.
             yield return UIManager.Instance.StartRespawnCountdown(3f); // 3-second countdown
             // --- Actual Respawn Logic ---
@@ -144,6 +151,8 @@ namespace Managers {
         /// </summary>
         private void GameOver() {
             Debug.Log("Game Over!");
+            // Failsafe: garante silêncio haptico ao entrar em Game Over
+            RumbleManager.Instance?.StopAllRumble();
             // Tell the UIManager to show the final screen.
             UIManager.Instance.ShowGameOverScreen();
             // Block all player input permanently.
@@ -154,6 +163,8 @@ namespace Managers {
         /// </summary>
         public void CompleteLevel() {
             Debug.Log("Level Completed!");
+            // Failsafe: garante silêncio haptico ao completar nível
+            RumbleManager.Instance?.StopAllRumble();
             // Show the level complete UI panel
             if (levelCompletePanel != null) {
                 levelCompletePanel.SetActive(true);
@@ -192,6 +203,8 @@ namespace Managers {
             
         public void QuitGame() 
         {
+            // Failsafe: interrompe vibração antes de sair
+            RumbleManager.Instance?.StopAllRumble();
             Application.Quit();
         }
         private void HandleBossContextDefeated() {

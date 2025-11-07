@@ -407,6 +407,15 @@ namespace Player
             _lastGroundJumpTime = Time.time - (_midAirJumpCooldownAfterGroundJump + 1f);
         }
 
+        // Restaura a disponibilidade de pulos no ar após impulsos externos (ex.: stomp/trampolim)
+        public void ResetMidAirJumpCount()
+        {
+            _midAirJumpCount = 0;
+            _prevMidAirJumpCount = 0;
+            if (animator != null)
+                animator.ResetTrigger("DoubleJump");
+        }
+
         // Validação de campos expostos
         public override void OnValidate()
         {

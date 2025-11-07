@@ -14,6 +14,9 @@ namespace Gameplay
         [Range(0f, 1f)]
         public float advanceDurationOverride = 0f;
 
+        [Tooltip("Camadas ignoradas no trigger dedicado (0 = sem filtro).")]
+        public LayerMask ignoreTriggerLayers = 0;
+
         // Rastreia jogadores atualmente dentro do trigger para liberar supressão em desativação
         private readonly HashSet<ECMSaciController> _insidePlayers = new HashSet<ECMSaciController>();
 
@@ -34,6 +37,10 @@ namespace Gameplay
 
         private void OnTriggerEnter(Collider other)
         {
+            // Ignora camadas específicas via filtro
+            if (ignoreTriggerLayers.value != 0 && ((ignoreTriggerLayers.value & (1 << other.gameObject.layer)) != 0))
+                return;
+
             if (trampoline == null)
                 return;
 
@@ -50,6 +57,10 @@ namespace Gameplay
 
         private void OnTriggerExit(Collider other)
         {
+            // Ignora camadas específicas via filtro
+            if (ignoreTriggerLayers.value != 0 && ((ignoreTriggerLayers.value & (1 << other.gameObject.layer)) != 0))
+                return;
+
             if (trampoline == null)
                 return;
 

@@ -19,6 +19,22 @@ namespace Player
         [Tooltip("Arraste o GameObject principal do Jogador (que tem o ECMSaciController) aqui.")]
         [SerializeField] private ECMSaciController saciController;
 
+        [Header("Filtro de Trigger")]
+        [Tooltip("Somente colliders nessas layers serão considerados para stomp (0 = desativado).")]
+        [SerializeField] private LayerMask stompableLayers = 0;
+
+        [Header("Debug")]
+        [Tooltip("Quando ligado, imprime logs detalhados de stomp (falhas e sucessos).")]
+        [SerializeField] private bool verboseLogs = false;
+
+        [Header("Restrições de Estado")]
+        [Tooltip("Quando ligado, o stomp só funciona quando fora do chão.")]
+        [SerializeField] private bool requireAirborne = true;
+        [Tooltip("Quando ligado, o stomp só funciona enquanto em queda (free fall).")]
+        [SerializeField] private bool requireFreeFall = false;
+        [Tooltip("Velocidade mínima descendente para considerar estado de queda (m/s).")]
+        [SerializeField] private float minFallSpeed = 0.1f;
+
         [Header("Configuração do Pulo")]
         [Tooltip("A força do 'quique' que o jogador dá ao pular em um inimigo.")]
         [SerializeField] private float bounceForce = 15f;
@@ -47,58 +63,110 @@ namespace Player
         /// </summary>
         private void OnTriggerEnter(Collider other)
         {
-            // 1. O 'stomp' está ligado?
+            // 1) Gate principal
             if (!stompEnabled) return;
-            
-            // 2. O Trigger foi ativado? (Este é o log mais importante)
-            Debug.Log($"[PlayerStomp] OnTriggerEnter com: {other.name}", other.gameObject);
 
-            // 3. O jogador está caindo?
+            // 2) Filtro opcional por Layer (silencia colisões não relevantes)
+            if (stompableLayers.value != 0 && (stompableLayers.value & (1 << other.gameObject.layer)) == 0)
+                return;
+
+            // 3) Identifique alvos válidos de stomp (inimigos OU interativos de stomp)
+            SimpleEnemy simpleEnemy = null;
+            ChasingEnemy chasingEnemy = null;
+            RangedEnemy rangedEnemy = null;
+            BoxInteractor boxInteractor = null;
+            bool isStompTarget = false;
+
+            if (other.TryGetComponent(out simpleEnemy)) isStompTarget = true;
+            else if (other.TryGetComponent(out chasingEnemy)) isStompTarget = true;
+            else if (other.TryGetComponent(out rangedEnemy)) isStompTarget = true;
+            else if (other.TryGetComponent(out boxInteractor)) isStompTarget = true;
+
+            if (!isStompTarget)
+                return; // silencioso para objetos não relevantes
+
+            if (verboseLogs)
+                Debug.Log($"[PlayerStomp] Trigger com inimigo: {other.name}", other.gameObject);
+
+            // 4) Verificações de estado / velocidade / cooldown APENAS para alvos válidos
+            bool isGrounded = saciController.movement.isGrounded;
             float playerVerticalVelocity = saciController.movement.velocity.y;
-            if (playerVerticalVelocity > 0.1f)
+
+            // Exigir estar fora do chão (por padrão)
+            if (requireAirborne && isGrounded)
             {
-                Debug.LogWarning($"[PlayerStomp] FALHA (Velocidade): Jogador está subindo (Vel Y: {playerVerticalVelocity}). Stomp cancelado.", this);
+                if (verboseLogs)
+                    Debug.Log($"[PlayerStomp] Cancelado (Estado): jogador no chão.", this);
                 return;
             }
-            
-            // 4. O 'stomp' está em cooldown?
+
+            // Exigir queda (free fall): não estar no chão e velocidade descendente suficiente
+            if (requireFreeFall)
+            {
+                if (isGrounded || playerVerticalVelocity > -minFallSpeed)
+                {
+                    if (verboseLogs)
+                        Debug.Log($"[PlayerStomp] Cancelado (Estado): requer queda (Vy: {playerVerticalVelocity:F2}).", this);
+                    return;
+                }
+            }
+            else
+            {
+                // Se não exigir queda, ao menos não permitir stomp enquanto subindo
+                if (playerVerticalVelocity > 0.1f)
+                {
+                    if (verboseLogs)
+                        Debug.Log($"[PlayerStomp] Cancelado (Velocidade): subindo (Vy: {playerVerticalVelocity:F2}).", this);
+                    return;
+                }
+            }
+
+            // Cooldown
             if (Time.time < _lastStompTime + StompCooldown)
             {
-                Debug.LogWarning($"[PlayerStomp] FALHA (Cooldown): Stomp ainda em cooldown.", this);
+                if (verboseLogs)
+                    Debug.Log($"[PlayerStomp] Cancelado (Cooldown): ainda em cooldown.", this);
                 return;
             }
-            
-            Debug.Log($"[PlayerStomp] PASSOU (Velocidade: {playerVerticalVelocity}). Procurando scripts de inimigo...", this);
 
-            // 5. É um Inimigo Simples?
-            if (other.TryGetComponent(out SimpleEnemy simpleEnemy))
+            // 5) Aplicar stomp no alvo detectado
+            _lastStompTime = Time.time;
+
+            if (simpleEnemy != null)
             {
-                Debug.Log($"[PlayerStomp] SUCESSO! Pisou em SimpleEnemy: {other.name}. Quicando!", other.gameObject);
-                _lastStompTime = Time.time;
+                if (verboseLogs)
+                    Debug.Log($"[PlayerStomp] SUCESSO! SimpleEnemy: {other.name}.", other.gameObject);
                 simpleEnemy.Defeat();
                 PerformBounce();
                 return;
             }
 
-            // 6. É o Sapo (ChasingEnemy)?
-            if (other.TryGetComponent(out ChasingEnemy chasingEnemy))
+            if (chasingEnemy != null)
             {
-                Debug.Log($"[PlayerStomp] SUCESSO! Pisou em ChasingEnemy: {other.name}. Quicando!", other.gameObject);
-                _lastStompTime = Time.time;
+                if (verboseLogs)
+                    Debug.Log($"[PlayerStomp] SUCESSO! ChasingEnemy: {other.name}.", other.gameObject);
                 chasingEnemy.Defeat();
                 PerformBounce();
                 return;
             }
-            if (other.TryGetComponent(out RangedEnemy rangedEnemy))
+
+            if (rangedEnemy != null)
             {
-                Debug.Log($"[PlayerStomp] SUCESSO! Pisou em RangedEnemy: {other.name}. Quicando!", other.gameObject);
-                _lastStompTime = Time.time;
+                if (verboseLogs)
+                    Debug.Log($"[PlayerStomp] SUCESSO! RangedEnemy: {other.name}.", other.gameObject);
                 rangedEnemy.Defeat();
                 PerformBounce();
                 return;
             }
-            // 7. Se chegou aqui, bateu em algo que não é um inimigo
-            Debug.LogWarning($"[PlayerStomp] FALHA (Componente): Bateu em {other.name}, mas não encontrou script 'SimpleEnemy' ou 'ChasingEnemy'.", other.gameObject);
+
+            if (boxInteractor != null)
+            {
+                if (verboseLogs)
+                    Debug.Log($"[PlayerStomp] Interagindo com BoxInteractor: {other.name}.", other.gameObject);
+                boxInteractor.Interact(saciController.transform);
+                // Nota: o bounce (se houver) é gerenciado pelo BoxInteractor via ApplyTrampolineEffect.
+                return;
+            }
         }
 
         /// <summary>
@@ -107,6 +175,8 @@ namespace Player
         private void PerformBounce() {
             RumbleManager.Instance?.PlayStompRumble();
             saciController.movement.ApplyVerticalImpulse(bounceForce);
+            // Permite novo duplo-pulo após o impulso de stomp
+            saciController.ResetMidAirJumpCount();
             saciController.ResetGroundJumpCooldown();
         }
     }

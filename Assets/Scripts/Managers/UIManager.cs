@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UI.HUD;
+using Gameplay;
 
 namespace Managers {
     /// <summary>
@@ -126,6 +127,11 @@ namespace Managers {
             pauseMenuPanel.SetActive(isPaused);
             coinsPanel.SetActive(!isPaused);
             livesPanel.SetActive(!isPaused);
+            if (isPaused)
+            {
+                // Failsafe: interrompe qualquer vibração quando o menu de pausa é exibido
+                RumbleManager.Instance?.StopAllRumble();
+            }
         }
         /// <summary>
         /// Shows the Game Over screen.
@@ -134,6 +140,8 @@ namespace Managers {
             coinsPanel.SetActive(false);
             livesPanel.SetActive(false);
             gameOverPanel.SetActive(true);
+            // Failsafe: garante silêncio haptico ao mostrar Game Over
+            RumbleManager.Instance?.StopAllRumble();
         }
         /// <summary>
         /// Starts the respawn countdown visual sequence.
@@ -143,6 +151,9 @@ namespace Managers {
             coinsPanel.SetActive(false);
             livesPanel.SetActive(false);
             respawnPanel.SetActive(true);
+
+            // Failsafe: interrompe vibração ao iniciar o countdown de respawn
+            RumbleManager.Instance?.StopAllRumble();
 
             float timer = countdownDuration;
             while (timer > 0) {
@@ -163,6 +174,9 @@ namespace Managers {
             GameManager.Instance.OnCoinsUpdated -= UpdateCoinText;
             GameManager.Instance.OnLivesUpdated -= UpdateLivesText;
             GameManager.Instance.OnEnemiesDefeatedUpdated -= UpdateEnemiesDefeatedText;
+
+            // Failsafe: ao destruir a UI, garante que qualquer rumble ativo seja interrompido
+            RumbleManager.Instance?.StopAllRumble();
         }
     }
 }

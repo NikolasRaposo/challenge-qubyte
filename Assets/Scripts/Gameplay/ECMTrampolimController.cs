@@ -35,6 +35,8 @@ namespace Gameplay
         [Tooltip("Altura mínima acima do plano do trampolim (transform.up) para considerar contato por cima.")]
         [Range(0f, 1f)]
         [SerializeField] private float minAboveHeight = 0.05f;
+        [Tooltip("Camadas ignoradas para eventos de Trigger no trampolim (0 = sem filtro).")]
+        [SerializeField] private LayerMask ignoreTriggerLayers = 0;
         [Header("Force Settings")]
         [Tooltip("Impulso vertical aplicado ao player ao usar o trampolim (ECM).")]
         [Range(5f, 30f)]
@@ -267,6 +269,12 @@ namespace Gameplay
                 return;
             }
             if (!_isTrampolineActive) return;
+            // Ignora camadas específicas via filtro
+            if (ignoreTriggerLayers.value != 0 && ((ignoreTriggerLayers.value & (1 << other.gameObject.layer)) != 0))
+            {
+                if (debugContactLogs) Debug.Log($"[TrampoDebug] Trigger ignorado por ignoreTriggerLayers: {LayerMask.LayerToName(other.gameObject.layer)}", this);
+                return;
+            }
             // Se nenhuma layer foi configurada, aceita qualquer uma
             bool layerOk = interactiveLayers == 0 || ((interactiveLayers.value & (1 << other.gameObject.layer)) != 0);
             if (!layerOk)
@@ -480,6 +488,12 @@ namespace Gameplay
         private void OnTriggerStay(Collider other)
         {
             if (!useJumpBoostWindow || useAdvanceTriggerOnly) return;
+            // Ignora camadas específicas via filtro
+            if (ignoreTriggerLayers.value != 0 && ((ignoreTriggerLayers.value & (1 << other.gameObject.layer)) != 0))
+            {
+                if (debugContactLogs) Debug.Log($"[TrampoDebug] TriggerStay ignorado por ignoreTriggerLayers: {LayerMask.LayerToName(other.gameObject.layer)}", this);
+                return;
+            }
             var saci = other.GetComponentInParent<ECMSaciController>();
             if (saci == null || saci.movement == null) return;
 
