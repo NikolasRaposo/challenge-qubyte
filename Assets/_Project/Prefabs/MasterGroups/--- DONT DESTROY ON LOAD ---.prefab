@@ -1,0 +1,113 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8875231159867694582
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1753909710555505182}
+  - component: {fileID: 8354301615173142891}
+  - component: {fileID: 8589731959756161887}
+  - component: {fileID: 8151087009242132587}
+  m_Layer: 0
+  m_Name: --- DONT DESTROY ON LOAD ---
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1753909710555505182
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8875231159867694582}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8354301615173142891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8875231159867694582}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fddbe620d6c988440b66c9ca6bd6b516, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerLives: 3
+  player: {fileID: 0}
+  levelCompletePanel: {fileID: 0}
+  bossContextController: {fileID: 0}
+--- !u!114 &8589731959756161887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8875231159867694582}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9627b0bc6c657914e95134982b94bd75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coinsPanel: {fileID: 0}
+  livesPanel: {fileID: 0}
+  pauseMenuPanel: {fileID: 0}
+  respawnPanel: {fileID: 0}
+  gameOverPanel: {fileID: 0}
+  coinsText: {fileID: 0}
+  livesText: {fileID: 0}
+  tornadoCooldownImage: {fileID: 0}
+  pauseCoinsText: {fileID: 0}
+  pauseEnemiesDefeatedText: {fileID: 0}
+  respawnCountdownText: {fileID: 0}
+  hudVisibleTime: 6
+  coinsPopAnimation: {fileID: 0}
+  livesPopAnimation: {fileID: 0}
+--- !u!114 &8151087009242132587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8875231159867694582}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff1c204ff6d1d084186b581a4b55920d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _enableRumble: 1
+  _onlyRumbleOnGamepad: 1
+  _playerInput: {fileID: 0}
+  _stompPreset:
+    Low: 0.2
+    High: 0.2
+    Duration: 0.1
+  _reflectPreset:
+    Low: 0.1
+    High: 0.4
+    Duration: 0.2
+  _counterPreset:
+    Low: 0.5
+    High: 0.5
+    Duration: 0.25
+  _bossHitPreset:
+    Low: 0.8
+    High: 0.8
+    Duration: 0.3
+  _playerDeathPreset:
+    Low: 1
+    High: 1
+    Duration: 0.5

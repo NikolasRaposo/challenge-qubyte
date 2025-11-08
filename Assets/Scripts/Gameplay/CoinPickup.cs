@@ -59,6 +59,15 @@ namespace Gameplay {
             _canBeTouched = false;
             Invoke(nameof(EnableTouchCollection), touchCollectionDisableTime);
 
+            // Se for um pickup de vida (tag "vida"/"life"), trate como pre-placed:
+            // libera magnetismo independentemente do spread.
+            string selfTag = gameObject.tag;
+            if (!string.IsNullOrEmpty(selfTag) && (selfTag.Equals("vida", System.StringComparison.OrdinalIgnoreCase) || selfTag.Equals("life", System.StringComparison.OrdinalIgnoreCase)))
+            {
+                _canBeAttracted = true;
+                _spreadIsComplete = true;
+            }
+
             // If 'ignoreDelay' is checked, enable magnetism immediately.
             if (!ignoreDelay) return;
             _canBeAttracted = true;
@@ -216,7 +225,16 @@ namespace Gameplay {
             if (_isCollected) return; // Prevent double collection.
             _isCollected = true;
             if (GameManager.Instance != null) {
-                GameManager.Instance.AddCoin();
+                // Se a tag do próprio pickup for "vida" (ou "life"), adiciona vida; caso contrário, adiciona moeda.
+                string selfTag = gameObject.tag;
+                if (!string.IsNullOrEmpty(selfTag) && (selfTag.Equals("vida", System.StringComparison.OrdinalIgnoreCase) || selfTag.Equals("life", System.StringComparison.OrdinalIgnoreCase)))
+                {
+                    GameManager.Instance.AddLife(1);
+                }
+                else
+                {
+                    GameManager.Instance.AddCoin(1);
+                }
             }
 
             // Stop all coin-specific tweens.

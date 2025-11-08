@@ -18,15 +18,20 @@ namespace Managers {
         public bool Jump { get; private set; }
         public bool Sprint { get; private set; }
         public event Action OnTornado, OnPause, OnProjetarTornado;
+        private float _pauseInputLockUntil; // bloqueia pause por curto período após iniciar/trocar contexto
 
         private void Awake() {
             if (Instance != null && Instance != this) Destroy(gameObject);
             else {
                 Instance = this;
-                DontDestroyOnLoad(gameObject); // Garante que ele persista entre cenas
+                // Usa o root para evitar o warning "DontDestroyOnLoad only works for root GameObjects"
+                var root = transform.root != null ? transform.root.gameObject : gameObject;
+                DontDestroyOnLoad(root);
             }
             _controls = new StarterAssets();
             SetContext(InputContext.Player);
+            // Evita que um input residual (ex: tecla pressionada ao entrar no Play) pause o jogo imediatamente
+            _pauseInputLockUntil = Time.unscaledTime + 0.35f;
         }
 
         private void OnEnable() => _controls.Enable();
@@ -50,18 +55,22 @@ namespace Managers {
                 case InputContext.Player:
                     SetPlayerEvents();
                     LockCursor();
+                    // Debounce curto ao alternar contexto para evitar pause acidental
+                    _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
                 case InputContext.UI:
                     SeUIEvents();
                     UnlockCursor();
                     // Failsafe: ao entrar no contexto de UI, interrompe vibração
                     RumbleManager.Instance?.StopAllRumble();
+                    _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
                 case InputContext.BlockInput:
                     // Não faz bind de nada e libera o cursor
                     UnlockCursor();
                     // Failsafe: ao bloquear input, interrompe vibração
                     RumbleManager.Instance?.StopAllRumble();
+                    _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
             }
         }
@@ -87,6 +96,9 @@ namespace Managers {
         private void SeUIEvents() {
             _controls.UI.Enable();
             _controls.UI.Pause.performed += PauseOnPerformed;
+            // Garante que o botão de pause do gamepad funcione também no contexto de UI
+            _controls.Player.Pause.Enable();
+            _controls.Player.Pause.performed += PauseOnPerformed;
         }
 
         // --- Handlers de Input (Atualizam os valores) ---
@@ -101,7 +113,13 @@ namespace Managers {
         // --- Handlers de Eventos (Disparam os C# Events) ---
         private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
         private void ProjetarTornadoOnPerformed(InputAction.CallbackContext obj) => OnProjetarTornado?.Invoke();
-        private void PauseOnPerformed(InputAction.CallbackContext obj) => OnPause?.Invoke();
+        private void PauseOnPerformed(InputAction.CallbackContext obj) {
+            // Ignora eventos de pause durante janela de bloqueio
+            if (Time.unscaledTime < _pauseInputLockUntil) return;
+            OnPause?.Invoke();
+            // Debounce curto para evitar dupla invocação no mesmo frame
+            _pauseInputLockUntil = Time.unscaledTime + 0.1f;
+        }
 
         // --- MÉTODO DE "CONSUMO" DE INPUT ---
         // O ThirdPersonController vai chamar isso após pular

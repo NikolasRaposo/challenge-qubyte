@@ -18,6 +18,7 @@ namespace Managers {
         public event Action<int> OnLivesUpdated;
         public event Action<int> OnEnemiesDefeatedUpdated;
         public event Action OnPlayerRespawn;
+        public event Action OnPlayerDied;
         
         [Header("Player Stats")]
         public int playerLives = 3;
@@ -44,6 +45,8 @@ namespace Managers {
         private void Awake() {
             if (Instance != null && Instance != this) { Destroy(gameObject); }
             else { Instance = this; }
+            // Persiste o GameManager entre cenas para manter contadores e eventos.
+            DontDestroyOnLoad(gameObject);
             
             if (levelCompletePanel != null) {
                 levelCompletePanel.SetActive(false);
@@ -54,6 +57,7 @@ namespace Managers {
             if (player != null) {
                 _lastCheckpointPosition = player.transform.position;
                 _playerHealth = player.GetComponent<PlayerHealth>();
+                Debug.Log($"[GameManager] Start. Player at {player.transform.position}. Checkpoint set to {_lastCheckpointPosition}");
             } 
             if (bossContextController != null) {
                 bossContextController.OnBossDefeated += HandleBossContextDefeated;
@@ -76,6 +80,10 @@ namespace Managers {
                 InputManager.Instance.SetPlayerContext();
             }
         }
+        public void NotifyPlayerDied()
+        {
+            OnPlayerDied?.Invoke();
+        }
         /// <summary>
         /// Adds a specified amount of coins to the counter.
         /// </summary>
@@ -84,10 +92,25 @@ namespace Managers {
             _collectedCoins += amount;
             OnCoinsUpdated?.Invoke(_collectedCoins);
         }
+
+        /// <summary>
+        /// Adiciona vidas ao jogador e notifica a UI.
+        /// </summary>
+        /// <param name="amount">Quantidade de vidas a adicionar.</param>
+        public void AddLife(int amount = 1)
+        {
+            playerLives += amount;
+            OnLivesUpdated?.Invoke(playerLives);
+        }
         public void IncrementDefeatedEnemies() {
             _enemiesDefeated++;
             OnEnemiesDefeatedUpdated?.Invoke(_enemiesDefeated);
         }
+
+        // Propriedades públicas somente leitura para que outros sistemas possam ler estado atual
+        public int CollectedCoins => _collectedCoins;
+        public int Lives => playerLives;
+        public int EnemiesDefeated => _enemiesDefeated;
         private void OnDestroy() {
             if (InputManager.Instance != null) {
                 InputManager.Instance.OnPause -= TogglePause;

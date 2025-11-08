@@ -47,6 +47,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   trampoline: {fileID: 467702962107541608}
   advanceDurationOverride: 0.624
+  ignoreTriggerLayers:
+    serializedVersion: 2
+    m_Bits: 2048
 --- !u!136 &1164105241107694870
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -171,15 +174,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trampolineEnabled: 1
-  debugLogs: 1
+  debugLogs: 0
   debugContactLogs: 0
-  debugHeightLogs: 1
+  debugHeightLogs: 0
   debugJumpBoostLogs: 0
   debugRBLogs: 0
   minTopContactDot: 0.2
   minApproachDownwardSpeed: 0.25
   ignoreTopContactCheck: 1
   minAboveHeight: 0.05
+  ignoreTriggerLayers:
+    serializedVersion: 2
+    m_Bits: 2048
   launchForce: 16
   minLaunchForce: 6
   horizontalVelocityMultiplier: 1
@@ -234,6 +240,7 @@ MonoBehaviour:
   consumeJumpInputOnAdvance: 1
   jumpBoostImpulseFactor: 2
   consumeJumpInputOnBoost: 1
+  advanceSuppressionFailSafeSeconds: 0.35
   effectLockoutSeconds: 0.08
   heightStorageTimeoutSeconds: 2
 --- !u!65 &1120553842511842119

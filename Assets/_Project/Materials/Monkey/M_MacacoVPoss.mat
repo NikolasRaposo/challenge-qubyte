@@ -12,9 +12,8 @@ Material:
   m_Parent: {fileID: 2100000, guid: cf30e59a3b8890749b179d178d293924, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - DR_RIM_ON
   - _BASEMAP_PREMULTIPLY
-  - _CELPRIMARYMODE_STEPS
+  - _CELPRIMARYMODE_SINGLE
   - _DETAILMAPBLENDINGMODE_MULTIPLY
   - _GRADIENTSPACE_WORLD
   - _OUTLINESPACE_SCREEN
@@ -33,15 +32,32 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _FlatRimEdgeSmoothness: 0.626
-    - _FlatRimLightAlign: 0.674
-    - _FlatRimSize: 0.807
-    - _FlatSpecularSize: 0.291
+    - _CelExtraEnabled: 0
+    - _CelNumSteps: 5
+    - _CelPrimaryMode: 1
+    - _FlatRimEdgeSmoothness: 0.533
+    - _FlatRimLightAlign: 0
+    - _FlatRimSize: 0.286
+    - _FlatSpecularEdgeSmoothness: 0.835
+    - _FlatSpecularSize: 0.571
+    - _Flatness: 0.507
+    - _GradientEnabled: 0
+    - _RimEnabled: 0
+    - _SelfShadingSize: 0.802
+    - _SelfShadingSizeExtra: 0.626
+    - _ShadowEdgeSize: 0.101
+    - _ShadowEdgeSizeExtra: 0.272
+    - _SpecularEnabled: 0
     - _TextureBlendingMode: 1
     - _TextureImpact: 1
     m_Colors:
-    - _ColorDim: {r: 0.6608964, g: 1, b: 0, a: 1}
-    - _ColorDimCurve: {r: 0.94509804, g: 0.8195501, b: 0.20784312, a: 0.85056}
-    - _ColorDimSteps: {r: 0.3773585, g: 0.29353815, b: 0.16909933, a: 0.85056}
-    - _FlatRimColor: {r: 0.009433985, g: 0.009433985, b: 0.009433985, a: 1}
+    - _BaseColor: {r: 0.18867922, g: 0.13096558, b: 0, a: 1}
+    - _ColorDim: {r: 0.24528301, g: 0.24528301, b: 0.24528301, a: 1}
+    - _ColorDimCurve: {r: 1, g: 1, b: 1, a: 0.85056}
+    - _ColorDimExtra: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDimSteps: {r: 0.5943396, g: 0.5943396, b: 0.5943396, a: 0.85056}
+    - _FlatRimColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FlatSpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _UnityShadowColor: {r: 1, g: 1, b: 1, a: 0.85056}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

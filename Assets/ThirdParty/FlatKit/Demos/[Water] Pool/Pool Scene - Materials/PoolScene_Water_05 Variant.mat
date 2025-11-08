@@ -13,7 +13,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _COLORMODE_GRADIENT_TEXTURE
-  - _FOAMMODE_NONE
+  - _FOAMMODE_GRADIENT_NOISE
   - _NOISESOURCE_WORLD_SPACE
   - _WAVEMODE_POINTY
   m_InvalidKeywords:
@@ -30,6 +30,12 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
+    - _FadeDistance: -1.13
+    - _FoamAmount: 0
+    - _FoamDepth: 0.2
+    - _FoamMode: 1
+    - _FoamNoiseAmount: 1
+    - _FoamScale: 0
     - _RefractionScale: 2.7
     - _RefractionSpeed: 0.1
     m_Colors: []

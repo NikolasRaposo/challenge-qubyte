@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6080656407568676829}
-  m_Layer: 8
+  m_Layer: 12
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 2810180019314094540}
   - component: {fileID: 6913402009656111217}
   - component: {fileID: 1416800565200577787}
-  m_Layer: 8
+  m_Layer: 12
   m_Name: Box
   m_TagString: Interactable
   m_Icon: {fileID: 0}
@@ -201,7 +201,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 1f38e048e0a19e145bd2b8acc5ae88e4,
         type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -42,7 +42,7 @@ GameObject:
   - component: {fileID: 3572360834879134557}
   - component: {fileID: 3657698552807186539}
   - component: {fileID: 8803675570592267170}
-  m_Layer: 9
+  m_Layer: 11
   m_Name: Stomp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -99,7 +99,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stompEnabled: 1
   saciController: {fileID: 8938805846169372227}
-  bounceForce: 15
+  stompableLayers:
+    serializedVersion: 2
+    m_Bits: 5120
+  verboseLogs: 0
+  requireAirborne: 1
+  requireFreeFall: 1
+  minFallSpeed: 0.1
+  bounceForce: 8
 --- !u!1 &3244301567471233595
 GameObject:
   m_ObjectHideFlags: 0
@@ -140,9 +147,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6695902117799341166}
+  - component: {fileID: 2778994446325087239}
+  - component: {fileID: 5045696493819066055}
   m_Layer: 2
-  m_Name: TriggerMagneticPos
-  m_TagString: Untagged
+  m_Name: MagnetField
+  m_TagString: MagneticTrigger
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -159,9 +168,58 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.5700002, z: -0.015999794}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 5773235492268884253}
   m_Father: {fileID: 8115222655619083839}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &2778994446325087239
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4313045491817515733}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.25
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!54 &5045696493819066055
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4313045491817515733}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &4669670262370948295
 GameObject:
   m_ObjectHideFlags: 0
@@ -5128,6 +5186,37 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
+--- !u!1 &8642576589774900771
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5773235492268884253}
+  m_Layer: 2
+  m_Name: AttractionPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5773235492268884253
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8642576589774900771}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6695902117799341166}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9066800912511291268
 GameObject:
   m_ObjectHideFlags: 0
@@ -5318,7 +5407,7 @@ MonoBehaviour:
   _groundJumpHeight: 1
   _midAirJumpHeight: 0.7
   _inSplinePathMode: 0
-  _midAirJumpCooldownAfterGroundJump: 0.3
+  _midAirJumpCooldownAfterGroundJump: 0.1
   _logVerticalVelocityDebug: 0
   _debugLogInterval: 0.1
 --- !u!114 &292767007796308785
@@ -6116,7 +6205,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ba5c8f9719472b4ba2e536e911822b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tornadoDamage: 10
 --- !u!4 &6879215137747759280 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3035998124425380934, guid: aa489ba3bd691db429436229dd48cbd0,

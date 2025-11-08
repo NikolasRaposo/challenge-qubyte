@@ -1,4 +1,4 @@
-﻿using ECM.Examples.Common;
+using ECM.Examples.Common;
 using UnityEngine;
 
 namespace ECM.Examples.Components
@@ -10,6 +10,16 @@ namespace ECM.Examples.Components
 
         [SerializeField]
         private float _rotationSpeed = 30.0f;
+
+        public enum RotationAxis { X, Y, Z }
+
+        [SerializeField]
+        [Tooltip("Eixo de rotação (X, Y, Z).")]
+        private RotationAxis _axis = RotationAxis.Y;
+
+        [SerializeField]
+        [Tooltip("Quando ligado, inverte a direção da rotação.")]
+        private bool _inverse = false;
 
         #endregion
 
@@ -35,6 +45,18 @@ namespace ECM.Examples.Components
             set { _angle = Utils.WrapAngle(value); }
         }
 
+        public RotationAxis axis
+        {
+            get { return _axis; }
+            set { _axis = value; }
+        }
+
+        public bool inverse
+        {
+            get { return _inverse; }
+            set { _inverse = value; }
+        }
+
         #endregion
 
         #region MONOBEHAVIOUR
@@ -52,9 +74,25 @@ namespace ECM.Examples.Components
 
         public void FixedUpdate()
         {
-            angle += rotationSpeed * Time.deltaTime;
+            var delta = (inverse ? -rotationSpeed : rotationSpeed) * Time.deltaTime;
+            angle += delta;
             
-            var rotation = Quaternion.Euler(0.0f, angle, 0.0f);
+            Quaternion rotation;
+            switch (_axis)
+            {
+                case RotationAxis.X:
+                    rotation = Quaternion.Euler(angle, 0.0f, 0.0f);
+                    break;
+                case RotationAxis.Y:
+                    rotation = Quaternion.Euler(0.0f, angle, 0.0f);
+                    break;
+                case RotationAxis.Z:
+                    rotation = Quaternion.Euler(0.0f, 0.0f, angle);
+                    break;
+                default:
+                    rotation = Quaternion.Euler(0.0f, angle, 0.0f);
+                    break;
+            }
             _rigidbody.MoveRotation(rotation);
         }
 

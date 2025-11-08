@@ -20,7 +20,7 @@ namespace UI.HUD
         [SerializeField] private float textLargeAmplitude = 6f;
         [SerializeField] private float textFloatSpeed = 2f;
 
-        private Vector3[][] originalVertices;
+        // Removemos cache de vértices originais para evitar travar o texto ao mudar conteúdo
 
         void Start()
         {
@@ -29,9 +29,6 @@ namespace UI.HUD
                 .DOAnchorPosY(iconStartPos.y + iconFloatAmplitude, iconFloatDuration)
                 .SetLoops(-1, LoopType.Yoyo)
                 .SetEase(Ease.InOutSine);
-
-            coinText.ForceMeshUpdate();
-            StoreOriginalVertices();
         }
 
         void Update()
@@ -39,15 +36,7 @@ namespace UI.HUD
             AnimateTextFloat();
         }
 
-        private void StoreOriginalVertices()
-        {
-            var textInfo = coinText.textInfo;
-            originalVertices = new Vector3[textInfo.meshInfo.Length][];
-            for (int i = 0; i < textInfo.meshInfo.Length; i++)
-            {
-                originalVertices[i] = textInfo.meshInfo[i].vertices.Clone() as Vector3[];
-            }
-        }
+        // Não armazenamos vértices; usamos a malha atual após ForceMeshUpdate
 
         private void AnimateTextFloat()
         {
@@ -71,10 +60,11 @@ namespace UI.HUD
                 // Pega posição base do caractere
                 Vector3 offset = new Vector3(0, offsetY, 0);
 
-                verts[vertexIndex + 0] = originalVertices[meshIndex][vertexIndex + 0] + offset;
-                verts[vertexIndex + 1] = originalVertices[meshIndex][vertexIndex + 1] + offset;
-                verts[vertexIndex + 2] = originalVertices[meshIndex][vertexIndex + 2] + offset;
-                verts[vertexIndex + 3] = originalVertices[meshIndex][vertexIndex + 3] + offset;
+                // Aplica deslocamento sobre a malha atual (reconstruída a cada frame por ForceMeshUpdate)
+                verts[vertexIndex + 0] += offset;
+                verts[vertexIndex + 1] += offset;
+                verts[vertexIndex + 2] += offset;
+                verts[vertexIndex + 3] += offset;
             }
 
             // Atualiza a malha

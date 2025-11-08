@@ -21,6 +21,10 @@ namespace Enemy {
         [SerializeField] private Transform playerTarget;
         [SerializeField] private float chaseSpeed = 3.5f;
 
+        [Header("Detection Settings")]
+        [Tooltip("Distância máxima para começar a perseguir o jogador.")]
+        [SerializeField] private float detectionRadius = 10f;
+
         [Header("Attack Settings")]
         [Tooltip("A que distância do player o inimigo para e se prepara para pular.")]
         [SerializeField] private float attackStopDistance = 1.5f;
@@ -89,6 +93,24 @@ namespace Enemy {
             }
         }
 
+        private void OnEnable()
+        {
+            if (Managers.GameManager.Instance != null)
+            {
+                Managers.GameManager.Instance.OnPlayerDied += HandlePlayerDied;
+                Managers.GameManager.Instance.OnPlayerRespawn += HandlePlayerRespawn;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (Managers.GameManager.Instance != null)
+            {
+                Managers.GameManager.Instance.OnPlayerDied -= HandlePlayerDied;
+                Managers.GameManager.Instance.OnPlayerRespawn -= HandlePlayerRespawn;
+            }
+        }
+
         private void Start() {
             _navAgent.speed = chaseSpeed;
             _navAgent.stoppingDistance = attackStopDistance;
@@ -103,6 +125,17 @@ namespace Enemy {
                 }
                 return;
             }
+
+            // Só persegue se dentro do raio de detecção
+            float sqrDist = (playerTarget.position - transform.position).sqrMagnitude;
+            float sqrDetect = detectionRadius * detectionRadius;
+            if (sqrDist > sqrDetect)
+            {
+                if (_navAgent.enabled) _navAgent.isStopped = true;
+                return;
+            }
+
+            if (_navAgent.enabled) _navAgent.isStopped = false;
             _navAgent.SetDestination(playerTarget.position);
             if (!_navAgent.pathPending && _navAgent.remainingDistance <= _navAgent.stoppingDistance)
             {
@@ -169,6 +202,27 @@ namespace Enemy {
             _attackCoroutine = null;
         }
 
+        private void HandlePlayerDied()
+        {
+            // Interrompe ataque, desativa hitbox e para o navmesh ao morrer o jogador
+            if (_attackCoroutine != null)
+            {
+                StopCoroutine(_attackCoroutine);
+                _attackCoroutine = null;
+            }
+            IsPreparingAttack = false;
+            IsVulnerable = false;
+            _isAttacking = false;
+            if (attackHitbox != null) attackHitbox.gameObject.SetActive(false);
+            if (_navAgent.enabled) _navAgent.isStopped = true;
+            if (_animator != null) _animator.speed = 1.0f; // garante estado consistente
+        }
+
+        private void HandlePlayerRespawn()
+        {
+            if (_navAgent.enabled) _navAgent.isStopped = false;
+        }
+
         public void AnimationEvent_PauseAndLunge()
         {
             _animator.speed = 0f;
@@ -217,6 +271,8 @@ namespace Enemy {
 
         private void OnDrawGizmosSelected() {
             // ... (Gizmos não mudam)
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, detectionRadius);
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(transform.position, attackStopDistance);
             Gizmos.color = Color.red;

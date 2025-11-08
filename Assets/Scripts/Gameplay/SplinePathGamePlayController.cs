@@ -18,6 +18,10 @@ public class SplinePathGamePlayController : MonoBehaviour
     private ECMSaciController _currentSaci;
     private Transform _originalParent;
     private bool _isInSplineMode = false;
+    [Header("Ativação")]
+    [Tooltip("Atraso mínimo (s) após habilitar antes de aceitar entrada no trigger.")]
+    [Min(0f)] [SerializeField] private float activationDelay = 0f;
+    private float _enabledTime;
 
     private void Awake()
     {
@@ -33,6 +37,16 @@ public class SplinePathGamePlayController : MonoBehaviour
             endTrigger.controller = this;
     }
 
+    private void OnEnable()
+    {
+        _enabledTime = Time.time;
+    }
+
+    private bool IsActive()
+    {
+        return Time.time >= _enabledTime + activationDelay;
+    }
+
     private void Update()
     {
         // Mantém a posição local zerada durante o modo spline
@@ -45,6 +59,11 @@ public class SplinePathGamePlayController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!IsActive())
+        {
+            Debug.Log($"[SplinePath] Ignorado (delay {activationDelay:F2}s ativo). Collider: '{other.name}' no {Time.time - _enabledTime:F2}s", this);
+            return;
+        }
         var saci = other.GetComponentInParent<ECMSaciController>();
         if (saci == null)
             return;
@@ -65,6 +84,8 @@ public class SplinePathGamePlayController : MonoBehaviour
             saci.transform.localPosition = Vector3.zero;
         }
 
+        Debug.Log($"[SplinePath] Entrada: '{saci.name}' parent -> '{(animateHolder != null ? animateHolder.name : name)}' pos -> { (animateHolder != null ? animateHolder.position : transform.position) }", this);
+
         // Pausa o movimento normal do ECM (torna RB kinematic internamente)
         saci.EnterSplinePathMode();
 
@@ -77,6 +98,7 @@ public class SplinePathGamePlayController : MonoBehaviour
         {
             splineAnimate.Restart(false);
             splineAnimate.Play();
+            Debug.Log($"[SplinePath] Iniciando animação na spline '{splineAnimate.name}'", this);
         }
     }
 
@@ -106,6 +128,8 @@ public class SplinePathGamePlayController : MonoBehaviour
 
         // Desativa controle contínuo de posição
         _isInSplineMode = false;
+
+        Debug.Log($"[SplinePath] Encerrado: '{saci.name}' restaurado para parent '{(_originalParent != null ? _originalParent.name : "<null>")}'", this);
 
         // Limpa estado
         _currentSaci = null;

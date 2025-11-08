@@ -129,7 +129,8 @@ namespace Gameplay
 
         private IEnumerator StopRumbleAfterDelay(float duration)
         {
-            yield return new WaitForSeconds(duration);
+            // Usa tempo real para garantir que a vibração pare mesmo com Time.timeScale = 0
+            yield return new WaitForSecondsRealtime(duration);
             _gamepad?.SetMotorSpeeds(0f, 0f); // Para a vibração
             _stopRumbleCoroutine = null;
         }

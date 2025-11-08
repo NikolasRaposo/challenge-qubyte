@@ -12,6 +12,7 @@ TagManager:
   - MagnetTrigger
   - CineSaci
   - Interactable
+  - vida
   layers:
   - Default
   - TransparentFX
@@ -26,7 +27,7 @@ TagManager:
   - Enemy
   - PlayerStomp
   - StompInteractable
-  - 
+  - PosProcessLocal
   - 
   - 
   - 

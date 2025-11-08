@@ -25,6 +25,9 @@ namespace Enemy
         [Tooltip("Tempo (em segundos) entre cada arremesso.")]
         [SerializeField] private float attackCooldown = 3f;
 
+        [Tooltip("Velocidade de rotação para mirar o jogador (graus/seg).")]
+        [SerializeField] private float rotationSpeed = 360f;
+
         [Header("Attack Config")]
         [Tooltip("O prefab do projétil que será arremessado.")]
         [SerializeField] private GameObject projectilePrefab;
@@ -78,19 +81,50 @@ namespace Enemy
             }
         }
 
+        private void OnEnable()
+        {
+            if (Managers.GameManager.Instance != null)
+            {
+                Managers.GameManager.Instance.OnPlayerDied += HandlePlayerDied;
+                Managers.GameManager.Instance.OnPlayerRespawn += HandlePlayerRespawn;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (Managers.GameManager.Instance != null)
+            {
+                Managers.GameManager.Instance.OnPlayerDied -= HandlePlayerDied;
+                Managers.GameManager.Instance.OnPlayerRespawn -= HandlePlayerRespawn;
+            }
+        }
+
         private void Update()
         {
-            // Se estiver morto, em cooldown, sem alvo ou se o jogador estiver morto, não faz nada
-            if (_isDefeated || _isOnCooldown || playerTarget == null || (_playerHealth != null && _playerHealth.IsDead))
+            // Se estiver morto, sem alvo ou se o jogador estiver morto, não faz nada
+            if (_isDefeated || playerTarget == null || (_playerHealth != null && _playerHealth.IsDead))
             {
                 return;
             }
 
             // Verifica se o jogador está ao alcance
             float distance = Vector3.Distance(transform.position, playerTarget.position);
+
+            // Atualiza rotação continuamente para "mirar" o jogador quando detectado
             if (distance <= attackRange)
             {
-                // Inicia a sequência de ataque
+                Vector3 directionToPlayer = (playerTarget.position - transform.position);
+                directionToPlayer.y = 0f; // Mantém a rotação no plano horizontal
+                if (directionToPlayer.sqrMagnitude > 0.0001f)
+                {
+                    Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer.normalized);
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                }
+            }
+
+            // Dispara ataque apenas se não estiver em cooldown e dentro do alcance
+            if (!_isOnCooldown && distance <= attackRange)
+            {
                 StartAttackSequence();
             }
         }
@@ -111,6 +145,20 @@ namespace Enemy
             
             // 4. Inicia a contagem do cooldown
             StartCoroutine(CooldownCoroutine());
+        }
+
+        private void HandlePlayerDied()
+        {
+            // Interrompe qualquer lógica de ataque e pausa o Animator enquanto o jogador está morto
+            StopAllCoroutines();
+            _isOnCooldown = false;
+            if (_animator != null) _animator.speed = 0f;
+        }
+
+        private void HandlePlayerRespawn()
+        {
+            // Restaura velocidade do Animator após respawn
+            if (_animator != null) _animator.speed = 1f;
         }
 
         /// <summary>

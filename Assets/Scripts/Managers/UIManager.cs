@@ -57,10 +57,6 @@ namespace Managers {
             if (player != null) {
                 _playerTornadoAttack = player.GetComponent<TornadoAttack>();
             }
-            // Subscribe to events from the GameManager
-            GameManager.Instance.OnCoinsUpdated += UpdateCoinText;
-            GameManager.Instance.OnLivesUpdated += UpdateLivesText;
-            GameManager.Instance.OnEnemiesDefeatedUpdated += UpdateEnemiesDefeatedText;
 
             // Ensure the initial state of the UI is correct
             pauseMenuPanel.SetActive(false);
@@ -71,11 +67,74 @@ namespace Managers {
             //ShowPanel(livesPanel);
         }
 
+        private void OnEnable()
+        {
+            // Assina eventos do GameManager e inicializa HUD com estado atual
+            var gm = GameManager.Instance;
+            if (gm != null)
+            {
+                gm.OnCoinsUpdated += UpdateCoinText;
+                gm.OnLivesUpdated += UpdateLivesText;
+                gm.OnEnemiesDefeatedUpdated += UpdateEnemiesDefeatedText;
+
+                // Inicializa HUD com os valores atuais
+                UpdateCoinText(gm.CollectedCoins);
+                UpdateLivesText(gm.Lives);
+                UpdateEnemiesDefeatedText(gm.EnemiesDefeated);
+            }
+            else
+            {
+                // Em alguns ciclos de vida, o GameManager pode não estar pronto aqui.
+                // Aguarda até existir e então assina e sincroniza.
+                if (_waitGmCoroutine != null) StopCoroutine(_waitGmCoroutine);
+                _waitGmCoroutine = StartCoroutine(WaitForGameManagerAndInitialize());
+            }
+        }
+
+        private void OnDisable()
+        {
+            var gm = GameManager.Instance;
+            if (gm != null)
+            {
+                gm.OnCoinsUpdated -= UpdateCoinText;
+                gm.OnLivesUpdated -= UpdateLivesText;
+                gm.OnEnemiesDefeatedUpdated -= UpdateEnemiesDefeatedText;
+            }
+
+            if (_waitGmCoroutine != null)
+            {
+                try { StopCoroutine(_waitGmCoroutine); } catch { }
+                _waitGmCoroutine = null;
+            }
+        }
+
         private void Update() {
             // Continuously update the tornado cooldown UI
             if (_playerTornadoAttack) {
                 tornadoCooldownImage.fillAmount = _playerTornadoAttack.GetCooldownProgress();
             }
+        }
+
+        private Coroutine _waitGmCoroutine;
+        private IEnumerator WaitForGameManagerAndInitialize()
+        {
+            // Espera até que o singleton do GameManager esteja disponível
+            while (GameManager.Instance == null)
+            {
+                yield return null; // próximo frame
+            }
+
+            var gm = GameManager.Instance;
+            gm.OnCoinsUpdated += UpdateCoinText;
+            gm.OnLivesUpdated += UpdateLivesText;
+            gm.OnEnemiesDefeatedUpdated += UpdateEnemiesDefeatedText;
+
+            // Sincroniza HUD com os valores atuais
+            UpdateCoinText(gm.CollectedCoins);
+            UpdateLivesText(gm.Lives);
+            UpdateEnemiesDefeatedText(gm.EnemiesDefeated);
+
+            _waitGmCoroutine = null;
         }
 
         /// <summary>
@@ -168,13 +227,6 @@ namespace Managers {
         }
         
         private void OnDestroy() {
-            // Unsubscribe from events to prevent memory leaks
-            if (GameManager.Instance == null)
-                return;
-            GameManager.Instance.OnCoinsUpdated -= UpdateCoinText;
-            GameManager.Instance.OnLivesUpdated -= UpdateLivesText;
-            GameManager.Instance.OnEnemiesDefeatedUpdated -= UpdateEnemiesDefeatedText;
-
             // Failsafe: ao destruir a UI, garante que qualquer rumble ativo seja interrompido
             RumbleManager.Instance?.StopAllRumble();
         }

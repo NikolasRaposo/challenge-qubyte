@@ -64,6 +64,11 @@ namespace Player {
         public void Die() {
             if (_isDead) return;
             _isDead = true;
+            Debug.Log($"[PlayerHealth] Player died at {transform.position}");
+            // Notifica sistemas globais que o jogador morreu (inimigos podem pausar ataques)
+            if (GameManager.Instance) {
+                GameManager.Instance.NotifyPlayerDied();
+            }
             RumbleManager.Instance?.PlayPlayerDeathRumble();
             var vfxController = GetComponent<Player.ECMSaciVfxController>();
             if (vfxController != null) {
