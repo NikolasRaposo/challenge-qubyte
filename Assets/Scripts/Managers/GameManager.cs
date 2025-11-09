@@ -40,6 +40,8 @@ namespace Managers {
         private bool _isPaused;
         private int _collectedCoins;
         private int _enemiesDefeated;
+        private bool _isInStartMenu; // bloqueia pausa enquanto menu inicial ativo
+        private bool _pauseDisabled = true; // desabilita completamente o pause
 
         // The Awake method is called before any Start methods.
         private void Awake() {
@@ -62,15 +64,28 @@ namespace Managers {
             if (bossContextController != null) {
                 bossContextController.OnBossDefeated += HandleBossContextDefeated;
             }
-            InputManager.Instance.OnPause += TogglePause;
+            // Se o pause estiver habilitado, assina evento; caso contrário, ignora
+            if (!_pauseDisabled)
+                InputManager.Instance.OnPause += TogglePause;
             
             OnCoinsUpdated?.Invoke(_collectedCoins);
             OnLivesUpdated?.Invoke(playerLives);
             OnEnemiesDefeatedUpdated?.Invoke(_enemiesDefeated);
         }
+        public void SetStartMenuActive(bool active) {
+            _isInStartMenu = active;
+        }
         public void TogglePause() {
+            // Pause desabilitado: garante que menu permaneça oculto e retorna
+            if (_pauseDisabled)
+            {
+                _isPaused = false;
+                UIManager.Instance?.TogglePauseMenu(false);
+                return;
+            }
+            // Ignora pause quando estamos no menu inicial
+            if (_isInStartMenu) return;
             _isPaused = !_isPaused;
-            Time.timeScale = _isPaused ? 0f : 1f;
             UIManager.Instance.TogglePauseMenu(_isPaused);
             if (_isPaused) {
                 InputManager.Instance.SetUiContext();
@@ -112,7 +127,7 @@ namespace Managers {
         public int Lives => playerLives;
         public int EnemiesDefeated => _enemiesDefeated;
         private void OnDestroy() {
-            if (InputManager.Instance != null) {
+            if (InputManager.Instance != null && !_pauseDisabled) {
                 InputManager.Instance.OnPause -= TogglePause;
             }
             if (bossContextController != null) {
@@ -232,6 +247,22 @@ namespace Managers {
         }
         private void HandleBossContextDefeated() {
             CompleteLevel();
+        }
+
+        // --- API pública para sinais da timeline/cinemática ---
+        /// <summary>
+        /// Reativa gameplay e exibe a HUD ao finalizar a cinemática.
+        /// Método sem parâmetros para ser chamado por SignalReceiver na timeline.
+        /// </summary>
+        public void ActivateHUDFromCinematicEnd()
+        {
+            // Garante jogo rodando e input do jogador
+            Time.timeScale = 1f;
+            _isPaused = false;
+            InputManager.Instance?.SetPlayerContext();
+
+            // Exibe HUD com valores atuais
+            UIManager.Instance?.ShowHUDImmediate();
         }
     }
 }

@@ -22,18 +22,18 @@ namespace UI.HUD
 
         // Removemos cache de vértices originais para evitar travar o texto ao mudar conteúdo
 
+        // Controla se as animações devem rodar (ativadas pela HUD pós-cinemática)
+        private bool _hudAnimationsEnabled = false;
+
         void Start()
         {
-            var iconStartPos = coinIcon.rectTransform.anchoredPosition;
-            coinIcon.rectTransform
-                .DOAnchorPosY(iconStartPos.y + iconFloatAmplitude, iconFloatDuration)
-                .SetLoops(-1, LoopType.Yoyo)
-                .SetEase(Ease.InOutSine);
+            // Não inicia animações automaticamente; aguarda ativação explícita via UIManager
         }
 
         void Update()
         {
-            AnimateTextFloat();
+            if (_hudAnimationsEnabled)
+                AnimateTextFloat();
         }
 
         // Não armazenamos vértices; usamos a malha atual após ForceMeshUpdate
@@ -72,6 +72,24 @@ namespace UI.HUD
             {
                 textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
                 coinText.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
+            }
+        }
+
+        // Chamada pelo UIManager ao ativar a HUD pós-cinemática
+        public void EnableHudAnimations()
+        {
+            if (_hudAnimationsEnabled) return;
+            _hudAnimationsEnabled = true;
+
+            // Inicia flutuação idle do ícone
+            if (coinIcon != null)
+            {
+                var iconStartPos = coinIcon.rectTransform.anchoredPosition;
+                coinIcon.rectTransform.DOKill();
+                coinIcon.rectTransform
+                    .DOAnchorPosY(iconStartPos.y + iconFloatAmplitude, iconFloatDuration)
+                    .SetLoops(-1, LoopType.Yoyo)
+                    .SetEase(Ease.InOutSine);
             }
         }
     }

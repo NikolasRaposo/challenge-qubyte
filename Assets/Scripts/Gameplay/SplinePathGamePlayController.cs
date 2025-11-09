@@ -135,4 +135,31 @@ public class SplinePathGamePlayController : MonoBehaviour
         _currentSaci = null;
         _originalParent = null;
     }
+
+    // Força a saída imediata do modo spline e destaca o Saci do holder,
+    // liberando controle de posição antes de qualquer outra lógica externa (ex.: teleporte).
+    // Retorna true se um detach foi realizado.
+    public bool TryForceDetachSaci(ECMSaciController saci)
+    {
+        if (!_isInSplineMode || saci == null || _currentSaci != saci)
+            return false;
+
+        // Pausa a animação da spline para evitar movimentos adicionais
+        if (splineAnimate != null)
+            splineAnimate.Pause();
+
+        // Restaura hierarquia (se _originalParent for null, vai para a raiz)
+        saci.transform.SetParent(_originalParent, true);
+
+        // Retoma movimento normal do ECM
+        saci.ExitSplinePathMode();
+
+        // Limpa estado local do controller para não mais ajustar a posição do Saci no Update
+        _isInSplineMode = false;
+        _currentSaci = null;
+        _originalParent = null;
+
+        Debug.Log("[SplinePath] ForceDetach acionado para Saci.", this);
+        return true;
+    }
 }

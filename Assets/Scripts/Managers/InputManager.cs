@@ -18,6 +18,7 @@ namespace Managers {
         public bool Jump { get; private set; }
         public bool Sprint { get; private set; }
         public event Action OnTornado, OnPause, OnProjetarTornado;
+        public event Action OnUiSubmit; // disparado ao apertar Enter/A no contexto de UI
         private float _pauseInputLockUntil; // bloqueia pause por curto período após iniciar/trocar contexto
 
         private void Awake() {
@@ -50,15 +51,20 @@ namespace Managers {
         // --- LÓGICA DE MUDANÇA DE CONTEXTO ---
         private void SetContext(InputContext context) {
             ClearAllBindings();
-            _controls.Disable();
+            // Em vez de desabilitar o asset inteiro (o que pode quebrar o InputSystemUIInputModule),
+            // habilitamos/desabilitamos apenas os mapas relevantes.
             switch (context) {
                 case InputContext.Player:
+                    _controls.UI.Disable();
+                    _controls.Player.Enable();
                     SetPlayerEvents();
                     LockCursor();
                     // Debounce curto ao alternar contexto para evitar pause acidental
                     _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
                 case InputContext.UI:
+                    _controls.Player.Disable();
+                    _controls.UI.Enable();
                     SeUIEvents();
                     UnlockCursor();
                     // Failsafe: ao entrar no contexto de UI, interrompe vibração
@@ -66,7 +72,9 @@ namespace Managers {
                     _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
                 case InputContext.BlockInput:
-                    // Não faz bind de nada e libera o cursor
+                    // Desabilita ambos os mapas e libera o cursor
+                    _controls.Player.Disable();
+                    _controls.UI.Disable();
                     UnlockCursor();
                     // Failsafe: ao bloquear input, interrompe vibração
                     RumbleManager.Instance?.StopAllRumble();
@@ -95,10 +103,8 @@ namespace Managers {
 
         private void SeUIEvents() {
             _controls.UI.Enable();
-            _controls.UI.Pause.performed += PauseOnPerformed;
-            // Garante que o botão de pause do gamepad funcione também no contexto de UI
-            _controls.Player.Pause.Enable();
-            _controls.Player.Pause.performed += PauseOnPerformed;
+            // Removido bind de Pause no contexto de UI para evitar toggles acidentais
+            _controls.UI.Submit.performed += UiSubmitOnPerformed;
         }
 
         // --- Handlers de Input (Atualizam os valores) ---
@@ -119,6 +125,9 @@ namespace Managers {
             OnPause?.Invoke();
             // Debounce curto para evitar dupla invocação no mesmo frame
             _pauseInputLockUntil = Time.unscaledTime + 0.1f;
+        }
+        private void UiSubmitOnPerformed(InputAction.CallbackContext obj) {
+            OnUiSubmit?.Invoke();
         }
 
         // --- MÉTODO DE "CONSUMO" DE INPUT ---
@@ -146,6 +155,7 @@ namespace Managers {
         
         private void ClearUiBindings() {
            _controls.UI.Pause.performed -= PauseOnPerformed;
+           _controls.UI.Submit.performed -= UiSubmitOnPerformed;
         }
         
         // --- Gerenciamento do Cursor ---

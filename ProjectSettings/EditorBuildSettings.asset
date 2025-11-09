@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Develop/Gabriel/Old/WorkflowNikolasCopy.unity
-    guid: 0a441cd36cb020244934e6ed51ea3824
+    path: Assets/Scenes/Develop/Gabriel/BuildScene_V2_BancaScene 2.unity
+    guid: 42ff6f584cff6bf46afc422282cf8d4f
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 9e7be553448fa2546aea5752021cbcf7,
       type: 2}

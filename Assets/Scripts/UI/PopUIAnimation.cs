@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using TMPro;
+using Managers;
 
 public class PopUIAnimation : MonoBehaviour
 {
@@ -31,6 +32,10 @@ public class PopUIAnimation : MonoBehaviour
     /// </summary>
     public void PlayPop()
     {
+        // Só permite animação quando HUD foi explicitamente ativada
+        if (UIManager.Instance != null && !UIManager.Instance.HudAnimationsEnabled)
+            return;
+
         // Cancela qualquer animação atual
         icon.rectTransform.DOKill();
         text.rectTransform.DOKill();

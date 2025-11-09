@@ -37,6 +37,10 @@ namespace Managers {
         [SerializeField] private float hudVisibleTime = 6f;
         [SerializeField] private PopUIAnimation  coinsPopAnimation;
         [SerializeField] private PopUIAnimation  livesPopAnimation;
+        [Header("HUD Behavior")]
+        [SerializeField] private bool hudAutoHideEnabled = false; // impede auto-hide até ativação explícita
+        public bool HudAnimationsEnabled { get; private set; } = false; // animações só após ativação
+        [SerializeField] private CoinUIAnimation coinIdleAnimation; // opcional, controla flutuação idle do ícone
         
         private TornadoAttack _playerTornadoAttack;
         private Coroutine _coinsCoroutine;
@@ -143,9 +147,11 @@ namespace Managers {
         private void UpdateCoinText(int newCoinAmount) {
             coinsText.text = $"{newCoinAmount}";
             pauseCoinsText.text = $"{newCoinAmount}";
-            ShowPanel(coinsPanel);
+            // Só usa auto-hide quando explicitamente habilitado
+            if (hudAutoHideEnabled) ShowPanel(coinsPanel);
+            else coinsPanel.SetActive(true);
 
-            if (coinsPopAnimation != null)
+            if (HudAnimationsEnabled && coinsPopAnimation != null)
                 coinsPopAnimation.PlayPop();
         }
     
@@ -154,9 +160,11 @@ namespace Managers {
         /// </summary>
         private void UpdateLivesText(int newLivesAmount) {
             livesText.text = $"{newLivesAmount}";
-            ShowPanel(livesPanel);
+            // Só usa auto-hide quando explicitamente habilitado
+            if (hudAutoHideEnabled) ShowPanel(livesPanel);
+            else livesPanel.SetActive(true);
             
-            if (livesPopAnimation != null)
+            if (HudAnimationsEnabled && livesPopAnimation != null)
                 livesPopAnimation.PlayPop();
         }
         private void ShowPanel(GameObject panel) {
@@ -183,6 +191,13 @@ namespace Managers {
         }
 
         public void TogglePauseMenu(bool isPaused) {
+            // Garante que toda a cadeia de pais e CanvasGroups estejam visíveis para o Pause Menu
+            if (isPaused)
+            {
+                EnsureParentsActive(pauseMenuPanel);
+                EnsureCanvasGroupsVisible(pauseMenuPanel);
+            }
+
             pauseMenuPanel.SetActive(isPaused);
             coinsPanel.SetActive(!isPaused);
             livesPanel.SetActive(!isPaused);
@@ -196,6 +211,10 @@ namespace Managers {
         /// Shows the Game Over screen.
         /// </summary>
         public void ShowGameOverScreen() {
+            // Garante que pais e CanvasGroups do Game Over estejam visíveis
+            EnsureParentsActive(gameOverPanel);
+            EnsureCanvasGroupsVisible(gameOverPanel);
+
             coinsPanel.SetActive(false);
             livesPanel.SetActive(false);
             gameOverPanel.SetActive(true);
@@ -207,6 +226,10 @@ namespace Managers {
         /// </summary>
         /// <param name="countdownDuration">How long the countdown should last.</param>
         public IEnumerator StartRespawnCountdown(float countdownDuration) {
+            // Garante que pais e CanvasGroups do painel de respawn estejam visíveis
+            EnsureParentsActive(respawnPanel);
+            EnsureCanvasGroupsVisible(respawnPanel);
+
             coinsPanel.SetActive(false);
             livesPanel.SetActive(false);
             respawnPanel.SetActive(true);
@@ -229,6 +252,101 @@ namespace Managers {
         private void OnDestroy() {
             // Failsafe: ao destruir a UI, garante que qualquer rumble ativo seja interrompido
             RumbleManager.Instance?.StopAllRumble();
+        }
+
+        // --- API pública para cinemática / sinais ---
+        /// <summary>
+        /// Exibe imediatamente a HUD de moedas e vidas, sincronizando com os valores atuais.
+        /// Não inicia corrotinas de ocultação; mantém visível até ser trocada por outro fluxo.
+        /// </summary>
+        public void ShowHUDImmediate()
+        {
+            var gm = GameManager.Instance;
+            if (gm != null)
+            {
+                // Sincroniza textos com estado atual
+                coinsText.text = $"{gm.CollectedCoins}";
+                livesText.text = $"{gm.Lives}";
+            }
+
+            // Garante que toda a cadeia de pais esteja ativa (CanvasHUD -> PanelHUD -> Panels)
+            EnsureParentsActive(coinsPanel);
+            EnsureParentsActive(livesPanel);
+            // Garante CanvasGroups visíveis nos pais e nos próprios painéis
+            EnsureCanvasGroupsVisible(coinsPanel);
+            EnsureCanvasGroupsVisible(livesPanel);
+
+            // Mostra painéis sem acionar temporizadores de ocultação
+            coinsPanel.SetActive(true);
+            livesPanel.SetActive(true);
+
+            // Ativa animações da HUD e desabilita auto-hide
+            HudAnimationsEnabled = true;
+            hudAutoHideEnabled = false;
+            // Inicia flutuação idle apenas após ativação explícita
+            coinIdleAnimation?.EnableHudAnimations();
+
+            // Opcional: pequeno pop para feedback visual
+            if (HudAnimationsEnabled && coinsPopAnimation != null) coinsPopAnimation.PlayPop();
+            if (HudAnimationsEnabled && livesPopAnimation != null) livesPopAnimation.PlayPop();
+        }
+
+        /// <summary>
+        /// Controla visibilidade bruta da HUD (coins/lives) sem efeitos ou temporizadores.
+        /// </summary>
+        public void SetHUDVisible(bool visible)
+        {
+            coinsPanel.SetActive(visible);
+            livesPanel.SetActive(visible);
+        }
+        /// <summary>
+        /// Controla se os painéis coins/lives devem se auto-ocultar ao aparecer.
+        /// </summary>
+        public void SetHudAutoHide(bool enabled)
+        {
+            hudAutoHideEnabled = enabled;
+        }
+
+        // Ativa recursivamente a cadeia de pais para garantir que o painel possa ser exibido
+        private void EnsureParentsActive(GameObject leaf)
+        {
+            if (leaf == null) return;
+            var t = leaf.transform.parent;
+            // Sobe até a raiz, ativando cada pai que estiver desativado
+            while (t != null)
+            {
+                if (!t.gameObject.activeSelf)
+                    t.gameObject.SetActive(true);
+                t = t.parent;
+            }
+        }
+
+        // Assegura que quaisquer CanvasGroup na cadeia (inclusive no leaf) estejam visíveis/interagíveis
+        private void EnsureCanvasGroupsVisible(GameObject leaf)
+        {
+            if (leaf == null) return;
+            // Primeiro garante o próprio leaf
+            var cgSelf = leaf.GetComponent<CanvasGroup>();
+            if (cgSelf != null)
+            {
+                cgSelf.alpha = 1f;
+                cgSelf.interactable = true;
+                cgSelf.blocksRaycasts = true;
+            }
+
+            // Depois percorre pais
+            var t = leaf.transform.parent;
+            while (t != null)
+            {
+                var cg = t.GetComponent<CanvasGroup>();
+                if (cg != null)
+                {
+                    cg.alpha = 1f;
+                    cg.interactable = true;
+                    cg.blocksRaycasts = true;
+                }
+                t = t.parent;
+            }
         }
     }
 }

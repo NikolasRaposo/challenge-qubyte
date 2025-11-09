@@ -101,30 +101,30 @@ public class ECMSimpleTeleporte : MonoBehaviour
 
     private IEnumerator TeleportFlow(GameObject playerObject, ECMSaciController saci)
     {
-        // Opcionalmente esperar o fim do frame para permitir que outros handlers processem (ex.: EndTrigger)
-        if (deferTeleportToEndOfFrame)
+        // Antes de qualquer coisa: se estiver sob controle da spline, force detach
+        // para impedir que o controller ajuste a posição a cada frame.
+        if (saci != null)
         {
-            if (verboseLogs)
-                Debug.Log("[ECMSimpleTeleporte] Deferindo para fim do frame antes de teleportar.", this);
-            yield return new WaitForEndOfFrame();
-        }
-
-        // Se estiver em modo spline / ECM pausado, aguardar breve janela até sair
-        if (waitUntilECMUnpaused && saci != null)
-        {
-            float deadline = Time.time + Mathf.Max(0f, maxWaitUnpauseSeconds);
-            // 'pause' é usado pelo controlador durante o modo spline
-            bool initialPause = saci.pause;
-            float waitStart = Time.time;
-            while (saci.pause && Time.time < deadline)
-                yield return null; // aguarda próximo frame
-            if (verboseLogs)
+            var splineController = saci.transform.GetComponentInParent<SplinePathGamePlayController>();
+            if (splineController != null)
             {
-                float waited = Time.time - waitStart;
-                Debug.Log($"[ECMSimpleTeleporte] Espera por ECM sair de pausa: inicial={initialPause}, final={saci.pause}, aguardado={waited:F3}s (limite={maxWaitUnpauseSeconds:F2}s)", this);
+                bool detached = splineController.TryForceDetachSaci(saci);
+                if (verboseLogs && detached)
+                    Debug.Log("[ECMSimpleTeleporte] ForceDetach do Saci realizado antes do teleporte.", this);
+            }
+            else
+            {
+                // Fallback: se não houver controller na hierarquia, apenas desparenteia
+                if (saci.transform.parent != null)
+                    saci.transform.SetParent(null, true);
+
+                // Garante que o ECM não tente restaurar velocidade antiga ao retomar
+                saci.restoreVelocityOnResume = false;
+                saci.pause = false;
             }
         }
 
+        // Garanta teleporte prioritário (ponto crítico) — acontece imediatamente
         bool teleported = TeleportPlayer(playerObject, saci);
 
         if (!teleported)
@@ -134,6 +134,24 @@ public class ECMSimpleTeleporte : MonoBehaviour
             yield break;
         }
 
+        // Opcionalmente sincronizar no fim do frame e reafirmar posição
+        if (deferTeleportToEndOfFrame)
+        {
+            if (verboseLogs)
+                Debug.Log("[ECMSimpleTeleporte] Deferindo verificação para fim do frame após teleporte.", this);
+            yield return new WaitForEndOfFrame();
+            // Reafirma posição/rotação (caso algum sistema tenha interferido)
+            if (destination != null)
+            {
+                if (saci != null)
+                    saci.transform.SetPositionAndRotation(destination.position, destination.rotation);
+                else
+                    playerObject.transform.SetPositionAndRotation(destination.position, destination.rotation);
+            }
+        }
+
+        // Após teleporte, pode realizar ajustes de retorno ao gameplay normal
+        // (segurar, despausar, etc.)
         // Se solicitado, manter o jogador travado por holdDuration e liberar ao final (apenas se teleporte ocorreu)
         if (holdAfterTeleport && saci != null && teleported)
         {
@@ -193,7 +211,14 @@ public class ECMSimpleTeleporte : MonoBehaviour
 
         Vector3 fromPos = playerObject.transform.position;
 
-        // Compatibilidade ECM: reset de velocidade e grounding para evitar conflitos
+        // Reposiciona instantaneamente (usa SetPositionAndRotation para minimizar side-effects)
+        if (applyDestinationRotation)
+            playerObject.transform.SetPositionAndRotation(destination.position, destination.rotation);
+        else
+            playerObject.transform.position = destination.position;
+
+        // Compatibilidade ECM: aplicar resets DEPOIS do teleporte para garantir que a movimentação
+        // não bloqueie ou atrase a mudança de posição.
         if (saci != null && saci.movement != null)
         {
             if (resetVelocity)
@@ -218,12 +243,6 @@ public class ECMSimpleTeleporte : MonoBehaviour
             if (disableGroundingAfterTeleport)
                 saci.movement.DisableGrounding();
         }
-
-        // Reposiciona instantaneamente (usa SetPositionAndRotation para minimizar side-effects)
-        if (applyDestinationRotation)
-            playerObject.transform.SetPositionAndRotation(destination.position, destination.rotation);
-        else
-            playerObject.transform.position = destination.position;
 
         Debug.Log($"[ECMSimpleTeleporte] Teleportando '{playerObject.name}' de {fromPos} para {destination.position}", this);
 
