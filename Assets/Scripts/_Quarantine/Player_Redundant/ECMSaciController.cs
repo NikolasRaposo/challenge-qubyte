@@ -255,8 +255,12 @@ namespace Player
                 return;
             }
 
-            // Direção de movimento a partir do StarterAssetsInputs (relativa à câmera se disponível)
-            Vector2 move = inputs != null ? inputs.move : Vector2.zero;
+            // Direção de movimento a partir do InputManager (fallback para StarterAssetsInputs se necessário)
+            Vector2 move;
+            if (Managers.InputManager.Instance != null)
+                move = Managers.InputManager.Instance.Move;
+            else
+                move = inputs != null ? inputs.move : Vector2.zero;
             Vector3 worldDir;
             if (playerCamera != null)
             {
@@ -289,11 +293,21 @@ namespace Player
             }
             else
             {
-                bool rawJump = inputs != null && inputs.jump;
+                // Lê o pulo de forma unificada: prioriza InputManager e mantém fallback para StarterAssetsInputs
+                bool rawJump = false;
+                if (Managers.InputManager.Instance != null)
+                    rawJump = Managers.InputManager.Instance.Jump;
+                else if (inputs != null)
+                    rawJump = inputs.jump;
+
                 if (rawJump)
                 {
                     _jumpInputBufferTimer = _jumpInputBufferTime;
-                    if (inputs != null) inputs.jump = false; // consome o pulo do StarterAssetsInputs
+                    // Consome o pulo na fonte correspondente
+                    if (Managers.InputManager.Instance != null)
+                        Managers.InputManager.Instance.ConsumeJumpInput();
+                    if (inputs != null)
+                        inputs.jump = false;
                 }
                 jump = _jumpInputBufferTimer > 0f;
                 if (_jumpInputBufferTimer > 0f)
