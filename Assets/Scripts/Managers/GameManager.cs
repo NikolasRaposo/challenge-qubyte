@@ -88,11 +88,11 @@ namespace Managers {
             _isPaused = !_isPaused;
             UIManager.Instance.TogglePauseMenu(_isPaused);
             if (_isPaused) {
-                InputManager.Instance.SetUiContext();
+                InputContextCoordinator.Instance.SetUiContext(true);
                 // Failsafe: garante que qualquer vibração seja interrompida ao pausar
                 RumbleManager.Instance?.StopAllRumble();
             } else {
-                InputManager.Instance.SetPlayerContext();
+                InputContextCoordinator.Instance.SetPlayerContext();
             }
         }
         public void NotifyPlayerDied()
@@ -167,7 +167,7 @@ namespace Managers {
         /// </summary>
         private IEnumerator RespawnSequence() {
             // Block player input while the countdown is running.
-            InputManager.Instance.SetBlockInputContext();
+            InputContextCoordinator.Instance.SetBlockInputContext();
             // Failsafe: interrompe qualquer vibração antes do countdown de respawn
             RumbleManager.Instance?.StopAllRumble();
             // Tell the UIManager to show the countdown and wait for it to finish.
@@ -181,7 +181,7 @@ namespace Managers {
             // Reset player's state (re-enable model, controls, etc.)
             _playerHealth.PrepareForRespawn();
             // Give control back to the player.
-            InputManager.Instance.SetPlayerContext();
+            InputContextCoordinator.Instance.SetPlayerContext();
             OnPlayerRespawn?.Invoke();
         }
         /// <summary>
@@ -209,7 +209,7 @@ namespace Managers {
             }
             // Freeze the game
             Time.timeScale = 0f;
-            InputManager.Instance.SetUiContext();
+            InputContextCoordinator.Instance.SetUiContext(true);
         }
         public void RestartLevel() {
             // Reloads the currently active scene.
@@ -226,7 +226,7 @@ namespace Managers {
             // Pausa o jogo
             Time.timeScale = 0f;
             
-            InputManager.Instance.SetUiContext();
+            InputContextCoordinator.Instance.SetUiContext(false);
 
             // Mostra a UI de menu
             var startMenu = FindObjectOfType<StartMenuControlAnim>(true);
@@ -259,7 +259,7 @@ namespace Managers {
             // Garante jogo rodando e input do jogador
             Time.timeScale = 1f;
             _isPaused = false;
-            InputManager.Instance?.SetPlayerContext();
+            InputContextCoordinator.Instance?.SetPlayerContext();
 
             // Exibe HUD com valores atuais
             UIManager.Instance?.ShowHUDImmediate();

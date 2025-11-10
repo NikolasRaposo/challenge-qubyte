@@ -1,11 +1,14 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Playables;
 
 public class StartMenuControlAnim : MonoBehaviour
 {
     [Header("Cinematic")]
     [SerializeField] private GameObject cinematicObject; // ativada após loading
+    [Tooltip("PlayableDirector responsável por tocar a timeline da cinemática, se aplicável")]
+    [SerializeField] private PlayableDirector cinematicDirector;
     [SerializeField] private bool blockInputAtStart = true; // bloqueia input ao iniciar
     [Header("HUD References")]
     [SerializeField] private GameObject canvasUI;
@@ -35,8 +38,8 @@ public class StartMenuControlAnim : MonoBehaviour
         
         if (blockInputAtStart)
         {
-            // Mantém o jogador imóvel, mas deixa a UI clicável
-            Managers.InputManager.Instance?.SetUiContext();
+            // Mantém o jogador imóvel e BLOQUEIA interações de UI até AnimationEnd
+            Managers.InputContextCoordinator.Instance?.SetUiContext(false);
         }
 
         // Mantém o player suspenso no ar: kinematic e controlador desativado
@@ -63,11 +66,8 @@ public class StartMenuControlAnim : MonoBehaviour
     private void OnEnable()
     {
         Managers.GameManager.Instance?.SetStartMenuActive(true);
-        var im = Managers.InputManager.Instance;
-        if (im != null)
-        {
-            im.OnUiSubmit += TriggerStartFromInput;
-        }
+        // Não assina automaticamente o OnUiSubmit aqui.
+        // O avanço provisório deve ser habilitado explicitamente via animação (EnableProvisionalAdvance).
     }
 
     private void OnDisable()
@@ -82,14 +82,41 @@ public class StartMenuControlAnim : MonoBehaviour
 
     // --- M�todos para o Animator 'LogoGroup' ---
 
+    // --- Controles Públicos de Contexto (para Animation Events / Botões) ---
+    // Use estes métodos diretamente em eventos de animação ou OnClick de botões.
+    public void EnterUiContextWithFocus()
+    {
+        Managers.InputContextCoordinator.Instance?.SetUiContext(true, defaultUiButton);
+    }
+
+    public void EnableUiInteractionsWithFocus()
+    {
+        Managers.InputContextCoordinator.Instance?.EnableUiInteractions(defaultUiButton);
+    }
+
+    public void DisableUiInteractionsPublic()
+    {
+        Managers.InputContextCoordinator.Instance?.DisableUiInteractions();
+    }
+
+    public void EnterPlayerContextPublic()
+    {
+        Managers.InputContextCoordinator.Instance?.SetPlayerContext();
+    }
+
+    public void EnterBlockInputContextPublic()
+    {
+        Managers.InputContextCoordinator.Instance?.SetBlockInputContext();
+    }
+
     public void AtivarMainMenuStart()
     {
         if (logoGroupAnimator != null)
         {
             logoGroupAnimator.SetTrigger("MainMenuStart");
 
-            // Garante que a UI esteja em foco e o cursor visível
-            Managers.InputManager.Instance?.SetUiContext();
+            // Garante contexto de UI mas mantém interações desabilitadas por enquanto
+            Managers.InputContextCoordinator.Instance?.SetUiContext(false);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -167,6 +194,7 @@ public class StartMenuControlAnim : MonoBehaviour
     {
         if (uiPanelsAnimator != null)
         {
+            Debug.Log("[StartMenuControlAnim] BotaoDeStartPressionado() invocado");
             uiPanelsAnimator.SetTrigger("StartButtonPressed");
         }
         else
@@ -175,13 +203,51 @@ public class StartMenuControlAnim : MonoBehaviour
         }
     }
 
-    private void TriggerStartFromInput()
+    // Método único para o Button OnClick: garante ordem e evita perda de chamadas
+    public void OnStartButtonClicked()
     {
-        if (_startSequenceTriggered) return;
+        // Evita duplo disparo se já tiver sido iniciado por Submit
+        if (_startSequenceTriggered)
+        {
+            Debug.Log("[StartMenuControlAnim] OnStartButtonClicked() ignorado – sequência já iniciada");
+            return;
+        }
+        Debug.Log("[StartMenuControlAnim] OnStartButtonClicked() invocado");
         _startSequenceTriggered = true;
-        // Emula clique no botão Start
+        // Executa animação do botão e inicia loading
         BotaoDeStartPressionado();
         AtivarLoadingScreen();
+    }
+
+    // --- Habilitação explícita do avanço provisório via Submit ---
+    // Chame estes métodos a partir de AnimationEnd (após os botões aparecerem)
+    public void EnableProvisionalAdvance()
+    {
+        var im = Managers.InputManager.Instance;
+        if (im != null)
+        {
+            // Habilita interações da UI e assina uma única vez
+            Managers.InputContextCoordinator.Instance?.EnableUiInteractions(defaultUiButton);
+            im.OnUiSubmit -= TriggerStartFromInput;
+            im.OnUiSubmit += TriggerStartFromInput;
+        }
+    }
+
+    public void DisableProvisionalAdvance()
+    {
+        var im = Managers.InputManager.Instance;
+        if (im != null)
+        {
+            im.OnUiSubmit -= TriggerStartFromInput;
+        }
+    }
+
+    private void TriggerStartFromInput()
+    {
+        // Ao receber o Submit, desabilita imediatamente novas assinaturas provisórias
+        DisableProvisionalAdvance();
+        Debug.Log("[StartMenuControlAnim] TriggerStartFromInput() invocado");
+        OnStartButtonClicked();
     }
     
     // --- M�todos para o Animator 'Loading' ---
@@ -190,8 +256,20 @@ public class StartMenuControlAnim : MonoBehaviour
     {
         if (LoadingAnimator != null)
         {
+            Debug.Log("[StartMenuControlAnim] AtivarLoadingScreen() invocado");
             // A partir do clique em Start, bloqueia todo input de gameplay e UI
-            Managers.InputManager.Instance?.SetBlockInputContext();
+            Managers.InputContextCoordinator.Instance?.SetBlockInputContext();
+            Managers.InputContextCoordinator.Instance?.DisableUiInteractions();
+            // Garante que toda a cadeia de pais do objeto de Loading esteja ativa
+            EnsureParentsActive(LoadingAnimator.gameObject);
+            // Garante que o componente Animator esteja habilitado
+            if (!LoadingAnimator.enabled)
+                LoadingAnimator.enabled = true;
+            // Valida existência do parâmetro Trigger "StartLoading"
+            if (!HasAnimatorTrigger(LoadingAnimator, "StartLoading"))
+            {
+                Debug.LogError("[StartMenuControlAnim] Parâmetro Trigger 'StartLoading' não encontrado no LoadingAnimator. Verifique o Animator Controller.");
+            }
             LoadingAnimator.SetTrigger("StartLoading");
             // O término do loading deve chamar OnLoadingFinished via AnimationEndHandler
         }
@@ -225,18 +303,48 @@ public class StartMenuControlAnim : MonoBehaviour
     // Conecte o AnimationEndHandler do estado final do Loading para chamar este método
     public void OnLoadingFinished()
     {
+        Debug.Log("[StartMenuControlAnim] OnLoadingFinished() invocado");
         // Após o loading, ativa a cinematica e mantém input bloqueado
         if (cinematicObject != null)
+        {
+            // Garante que toda a cadeia de pais da cinematica esteja ativa
+            EnsureParentsActive(cinematicObject);
+            var before = cinematicObject.activeSelf;
             cinematicObject.SetActive(true);
+            Debug.Log($"[StartMenuControlAnim] Cinemática '{cinematicObject.name}' ativa: {before} -> {cinematicObject.activeSelf}");
+
+            // Se houver PlayableDirector configurado, dispara a timeline da cinemática
+            if (cinematicDirector == null)
+                cinematicDirector = cinematicObject.GetComponent<PlayableDirector>();
+            if (cinematicDirector != null)
+            {
+                if (!cinematicDirector.enabled) cinematicDirector.enabled = true;
+                cinematicDirector.time = 0;
+                cinematicDirector.Play();
+                Debug.Log("[StartMenuControlAnim] PlayableDirector.Play() disparado para a cinemática");
+            }
+            else
+            {
+                Debug.Log("[StartMenuControlAnim] Nenhum PlayableDirector encontrado/atribuído na cinemática — apenas ativado.");
+            }
+        }
         else
-            Debug.LogWarning("Nenhuma 'cinematicObject' atribuída. A cinematica não será ativada.");
+        {
+            Debug.LogWarning("[StartMenuControlAnim] Nenhuma 'cinematicObject' atribuída. A cinematica não será ativada.");
+        }
+    }
+
+    // Utilitário público opcional para forçar ativação e reproduzir a cinemática
+    public void ForceActivateAndPlayCinematic()
+    {
+        OnLoadingFinished();
     }
     
     // Conecte o AnimationEndHandler do estado final da Cinematica para chamar este método
     public void OnCinematicFinished()
     {
         // Libera o jogador após terminar a cinematica
-        Managers.InputManager.Instance?.SetPlayerContext();
+        Managers.InputContextCoordinator.Instance?.SetPlayerContext();
         Managers.GameManager.Instance?.SetStartMenuActive(false);
 
         // Restaura física e controlador para o player cair e seguir jogo
@@ -256,5 +364,29 @@ public class StartMenuControlAnim : MonoBehaviour
                 ecm.enabled = true;
             }
         }
+    }
+
+    // --- Utilitário local ---
+    private void EnsureParentsActive(GameObject leaf)
+    {
+        if (leaf == null) return;
+        var t = leaf.transform;
+        while (t != null)
+        {
+            var go = t.gameObject;
+            if (!go.activeSelf) go.SetActive(true);
+            t = t.parent;
+        }
+    }
+
+    private static bool HasAnimatorTrigger(Animator animator, string triggerName)
+    {
+        if (animator == null || string.IsNullOrEmpty(triggerName)) return false;
+        foreach (var p in animator.parameters)
+        {
+            if (p.type == AnimatorControllerParameterType.Trigger && p.name == triggerName)
+                return true;
+        }
+        return false;
     }
 }
