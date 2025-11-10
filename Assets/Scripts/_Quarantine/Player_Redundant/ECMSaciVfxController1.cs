@@ -1,5 +1,6 @@
 using ECM.Controllers;
 using UnityEngine;
+using Managers;
 
 namespace Player
 {
@@ -201,9 +202,8 @@ namespace Player
                 var t = doubleJumpVfx.transform;
                 // Converte input bruto para direção em mundo (relativa à câmera se disponível)
                 Vector3 inputDirWorld = Vector3.zero;
-                if (saci.inputs != null)
                 {
-                    Vector2 rawMove = saci.inputs.move;
+                    Vector2 rawMove = InputManager.Instance != null ? InputManager.Instance.Move : Vector2.zero;
                     if (rawMove.sqrMagnitude > 0.0001f)
                     {
                         Transform cam = Camera.main != null ? Camera.main.transform : null;
@@ -245,9 +245,8 @@ namespace Player
                 var t = doubleJumpVfx.transform;
                 // Recalcula pitch após possível override de rotação mundial
                 Vector3 inputDirWorld = Vector3.zero;
-                if (saci.inputs != null)
                 {
-                    Vector2 rawMove = saci.inputs.move;
+                    Vector2 rawMove = InputManager.Instance != null ? InputManager.Instance.Move : Vector2.zero;
                     if (rawMove.sqrMagnitude > 0.0001f)
                     {
                         Transform cam = Camera.main != null ? Camera.main.transform : null;

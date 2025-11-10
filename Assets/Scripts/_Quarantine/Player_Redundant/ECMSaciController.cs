@@ -3,7 +3,7 @@ using ECM.Controllers;
 using ECM.Helpers;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using ThirdParty.StarterAssets.InputSystem;
+using Managers;
 
 namespace Player
 {
@@ -11,8 +11,7 @@ namespace Player
     public sealed class ECMSaciController : BaseCharacterController
     {
         [Header("Referências")]
-        [Tooltip("Fonte de input (StarterAssetsInputs) do player.")]
-        public StarterAssetsInputs inputs;
+        // Fonte de input: usamos InputManager.Instance diretamente; não requer referência no Inspector.
 
         // Referência de câmera para movimento relativo
         [Tooltip("Transform da câmera usada para movimento relativo.")]
@@ -109,8 +108,8 @@ namespace Player
         // Ajusta a velocidade alvo com base no estado (caminhando/correndo)
         protected override Vector3 CalcDesiredVelocity()
         {
-            // Define a velocidade com base no sprint (StarterAssetsInputs)
-            speed = (inputs != null && inputs.sprint) ? _runSpeed : _walkSpeed;
+            // Define a velocidade com base no sprint (InputManager)
+            speed = (InputManager.Instance != null && InputManager.Instance.Sprint) ? _runSpeed : _walkSpeed;
             return base.CalcDesiredVelocity();
         }
 
@@ -242,7 +241,7 @@ namespace Player
             {
                 moveDirection = Vector3.zero;
                 jump = false;
-                if (inputs != null) inputs.jump = false; // garante que não fique travado ao sair para UI
+                InputManager.Instance?.ConsumeJumpInput(); // garante que não fique travado ao sair para UI
                 return;
             }
 
@@ -251,12 +250,12 @@ namespace Player
             {
                 moveDirection = Vector3.zero;
                 jump = false;
-                if (inputs != null) inputs.jump = false;
+                InputManager.Instance?.ConsumeJumpInput();
                 return;
             }
 
-            // Direção de movimento a partir do StarterAssetsInputs (relativa à câmera se disponível)
-            Vector2 move = inputs != null ? inputs.move : Vector2.zero;
+            // Direção de movimento a partir do InputManager (relativa à câmera se disponível)
+            Vector2 move = InputManager.Instance != null ? InputManager.Instance.Move : Vector2.zero;
             Vector3 worldDir;
             if (playerCamera != null)
             {
@@ -283,17 +282,17 @@ namespace Player
             if (_suppressJumpInput)
             {
                 // Enquanto suprimido, zera input e buffer para impedir pulo/duplo-pulo
-                if (inputs != null) inputs.jump = false;
+                InputManager.Instance?.ConsumeJumpInput();
                 _jumpInputBufferTimer = 0f;
                 jump = false;
             }
             else
             {
-                bool rawJump = inputs != null && inputs.jump;
+                bool rawJump = InputManager.Instance != null && InputManager.Instance.Jump;
                 if (rawJump)
                 {
                     _jumpInputBufferTimer = _jumpInputBufferTime;
-                    if (inputs != null) inputs.jump = false; // consome o pulo do StarterAssetsInputs
+                    InputManager.Instance?.ConsumeJumpInput(); // consome o pulo do InputManager
                 }
                 jump = _jumpInputBufferTimer > 0f;
                 if (_jumpInputBufferTimer > 0f)
@@ -305,9 +304,6 @@ namespace Player
         public override void Awake()
         {
             base.Awake();
-
-            if (inputs == null)
-                inputs = GetComponent<StarterAssetsInputs>();
 
             _inputModeManager = GetComponent<InputModeManager>();
 
@@ -386,7 +382,7 @@ namespace Player
             if (suppress)
             {
                 // Ao ativar, consome qualquer estado de pulo remanescente
-                if (inputs != null) inputs.jump = false;
+                InputManager.Instance?.ConsumeJumpInput();
                 _jumpInputBufferTimer = 0f;
                 jump = false;
             }
@@ -395,7 +391,7 @@ namespace Player
         // Consome imediatamente o input de pulo e limpa o buffer do controlador
         public void ClearJumpBufferAndConsumeInput()
         {
-            if (inputs != null) inputs.jump = false;
+            InputManager.Instance?.ConsumeJumpInput();
             _jumpInputBufferTimer = 0f;
             jump = false;
         }

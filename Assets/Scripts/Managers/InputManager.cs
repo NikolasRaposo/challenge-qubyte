@@ -5,167 +5,122 @@ using Gameplay;
 
 namespace Managers {
     public enum InputContext {
-        Player,
+        Gameplay,
         UI,
-        BlockInput,
+        None,
     }
 
     public class InputManager : MonoBehaviour {
         public static InputManager Instance { get; private set; }
-        private StarterAssets _controls;
+
+        [Header("Fonte de Input")]
+        [Tooltip("Roteador central que expõe eventos tipados.")]
+        public PlayerInputRouter inputRouter;
+        [Tooltip("Componente PlayerInput usado para alternar mapas.")]
+        public PlayerInput playerInput;
+
         public Vector2 Move { get; private set; }
         public Vector2 Look { get; private set; }
         public bool Jump { get; private set; }
         public bool Sprint { get; private set; }
-        public event Action OnTornado, OnPause, OnProjetarTornado;
-        public event Action OnUiSubmit; // disparado ao apertar Enter/A no contexto de UI
-        private float _pauseInputLockUntil; // bloqueia pause por curto período após iniciar/trocar contexto
+        public event Action OnTornado, OnProjetarTornado;
+        public event Action OnUiSubmit; // opcional
 
         private void Awake() {
-            if (Instance != null && Instance != this) Destroy(gameObject);
-            else {
-                Instance = this;
-                // Usa o root para evitar o warning "DontDestroyOnLoad only works for root GameObjects"
-                var root = transform.root != null ? transform.root.gameObject : gameObject;
-                DontDestroyOnLoad(root);
-            }
-            _controls = new StarterAssets();
-            SetContext(InputContext.Player);
-            // Evita que um input residual (ex: tecla pressionada ao entrar no Play) pause o jogo imediatamente
-            _pauseInputLockUntil = Time.unscaledTime + 0.35f;
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            Instance = this;
+            var root = transform.root != null ? transform.root.gameObject : gameObject;
+            DontDestroyOnLoad(root);
+
+            // Auto-binding: primeiro procura no mesmo GameObject; depois, fallback global
+            if (inputRouter == null)
+                inputRouter = GetComponent<PlayerInputRouter>() ?? FindFirstObjectByType<PlayerInputRouter>();
+
+            if (playerInput == null)
+                playerInput = GetComponent<PlayerInput>()
+                               ?? (inputRouter != null ? inputRouter.GetComponent<PlayerInput>() : null)
+                               ?? FindFirstObjectByType<PlayerInput>();
         }
 
-        private void OnEnable() => _controls.Enable();
-        private void OnDisable()
-        {
-            _controls.Disable();
-            // Failsafe: ao desabilitar o gerenciador de input, interrompe vibração
+        private void OnEnable() {
+            if (inputRouter != null) {
+                inputRouter.OnMove += HandleMove;
+                inputRouter.OnLook += HandleLook;
+                inputRouter.OnJump += HandleJump;
+                inputRouter.OnSprint += HandleSprint;
+                inputRouter.OnTornado += ForwardTornado;
+                inputRouter.OnProjetarTornado += ForwardProjetarTornado;
+                inputRouter.OnUiSubmit += ForwardUiSubmit;
+            }
+        }
+
+        private void OnDisable() {
+            if (inputRouter != null) {
+                inputRouter.OnMove -= HandleMove;
+                inputRouter.OnLook -= HandleLook;
+                inputRouter.OnJump -= HandleJump;
+                inputRouter.OnSprint -= HandleSprint;
+                inputRouter.OnTornado -= ForwardTornado;
+                inputRouter.OnProjetarTornado -= ForwardProjetarTornado;
+                inputRouter.OnUiSubmit -= ForwardUiSubmit;
+            }
             RumbleManager.Instance?.StopAllRumble();
         }
 
-        // --- MÉTODOS PÚBLICOS DE CONTROLE DE CONTEXTO ---
-        public void SetPlayerContext() => SetContext(InputContext.Player);
+        // --- CONTEXTO ---
+        public void SetGameplayContext() => SetContext(InputContext.Gameplay);
         public void SetUiContext() => SetContext(InputContext.UI);
-        public void SetBlockInputContext() => SetContext(InputContext.BlockInput);
+        public void SetBlockInputContext() => SetContext(InputContext.None);
 
-        // --- LÓGICA DE MUDANÇA DE CONTEXTO ---
         private void SetContext(InputContext context) {
-            ClearAllBindings();
-            // Em vez de desabilitar o asset inteiro (o que pode quebrar o InputSystemUIInputModule),
-            // habilitamos/desabilitamos apenas os mapas relevantes.
+            if (playerInput == null) return;
+
             switch (context) {
-                case InputContext.Player:
-                    _controls.UI.Disable();
-                    _controls.Player.Enable();
-                    SetPlayerEvents();
+                case InputContext.Gameplay:
+                    SwitchMapSafe("Gameplay");
                     LockCursor();
-                    // Debounce curto ao alternar contexto para evitar pause acidental
-                    _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
                 case InputContext.UI:
-                    _controls.Player.Disable();
-                    _controls.UI.Enable();
-                    SeUIEvents();
+                    SwitchMapSafe("UI");
                     UnlockCursor();
-                    // Failsafe: ao entrar no contexto de UI, interrompe vibração
                     RumbleManager.Instance?.StopAllRumble();
-                    _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
-                case InputContext.BlockInput:
-                    // Desabilita ambos os mapas e libera o cursor
-                    _controls.Player.Disable();
-                    _controls.UI.Disable();
+                case InputContext.None:
+                    if (!SwitchMapSafe("None")) {
+                        // Se não houver mapa "None", desabilita PlayerInput como fallback
+                        playerInput.enabled = false;
+                    }
                     UnlockCursor();
-                    // Failsafe: ao bloquear input, interrompe vibração
                     RumbleManager.Instance?.StopAllRumble();
-                    _pauseInputLockUntil = Time.unscaledTime + 0.15f;
                     break;
             }
         }
 
-        private void SetPlayerEvents() {
-            _controls.Player.Enable();
-            
-            // Binds de Eventos (Ações de 1 frame)
-            _controls.Player.Tornado.performed += TornadoOnPerformed;
-            _controls.Player.ProjetarTornado.performed += ProjetarTornadoOnPerformed;
-            _controls.Player.Pause.performed += PauseOnPerformed;
-            _controls.Player.Jump.performed += JumpOnPerformed;
-
-            // Binds de Estado Contínuo (Valores que mudam)
-            _controls.Player.Move.performed += MoveOnPerformed;
-            _controls.Player.Move.canceled += MoveOnCanceled;
-            _controls.Player.Look.performed += LookOnPerformed;
-            _controls.Player.Look.canceled += LookOnCanceled;
-            _controls.Player.Sprint.performed += SprintOnPerformed;
-            _controls.Player.Sprint.canceled += SprintOnCanceled;
+        private bool SwitchMapSafe(string mapName) {
+            if (string.IsNullOrEmpty(mapName)) return false;
+            var actions = playerInput.actions;
+            if (actions == null) return false;
+            var map = actions.FindActionMap(mapName, true);
+            if (map == null) return false;
+            playerInput.enabled = true;
+            playerInput.SwitchCurrentActionMap(mapName);
+            return true;
         }
 
-        private void SeUIEvents() {
-            _controls.UI.Enable();
-            // Removido bind de Pause no contexto de UI para evitar toggles acidentais
-            _controls.UI.Submit.performed += UiSubmitOnPerformed;
-        }
-
-        // --- Handlers de Input (Atualizam os valores) ---
-        private void MoveOnPerformed(InputAction.CallbackContext ctx) => Move = ctx.ReadValue<Vector2>();
-        private void MoveOnCanceled(InputAction.CallbackContext ctx) => Move = Vector2.zero;
-        private void LookOnPerformed(InputAction.CallbackContext ctx) => Look = ctx.ReadValue<Vector2>();
-        private void LookOnCanceled(InputAction.CallbackContext ctx) => Look = Vector2.zero;
-        private void SprintOnPerformed(InputAction.CallbackContext ctx) => Sprint = true;
-        private void SprintOnCanceled(InputAction.CallbackContext ctx) => Sprint = false;
-        private void JumpOnPerformed(InputAction.CallbackContext ctx) => Jump = true;
-        
-        // --- Handlers de Eventos (Disparam os C# Events) ---
-        private void TornadoOnPerformed(InputAction.CallbackContext obj) => OnTornado?.Invoke();
-        private void ProjetarTornadoOnPerformed(InputAction.CallbackContext obj) => OnProjetarTornado?.Invoke();
-        private void PauseOnPerformed(InputAction.CallbackContext obj) {
-            // Ignora eventos de pause durante janela de bloqueio
-            if (Time.unscaledTime < _pauseInputLockUntil) return;
-            OnPause?.Invoke();
-            // Debounce curto para evitar dupla invocação no mesmo frame
-            _pauseInputLockUntil = Time.unscaledTime + 0.1f;
-        }
-        private void UiSubmitOnPerformed(InputAction.CallbackContext obj) {
-            OnUiSubmit?.Invoke();
-        }
+        // --- Atualizadores ---
+        private void HandleMove(Vector2 v) => Move = v;
+        private void HandleLook(Vector2 v) => Look = v;
+        private void HandleJump(bool pressed) { if (pressed) Jump = true; }
+        private void HandleSprint(bool held) => Sprint = held;
+        private void ForwardTornado() => OnTornado?.Invoke();
+        private void ForwardProjetarTornado() => OnProjetarTornado?.Invoke();
+        private void ForwardUiSubmit() => OnUiSubmit?.Invoke();
 
         // --- MÉTODO DE "CONSUMO" DE INPUT ---
-        // O ThirdPersonController vai chamar isso após pular
         public void ConsumeJumpInput() => Jump = false;
-        
-        // --- Limpeza ---
-        private void ClearAllBindings() {
-            ClearPlayerBindings();
-            ClearUiBindings();
-        }
 
-        private void ClearPlayerBindings() {
-            _controls.Player.Tornado.performed -= TornadoOnPerformed;
-            _controls.Player.ProjetarTornado.performed -= ProjetarTornadoOnPerformed;
-            _controls.Player.Pause.performed -= PauseOnPerformed;
-            _controls.Player.Jump.performed -= JumpOnPerformed;
-            _controls.Player.Move.performed -= MoveOnPerformed;
-            _controls.Player.Move.canceled -= MoveOnCanceled;
-            _controls.Player.Look.performed -= LookOnPerformed;
-            _controls.Player.Look.canceled -= LookOnCanceled;
-            _controls.Player.Sprint.performed -= SprintOnPerformed;
-            _controls.Player.Sprint.canceled -= SprintOnCanceled;
-        }
-        
-        private void ClearUiBindings() {
-           _controls.UI.Pause.performed -= PauseOnPerformed;
-           _controls.UI.Submit.performed -= UiSubmitOnPerformed;
-        }
-        
-        // --- Gerenciamento do Cursor ---
-        private static void LockCursor() {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-        private static void UnlockCursor() {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
+        // --- Cursor ---
+        private static void LockCursor() { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+        private static void UnlockCursor() { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
     }
 }

@@ -14,6 +14,11 @@ namespace Managers {
     public class GameManager : MonoBehaviour {
         public static GameManager Instance { get; private set; }
 
+        // Eventos para o FlowRouter acionar micro-blocos de UI/fluxo
+        public event Action OnLevelComplete;
+        public event Action OnGameOver;
+        public event Action<float> OnRespawnRequested; // duração do countdown
+
         public event Action<int> OnCoinsUpdated;
         public event Action<int> OnLivesUpdated;
         public event Action<int> OnEnemiesDefeatedUpdated;
@@ -37,11 +42,10 @@ namespace Managers {
         
         private Vector3 _lastCheckpointPosition;
         private PlayerHealth _playerHealth;
-        private bool _isPaused;
+        // Removido: estado de pausa será gerenciado pelo PauseInputListener
         private int _collectedCoins;
         private int _enemiesDefeated;
-        private bool _isInStartMenu; // bloqueia pausa enquanto menu inicial ativo
-        private bool _pauseDisabled = true; // desabilita completamente o pause
+        // Removido: bloqueio e desabilitação de pausa agora pertencem ao PauseInputListener
 
         // The Awake method is called before any Start methods.
         private void Awake() {
@@ -55,7 +59,6 @@ namespace Managers {
             }
         }
         private void Start() {
-            Time.timeScale = 1f;
             if (player != null) {
                 _lastCheckpointPosition = player.transform.position;
                 _playerHealth = player.GetComponent<PlayerHealth>();
@@ -64,37 +67,13 @@ namespace Managers {
             if (bossContextController != null) {
                 bossContextController.OnBossDefeated += HandleBossContextDefeated;
             }
-            // Se o pause estiver habilitado, assina evento; caso contrário, ignora
-            if (!_pauseDisabled)
-                InputManager.Instance.OnPause += TogglePause;
+            // Removido: assinatura de pausa movida para PauseInputListener
             
             OnCoinsUpdated?.Invoke(_collectedCoins);
             OnLivesUpdated?.Invoke(playerLives);
             OnEnemiesDefeatedUpdated?.Invoke(_enemiesDefeated);
         }
-        public void SetStartMenuActive(bool active) {
-            _isInStartMenu = active;
-        }
-        public void TogglePause() {
-            // Pause desabilitado: garante que menu permaneça oculto e retorna
-            if (_pauseDisabled)
-            {
-                _isPaused = false;
-                UIManager.Instance?.TogglePauseMenu(false);
-                return;
-            }
-            // Ignora pause quando estamos no menu inicial
-            if (_isInStartMenu) return;
-            _isPaused = !_isPaused;
-            UIManager.Instance.TogglePauseMenu(_isPaused);
-            if (_isPaused) {
-                InputManager.Instance.SetUiContext();
-                // Failsafe: garante que qualquer vibração seja interrompida ao pausar
-                RumbleManager.Instance?.StopAllRumble();
-            } else {
-                InputManager.Instance.SetPlayerContext();
-            }
-        }
+        // Removido: SetStartMenuActive e TogglePause; pausa é responsabilidade do PauseInputListener
         public void NotifyPlayerDied()
         {
             OnPlayerDied?.Invoke();
@@ -127,9 +106,7 @@ namespace Managers {
         public int Lives => playerLives;
         public int EnemiesDefeated => _enemiesDefeated;
         private void OnDestroy() {
-            if (InputManager.Instance != null && !_pauseDisabled) {
-                InputManager.Instance.OnPause -= TogglePause;
-            }
+            // Removido: unbind de pausa movido ao PauseInputListener
             if (bossContextController != null) {
                 bossContextController.OnBossDefeated -= HandleBossContextDefeated;
             }
@@ -166,12 +143,13 @@ namespace Managers {
         /// Coroutine that manages the sequence of the player respawning.
         /// </summary>
         private IEnumerator RespawnSequence() {
-            // Block player input while the countdown is running.
-            InputManager.Instance.SetBlockInputContext();
+            // Gating de input durante countdown deve ser responsabilidade do bloco de respawn
             // Failsafe: interrompe qualquer vibração antes do countdown de respawn
             RumbleManager.Instance?.StopAllRumble();
-            // Tell the UIManager to show the countdown and wait for it to finish.
-            yield return UIManager.Instance.StartRespawnCountdown(3f); // 3-second countdown
+            // Emite evento para o FlowRouter acionar um micro-bloco de respawn/countdown
+            OnRespawnRequested?.Invoke(3f);
+            // Aguarda o mesmo período usando tempo não escalado
+            yield return new WaitForSecondsRealtime(3f);
             // --- Actual Respawn Logic ---
             Debug.Log("Respawning player at: " + _lastCheckpointPosition);
             CharacterController characterController = player.GetComponent<CharacterController>();
@@ -180,8 +158,7 @@ namespace Managers {
             if (characterController) characterController.enabled = true;
             // Reset player's state (re-enable model, controls, etc.)
             _playerHealth.PrepareForRespawn();
-            // Give control back to the player.
-            InputManager.Instance.SetPlayerContext();
+            // Restauração de contexto de input será responsabilidade do fluxo/bloco
             OnPlayerRespawn?.Invoke();
         }
         /// <summary>
@@ -191,10 +168,9 @@ namespace Managers {
             Debug.Log("Game Over!");
             // Failsafe: garante silêncio haptico ao entrar em Game Over
             RumbleManager.Instance?.StopAllRumble();
-            // Tell the UIManager to show the final screen.
-            UIManager.Instance.ShowGameOverScreen();
-            // Block all player input permanently.
-            InputManager.Instance.SetBlockInputContext();
+            // Emite evento para o FlowRouter acionar micro-bloco de Game Over
+            OnGameOver?.Invoke();
+            // Controle de input será gerenciado integralmente pelo bloco de Game Over
         }
         /// <summary>
         /// Handles the logic for when the level is successfully completed.
@@ -203,40 +179,13 @@ namespace Managers {
             Debug.Log("Level Completed!");
             // Failsafe: garante silêncio haptico ao completar nível
             RumbleManager.Instance?.StopAllRumble();
-            // Show the level complete UI panel
-            if (levelCompletePanel != null) {
-                levelCompletePanel.SetActive(true);
-            }
-            // Freeze the game
-            Time.timeScale = 0f;
-            InputManager.Instance.SetUiContext();
+            // Emite evento para o FlowRouter acionar micro-bloco de conclusão de nível
+            OnLevelComplete?.Invoke();
+            // O bloco deve decidir congelar o jogo e alternar contexto de input
         }
         public void RestartLevel() {
             // Reloads the currently active scene.
             //SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        }
-
-        [Obsolete("Obsolete")]
-        public void GoToMainMenu() {
-            // Loads the main menu scene. Make sure you have a scene named "MainMenu"
-            // or change the string to the correct name.
-            //SceneManager.LoadScene(0);
-            Debug.Log("Voltando para o menu");
-
-            // Pausa o jogo
-            Time.timeScale = 0f;
-            
-            InputManager.Instance.SetUiContext();
-
-            // Mostra a UI de menu
-            var startMenu = FindObjectOfType<StartMenuControlAnim>(true);
-            if (startMenu != null) {
-                startMenu.gameObject.SetActive(true);
-                startMenu.AtivarMainMenuStart(); // animação do logo
-                startMenu.AtivarMainMenuLateStart(); // animação dos painéis
-            } else {
-                Debug.LogWarning("Nenhum StartMenuControlAnim encontrado na cena!");
-            }
         }
             
         public void QuitGame() 
@@ -256,13 +205,6 @@ namespace Managers {
         /// </summary>
         public void ActivateHUDFromCinematicEnd()
         {
-            // Garante jogo rodando e input do jogador
-            Time.timeScale = 1f;
-            _isPaused = false;
-            InputManager.Instance?.SetPlayerContext();
-
-            // Exibe HUD com valores atuais
-            UIManager.Instance?.ShowHUDImmediate();
         }
     }
 }
