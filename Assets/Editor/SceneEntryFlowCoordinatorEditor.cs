@@ -4,11 +4,17 @@ using UnityEngine;
 [CustomEditor(typeof(SceneEntryFlowCoordinator))]
 public class SceneEntryFlowCoordinatorEditor : Editor
 {
+    SerializedProperty overrideStartPhase;
+    SerializedProperty startPhaseOverride;
     SerializedProperty changeInputContextOnStart;
     SerializedProperty startInputContext;
     SerializedProperty enableUiInteractionsOnStart;
     SerializedProperty blockGameplayInputOnStart;
     SerializedProperty autoPlayCinematicAfterLoading;
+    // Dev Start Checkpoint
+    SerializedProperty startAtCheckpoint;
+    SerializedProperty startCheckpointName;
+    SerializedProperty startCheckpointIndex;
 
     SerializedProperty cinematicRoot;
     SerializedProperty cinematicDirector;
@@ -17,6 +23,7 @@ public class SceneEntryFlowCoordinatorEditor : Editor
     SerializedProperty loadingStartTrigger;
     SerializedProperty loadingStopTrigger;
 
+    SerializedProperty entryUiRoot; // UMainMenu raiz
     SerializedProperty canvasUI;
     SerializedProperty canvasHUD;
     SerializedProperty defaultUiButton;
@@ -62,11 +69,17 @@ public class SceneEntryFlowCoordinatorEditor : Editor
 
     private void OnEnable()
     {
+        overrideStartPhase = serializedObject.FindProperty("overrideStartPhase");
+        startPhaseOverride = serializedObject.FindProperty("startPhaseOverride");
         changeInputContextOnStart = serializedObject.FindProperty("changeInputContextOnStart");
         startInputContext = serializedObject.FindProperty("startInputContext");
         enableUiInteractionsOnStart = serializedObject.FindProperty("enableUiInteractionsOnStart");
         blockGameplayInputOnStart = serializedObject.FindProperty("blockGameplayInputOnStart");
         autoPlayCinematicAfterLoading = serializedObject.FindProperty("autoPlayCinematicAfterLoading");
+        // Dev Start Checkpoint
+        startAtCheckpoint = serializedObject.FindProperty("startAtCheckpoint");
+        startCheckpointName = serializedObject.FindProperty("startCheckpointName");
+        startCheckpointIndex = serializedObject.FindProperty("startCheckpointIndex");
 
         cinematicRoot = serializedObject.FindProperty("cinematicRoot");
         cinematicDirector = serializedObject.FindProperty("cinematicDirector");
@@ -75,6 +88,7 @@ public class SceneEntryFlowCoordinatorEditor : Editor
         loadingStartTrigger = serializedObject.FindProperty("loadingStartTrigger");
         loadingStopTrigger = serializedObject.FindProperty("loadingStopTrigger");
 
+        entryUiRoot = serializedObject.FindProperty("entryUiRoot");
         canvasUI = serializedObject.FindProperty("canvasUI");
         canvasHUD = serializedObject.FindProperty("canvasHUD");
         defaultUiButton = serializedObject.FindProperty("defaultUiButton");
@@ -99,9 +113,117 @@ public class SceneEntryFlowCoordinatorEditor : Editor
         hasHandoffHappened = serializedObject.FindProperty("hasHandoffHappened");
     }
 
+    // Cache de nomes de checkpoints para o dropdown
+    private string[] _checkpointNames;
+    private int _selectedCheckpointIdx = -1;
+    private void RefreshCheckpointNames()
+    {
+        // Tenta usar CheckpointManager se estiver presente; caso contrário, faz uma busca por tag.
+        System.Collections.Generic.List<string> names = new System.Collections.Generic.List<string>();
+        var cm = Managers.CheckpointManager.Instance;
+        if (cm != null)
+        {
+            try
+            {
+                var list = cm.GetAll();
+                foreach (var it in list)
+                {
+                    if (it != null && it.transform != null)
+                        names.Add(it.name);
+                }
+            }
+            catch { /* segura no editor */ }
+        }
+        if (names.Count == 0)
+        {
+            try
+            {
+                var gos = GameObject.FindGameObjectsWithTag("CheckPoint");
+                foreach (var go in gos)
+                {
+                    if (go != null) names.Add(go.name);
+                }
+            }
+            catch { /* segura em caso de tag inexistente */ }
+        }
+
+        _checkpointNames = names.ToArray();
+        // Sincroniza seleção com propriedade existente
+        _selectedCheckpointIdx = -1;
+        if (!string.IsNullOrEmpty(startCheckpointName.stringValue))
+        {
+            for (int i = 0; i < _checkpointNames.Length; i++)
+            {
+                if (_checkpointNames[i] == startCheckpointName.stringValue)
+                {
+                    _selectedCheckpointIdx = i;
+                    break;
+                }
+            }
+        }
+        // Se não houver nome, usa índice quando válido
+        if (_selectedCheckpointIdx < 0 && startCheckpointIndex.intValue >= 0 && startCheckpointIndex.intValue < _checkpointNames.Length)
+        {
+            _selectedCheckpointIdx = startCheckpointIndex.intValue;
+            startCheckpointName.stringValue = _checkpointNames[_selectedCheckpointIdx];
+        }
+    }
+
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
+
+        // Dev Overrides — destaque no topo
+        EditorGUILayout.Space(6);
+        EditorGUILayout.LabelField("Dev Overrides", EditorStyles.boldLabel);
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        EditorGUILayout.HelpBox("Override de fase inicial para acelerar testes (ex.: ir direto para Gameplay).", MessageType.Warning);
+        EditorGUILayout.PropertyField(overrideStartPhase, new GUIContent("Override Start Phase"));
+        EditorGUI.BeginDisabledGroup(!overrideStartPhase.boolValue);
+        EditorGUILayout.PropertyField(startPhaseOverride, new GUIContent("Start Phase Override"));
+        // Dev Start Checkpoint UI
+        if (overrideStartPhase.boolValue)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.Space(2);
+            EditorGUILayout.LabelField("Dev Start Checkpoint", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(startAtCheckpoint, new GUIContent("Start At Checkpoint"));
+            EditorGUI.BeginDisabledGroup(!startAtCheckpoint.boolValue || startPhaseOverride.enumValueIndex != (int)SceneEntryFlowCoordinator.Phase.Gameplay);
+            // Atualiza lista sob demanda
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Atualizar lista", GUILayout.Width(120)))
+            {
+                RefreshCheckpointNames();
+            }
+            var countLabel = _checkpointNames != null ? _checkpointNames.Length.ToString() : "?";
+            EditorGUILayout.LabelField($"Encontrados: {countLabel}");
+            EditorGUILayout.EndHorizontal();
+
+            if (_checkpointNames == null)
+            {
+                RefreshCheckpointNames();
+            }
+            if (_checkpointNames != null && _checkpointNames.Length > 0)
+            {
+                int newIdx = EditorGUILayout.Popup("Checkpoint", _selectedCheckpointIdx < 0 ? 0 : _selectedCheckpointIdx, _checkpointNames);
+                if (newIdx != _selectedCheckpointIdx)
+                {
+                    _selectedCheckpointIdx = newIdx;
+                    startCheckpointName.stringValue = _checkpointNames[newIdx];
+                    startCheckpointIndex.intValue = newIdx;
+                }
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Nenhum checkpoint encontrado na cena. Certifique-se que objetos estão com tag 'CheckPoint'.", MessageType.Warning);
+                EditorGUILayout.PropertyField(startCheckpointName, new GUIContent("Checkpoint Name (manual)"));
+                EditorGUILayout.PropertyField(startCheckpointIndex, new GUIContent("Checkpoint Index"));
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUI.indentLevel--;
+        }
+        EditorGUI.EndDisabledGroup();
+        EditorGUILayout.EndVertical();
 
         EditorGUILayout.PropertyField(markGameAsInStartMenu);
 
@@ -217,6 +339,8 @@ public class SceneEntryFlowCoordinatorEditor : Editor
         if (showUiSection)
         {
             bool hasUiOverride = uiController != null && uiController.objectReferenceValue != null;
+            EditorGUILayout.PropertyField(entryUiRoot, new GUIContent("Entry UI Root (UMainMenu)"));
+            EditorGUILayout.HelpBox("Defina aqui a RAIZ do UMainMenu (Entry UI). O fluxo usa este objeto para ativar/desativar o menu inicial sem afetar o Canvas de gameplay.", MessageType.Info);
             EditorGUILayout.PropertyField(changeInputContextOnStart, new GUIContent("Alterar Input Context On Start"));
             if (changeInputContextOnStart.boolValue)
             {
@@ -228,7 +352,7 @@ public class SceneEntryFlowCoordinatorEditor : Editor
                 {
                     EditorGUILayout.PropertyField(enableUiInteractionsOnStart, new GUIContent("Enable UI Interactions On Start"));
                     EditorGUI.BeginDisabledGroup(hasUiOverride);
-                    EditorGUILayout.PropertyField(canvasUI);
+                    EditorGUILayout.PropertyField(canvasUI, new GUIContent("Canvas de Gameplay (HUD/Pause)"));
                     EditorGUILayout.PropertyField(defaultUiButton);
                     EditorGUI.EndDisabledGroup();
                 }
@@ -335,7 +459,7 @@ public class SceneEntryFlowCoordinatorEditor : Editor
     private System.Collections.Generic.List<ActivatorEntry> ScanForFlowActivators(SceneEntryFlowCoordinator coordinator)
     {
         var list = new System.Collections.Generic.List<ActivatorEntry>();
-        var behaviours = GameObject.FindObjectsOfType<MonoBehaviour>(true);
+        var behaviours = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var mb in behaviours)
         {
             if (mb == null) continue;

@@ -86,8 +86,12 @@ public class SplinePathGamePlayController : MonoBehaviour
 
         Debug.Log($"[SplinePath] Entrada: '{saci.name}' parent -> '{(animateHolder != null ? animateHolder.name : name)}' pos -> { (animateHolder != null ? animateHolder.position : transform.position) }", this);
 
-        // Pausa o movimento normal do ECM (torna RB kinematic internamente)
-        saci.EnterSplinePathMode();
+        // Pausa o movimento normal do ECM via Gate (centralizado)
+        var gate = saci.GetComponent<PlayerControlGate>();
+        if (gate != null)
+            gate.EnterSplineMode();
+        else
+            saci.EnterSplinePathMode();
 
         // Ativa controle contínuo de posição
         _isInSplineMode = true;
@@ -123,8 +127,12 @@ public class SplinePathGamePlayController : MonoBehaviour
         // Restaura hierarquia
         saci.transform.SetParent(_originalParent, true);
 
-        // Retoma movimento normal do ECM
-        saci.ExitSplinePathMode();
+        // Retoma movimento normal do ECM via Gate (centralizado)
+        var gate = saci.GetComponent<PlayerControlGate>();
+        if (gate != null)
+            gate.ExitSplineMode();
+        else
+            saci.ExitSplinePathMode();
 
         // Desativa controle contínuo de posição
         _isInSplineMode = false;
@@ -151,8 +159,12 @@ public class SplinePathGamePlayController : MonoBehaviour
         // Restaura hierarquia (se _originalParent for null, vai para a raiz)
         saci.transform.SetParent(_originalParent, true);
 
-        // Retoma movimento normal do ECM
-        saci.ExitSplinePathMode();
+        // Retoma movimento normal do ECM via Gate (centralizado)
+        var gate = saci.GetComponent<PlayerControlGate>();
+        if (gate != null)
+            gate.ExitSplineMode();
+        else
+            saci.ExitSplinePathMode();
 
         // Limpa estado local do controller para não mais ajustar a posição do Saci no Update
         _isInSplineMode = false;

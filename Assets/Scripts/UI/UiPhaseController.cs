@@ -25,6 +25,12 @@ public class UiPhaseController : MonoBehaviour
         coordinator?.SetUiContext(enableUiInteractions: false);
         coordinator?.EnableUiInteractions(defaultButton);
         Focus(defaultButton);
+        Managers.UIManager.Instance?.NotifyUiChange(
+            source: nameof(UiPhaseController),
+            action: "EnterUi",
+            target: canvasUI,
+            details: defaultButton != null ? $"defaultButton={defaultButton.name}" : null
+        );
         _inUi = true;
         OnEnterUi?.Invoke();
     }
@@ -39,6 +45,11 @@ public class UiPhaseController : MonoBehaviour
         var coordinator = icc ?? Managers.InputContextCoordinator.Instance;
         coordinator?.DisableUiInteractions();
         EventSystem.current?.SetSelectedGameObject(null);
+        Managers.UIManager.Instance?.NotifyUiChange(
+            source: nameof(UiPhaseController),
+            action: "ExitUi",
+            target: canvasUI
+        );
         _inUi = false;
         OnExitUi?.Invoke();
     }
@@ -48,5 +59,10 @@ public class UiPhaseController : MonoBehaviour
         if (go == null) return;
         var es = EventSystem.current;
         if (es != null) es.SetSelectedGameObject(go);
+        Managers.UIManager.Instance?.NotifyUiChange(
+            source: nameof(UiPhaseController),
+            action: "Focus",
+            target: go
+        );
     }
 }

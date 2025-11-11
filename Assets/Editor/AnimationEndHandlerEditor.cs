@@ -161,7 +161,7 @@ public class AnimationEndHandlerEditor : Editor
         }
 
         // Passo 1: encontre componentes que referenciam exatamente este Animator em campos públicos/privados
-        var behaviours = GameObject.FindObjectsOfType<MonoBehaviour>(true);
+        var behaviours = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         var candidates = new System.Collections.Generic.List<MonoBehaviour>();
         foreach (var mb in behaviours)
         {
@@ -175,7 +175,8 @@ public class AnimationEndHandlerEditor : Editor
                 {
                     object val = null;
                     try { val = f.GetValue(mb); } catch { val = null; }
-                    if (val == listenedAnimator)
+                    var anim = val as Animator;
+                    if (anim != null && anim == listenedAnimator)
                     {
                         referencesAnimator = true;
                         break;

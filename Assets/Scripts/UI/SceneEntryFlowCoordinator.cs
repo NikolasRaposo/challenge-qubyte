@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.Playables;
+using ECM.Controllers; // BaseCharacterController para fallback de pausa ECM
+using ECM.Components; // CharacterMovement para fallback de pausa ECM
 
 // Coordenador genérico e reutilizável para o fluxo de entrada da cena
 // Fases: UI inicial -> Loading -> Cinemática -> Handoff para Gameplay
@@ -49,6 +51,8 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
     [SerializeField] private string loadingStopTrigger = "StopLoading";
 
     [Header("UI / Focus")]
+    [Tooltip("Raiz do UMainMenu (Entry UI). Use este objeto para controlar a visibilidade do menu principal e telas iniciais.")]
+    [SerializeField] private GameObject entryUiRoot;
     [SerializeField] private GameObject canvasUI;
     [SerializeField] private GameObject canvasHUD;
     [SerializeField] private GameObject defaultUiButton;
@@ -73,6 +77,18 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
     [Tooltip("Se verdadeiro, marca GameManager como estando em Start Menu durante o fluxo inicial.")]
     [SerializeField] private bool markGameAsInStartMenu = false;
 
+    [Header("Dev Overrides")]
+    [SerializeField] private bool overrideStartPhase = false;
+    [SerializeField] private Phase startPhaseOverride = Phase.Gameplay;
+
+    [Header("Dev Start Checkpoint")]
+    [Tooltip("Se verdadeiro, ao usar override para Gameplay, posiciona o player em um checkpoint.")]
+    [SerializeField] private bool startAtCheckpoint = false;
+    [Tooltip("Nome exato do GameObject marcado com a tag de checkpoint (prioritário sobre índice).")]
+    [SerializeField] private string startCheckpointName;
+    [Tooltip("Índice do checkpoint descoberto pelo CheckpointManager (use -1 para ignorar).")]
+    [SerializeField] private int startCheckpointIndex = -1;
+
     [Header("Controladores Opcionais")]
     [SerializeField] private UiPhaseController uiController;
     [SerializeField] private LoadingPhaseController loadingController;
@@ -81,6 +97,8 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
 
     private Rigidbody playerRb;
     private Behaviour playerControllerBehaviour; // Ex.: ECMSaciController
+    private BaseCharacterController playerEcmController; // Fallback para pausa ECM
+    private CharacterMovement playerMovement; // Fallback para pausa ECM
 
     private void Awake()
     {
@@ -103,11 +121,29 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
             playerRb = gm.player.GetComponent<Rigidbody>();
             // Tenta localizar um controlador comum (ex.: ECMSaciController)
             playerControllerBehaviour = gm.player.GetComponent<Behaviour>();
+            // Captura referências ECM para fallback de pausa/retomada
+            playerEcmController = gm.player.GetComponent<BaseCharacterController>();
+            playerMovement = gm.player.GetComponent<CharacterMovement>();
         }
     }
 
     private void Start()
     {
+        if (overrideStartPhase)
+        {
+            Managers.GameManager.Instance?.SetStartMenuActive(false);
+            if (startPhaseOverride == Phase.Gameplay && startAtCheckpoint)
+            {
+                // Aplica spawn imediato em checkpoint antes de entrar em Gameplay
+                var applied = Managers.CheckpointManager.Instance?.ApplyStartCheckpoint(startCheckpointName, startCheckpointIndex) ?? false;
+                if (!applied)
+                {
+                    Debug.LogWarning("[SceneEntryFlowCoordinator] Falha ao aplicar StartAtCheckpoint. Verifique nome/índice e se há CheckpointManager na cena.");
+                }
+            }
+            RequestTransitionTo(startPhaseOverride);
+            return;
+        }
         if (markGameAsInStartMenu)
         {
             Managers.GameManager.Instance?.SetStartMenuActive(true);
@@ -145,11 +181,12 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         {
             if (playerGate != null)
             {
-                playerGate.FreezePhysics();
+                playerGate.FreezePhysicsAndPauseECM(restoreVelocityOnResume: false);
             }
             else
             {
                 FreezePlayerPhysics();
+                PauseEcmFallback(restoreVelocityOnResume: false);
             }
         }
 
@@ -165,14 +202,20 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
             }
         }
 
-        // Não ativar/forçar pais da cinematica no Start para evitar início precoce
-        EnsureParentsActive(canvasUI);
+        // Garante que raízes de UI estejam com pais ativos para permitir exibição quando necessário
+        EnsureParentsActive(entryUiRoot);
         EnsureParentsActive(canvasHUD);
 
         // Estado inicial da HUD
         if (canvasHUD != null)
         {
             canvasHUD.SetActive(hudEnabledOnStart);
+            Managers.UIManager.Instance?.NotifyUiChange(
+                source: nameof(SceneEntryFlowCoordinator),
+                action: $"HUD.SetActive({hudEnabledOnStart})",
+                target: canvasHUD,
+                details: "Estado inicial da HUD"
+            );
         }
 
         // Dispara eventos de início
@@ -229,11 +272,12 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         {
             if (playerGate != null)
             {
-                playerGate.UnfreezePhysics();
+                playerGate.UnfreezePhysicsAndResumeECM(restoreVelocityOnResume: false);
                 playerGate.EnableController();
             }
             else
             {
+                ResumeEcmFallback(restoreVelocityOnResume: false);
                 UnfreezePlayerPhysics();
                 EnablePlayerController();
             }
@@ -318,12 +362,24 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         {
             loadingController.StartLoading(Managers.InputContextCoordinator.Instance);
             // O controlador já cuida de bloquear input e desabilitar UI.
+            Managers.UIManager.Instance?.NotifyUiChange(
+                source: nameof(SceneEntryFlowCoordinator),
+                action: "LoadingController.StartLoading",
+                target: entryUiRoot != null ? entryUiRoot : canvasUI,
+                details: "Ativando Loading via controlador"
+            );
         }
         else if (loadingAnimator != null && HasAnimatorTrigger(loadingAnimator, loadingStartTrigger))
         {
             loadingAnimator.SetTrigger(loadingStartTrigger);
             Managers.InputContextCoordinator.Instance?.SetBlockInputContext();
             Managers.InputContextCoordinator.Instance?.DisableUiInteractions();
+            Managers.UIManager.Instance?.NotifyUiChange(
+                source: nameof(SceneEntryFlowCoordinator),
+                action: $"Animator.SetTrigger({loadingStartTrigger})",
+                target: loadingAnimator.gameObject,
+                details: "Ativando Loading UI"
+            );
         }
         else
         {
@@ -344,10 +400,22 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         if (loadingController != null)
         {
             loadingController.StopLoading();
+            Managers.UIManager.Instance?.NotifyUiChange(
+                source: nameof(SceneEntryFlowCoordinator),
+                action: "LoadingController.StopLoading",
+                target: entryUiRoot != null ? entryUiRoot : canvasUI,
+                details: "Desativando Loading via controlador"
+            );
         }
         else if (loadingAnimator != null && HasAnimatorTrigger(loadingAnimator, loadingStopTrigger))
         {
             loadingAnimator.SetTrigger(loadingStopTrigger);
+            Managers.UIManager.Instance?.NotifyUiChange(
+                source: nameof(SceneEntryFlowCoordinator),
+                action: $"Animator.SetTrigger({loadingStopTrigger})",
+                target: loadingAnimator.gameObject,
+                details: "Desativando Loading UI"
+            );
         }
     }
 
@@ -358,6 +426,12 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         Managers.InputContextCoordinator.Instance?.SetUiContext(enableUiInteractions: false);
         Managers.InputContextCoordinator.Instance?.EnableUiInteractions();
         FocusButton(preferred != null ? preferred : defaultUiButton);
+        Managers.UIManager.Instance?.NotifyUiChange(
+            source: nameof(SceneEntryFlowCoordinator),
+            action: "EnterUiContextWithFocus",
+            target: preferred != null ? preferred : defaultUiButton,
+            details: "Entrada em UI com foco"
+        );
     }
 
     public void EnterPlayerContext()
@@ -378,6 +452,12 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         if (canvasHUD != null)
         {
             canvasHUD.SetActive(visible);
+            Managers.UIManager.Instance?.NotifyUiChange(
+                source: nameof(SceneEntryFlowCoordinator),
+                action: $"HUD.SetActive({visible})",
+                target: canvasHUD,
+                details: "Controle bruto de HUD"
+            );
         }
     }
 
@@ -410,6 +490,34 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         {
             playerRb.isKinematic = false;
             Debug.Log("[SceneEntryFlowCoordinator] Física do jogador destravada");
+        }
+    }
+
+    // ECM pause/resume fallback (quando PlayerControlGate não estiver disponível)
+    private void PauseEcmFallback(bool restoreVelocityOnResume)
+    {
+        if (playerMovement != null)
+        {
+            // Pausa imediata a movimentação, evita escrita de velocidade em RB kinematic
+            playerMovement.Pause(true, restoreVelocity: false);
+        }
+        if (playerEcmController != null)
+        {
+            playerEcmController.restoreVelocityOnResume = restoreVelocityOnResume;
+            playerEcmController.pause = true;
+        }
+    }
+
+    private void ResumeEcmFallback(bool restoreVelocityOnResume)
+    {
+        if (playerMovement != null)
+        {
+            playerMovement.Pause(false, restoreVelocityOnResume);
+        }
+        if (playerEcmController != null)
+        {
+            playerEcmController.restoreVelocityOnResume = restoreVelocityOnResume;
+            playerEcmController.pause = false;
         }
     }
 
@@ -451,6 +559,11 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         if (es != null)
         {
             es.SetSelectedGameObject(go);
+            Managers.UIManager.Instance?.NotifyUiChange(
+                source: nameof(SceneEntryFlowCoordinator),
+                action: "FocusButton",
+                target: go
+            );
         }
     }
 
@@ -496,6 +609,12 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
     // Centralizador de transições de fase: use este método como ponto único
     public void RequestTransitionTo(Phase target)
     {
+        Managers.UIManager.Instance?.NotifyUiChange(
+            source: nameof(SceneEntryFlowCoordinator),
+            action: $"RequestTransitionTo({target})",
+            target: entryUiRoot != null ? entryUiRoot : canvasUI,
+            details: "Centralizador de transição"
+        );
         switch (target)
         {
             case Phase.StartingGame:
@@ -506,23 +625,49 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
                 break;
             case Phase.EntryUI:
                 LogWithContext("RequestTransitionTo → EntryUI");
+                SetEntryUiActive(true);
                 EnterUiContextWithFocus(defaultUiButton);
                 currentPhase = Phase.EntryUI;
                 break;
             case Phase.Loading:
                 LogWithContext("RequestTransitionTo → Loading");
+                SetEntryUiActive(true);
                 ActivateLoadingUI();
                 break;
             case Phase.Cinematic:
                 LogWithContext("RequestTransitionTo → Cinematic");
+                SetEntryUiActive(false);
                 ActivateAndPlayCinematic();
                 break;
             case Phase.Gameplay:
                 LogWithContext("RequestTransitionTo → Gameplay");
+                SetEntryUiActive(false);
                 Managers.InputContextCoordinator.Instance?.SetPlayerContext();
                 Managers.InputContextCoordinator.Instance?.DisableUiInteractions();
                 currentPhase = Phase.Gameplay;
                 break;
         }
+    }
+
+    private void SetEntryUiActive(bool active)
+    {
+        // Se o UIManager conhecer o MainMenu, delega a visibilidade a ele
+        if (Managers.UIManager.Instance != null)
+        {
+            Managers.UIManager.Instance.SetMainMenuVisible(active);
+            return;
+        }
+
+        // Fallback: controla diretamente a raiz do UMainMenu quando disponível
+        var root = entryUiRoot != null ? entryUiRoot : canvasUI;
+        if (root == null) return;
+        if (root.activeSelf == active) return;
+        root.SetActive(active);
+        Managers.UIManager.Instance?.NotifyUiChange(
+            source: nameof(SceneEntryFlowCoordinator),
+            action: $"EntryUI.SetActive({active})",
+            target: root,
+            details: active ? "Ativando UI de entrada" : "Desativando UI de entrada"
+        );
     }
 }

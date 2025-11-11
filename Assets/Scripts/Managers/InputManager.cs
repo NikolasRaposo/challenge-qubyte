@@ -44,8 +44,11 @@ namespace Managers {
         }
 
         // --- MÉTODOS PÚBLICOS DE CONTROLE DE CONTEXTO ---
+        [Qubyte.Tracking.TrackableCall]
         public void SetPlayerContext() => SetContext(InputContext.Player);
+        [Qubyte.Tracking.TrackableCall]
         public void SetUiContext() => SetContext(InputContext.UI);
+        [Qubyte.Tracking.TrackableCall]
         public void SetBlockInputContext() => SetContext(InputContext.BlockInput);
 
         // --- LÓGICA DE MUDANÇA DE CONTEXTO ---
@@ -104,8 +107,15 @@ namespace Managers {
 
         private void SeUIEvents() {
             _controls.UI.Enable();
-            // Removido bind de Pause no contexto de UI para evitar toggles acidentais
+            // Bind de Pause também no contexto de UI para permitir sair do pause menu
+            _controls.UI.Pause.performed += PauseOnPerformed;
             _controls.UI.Submit.performed += UiSubmitOnPerformed;
+
+            // Failsafe: garante que o botão de Pause do gamepad funcione
+            // mesmo se o mapa de UI não tiver o binding adequado.
+            // Habilita especificamente a ação Player.Pause e escuta o mesmo handler.
+            _controls.Player.Pause.Enable();
+            _controls.Player.Pause.performed += PauseOnPerformed;
         }
 
         // --- Handlers de Input (Atualizam os valores) ---
@@ -133,6 +143,7 @@ namespace Managers {
 
         // --- MÉTODO DE "CONSUMO" DE INPUT ---
         // O ThirdPersonController vai chamar isso após pular
+        [Qubyte.Tracking.TrackableCall]
         public void ConsumeJumpInput() => Jump = false;
         
         // --- Limpeza ---

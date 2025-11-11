@@ -163,7 +163,9 @@ namespace Player
             {
                 if (verboseLogs)
                     Debug.Log($"[PlayerStomp] Interagindo com BoxInteractor: {other.name}.", other.gameObject);
-                boxInteractor.Interact(saciController.transform);
+                // Passa o transform deste filho (layer PlayerStomp) para permitir que o BoxInteractor
+                // identifique corretamente interações de stomp e aplique trampolim apenas nestes casos.
+                boxInteractor.Interact(transform);
                 // Nota: o bounce (se houver) é gerenciado pelo BoxInteractor via ApplyTrampolineEffect.
                 return;
             }

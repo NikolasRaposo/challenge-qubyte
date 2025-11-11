@@ -241,7 +241,7 @@ public class PlayerVfxPosFeedbackControl : MonoBehaviour
     private void ResetStoredHeightInAllTrampolines()
     {
         // Encontra todos os trampolins na cena e reseta a altura armazenada
-        ECMTrampolineController[] trampolines = FindObjectsOfType<ECMTrampolineController>();
+        ECMTrampolineController[] trampolines = FindObjectsByType<ECMTrampolineController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         foreach (var trampoline in trampolines)
         {
             trampoline.ResetStoredHeight(saciController);

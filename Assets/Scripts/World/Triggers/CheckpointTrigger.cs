@@ -1,79 +1,82 @@
 using UnityEngine;
 using Managers;
-using UnityEngine.Events; // Namespace necessário para usar UnityEvent
+using UnityEngine.Events; // Namespace necessï¿½rio para usar UnityEvent
 
 /// <summary>
 /// Este script deve ser anexado a um objeto com um Collider configurado como Trigger.
-/// Quando o jogador entra no trigger pela primeira vez, ele atualiza a posição do último checkpoint no GameManager,
-/// dispara um evento customizável e depois desativa a si mesmo para não ser executado novamente.
+/// Quando o jogador entra no trigger pela primeira vez, ele atualiza a posiï¿½ï¿½o do ï¿½ltimo checkpoint no GameManager,
+/// dispara um evento customizï¿½vel e depois desativa a si mesmo para nï¿½o ser executado novamente.
 /// O Collider permanece ativo para uso de outros scripts.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class CheckpointTrigger : MonoBehaviour {
-    [Header("Configurações do Checkpoint")]
-    [Tooltip("O deslocamento (offset) a partir do centro deste objeto que definirá o ponto de respawn exato.")]
+    [Header("Configuraï¿½ï¿½es do Checkpoint")]
+    [Tooltip("O deslocamento (offset) a partir do centro deste objeto que definirï¿½ o ponto de respawn exato.")]
     [SerializeField] private Vector3 checkpointOffset = Vector3.zero;
     
     [Header("Eventos")]
-    [Tooltip("Evento que será disparado APENAS na primeira vez que o jogador entrar no trigger.")]
+    [Tooltip("Evento que serï¿½ disparado APENAS na primeira vez que o jogador entrar no trigger.")]
     public UnityEvent onFirstTriggerEnter;
     
     [Header("Debug")]
-    [Tooltip("Se marcado, exibe mensagens de log no console quando o checkpoint é ativado.")]
+    [Tooltip("Se marcado, exibe mensagens de log no console quando o checkpoint ï¿½ ativado.")]
     [SerializeField] private bool enableDebugLogs = false;
 
-    // Esta variável agora controla se o checkpoint já foi ativado.
+    // Esta variï¿½vel agora controla se o checkpoint jï¿½ foi ativado.
     private bool _hasBeenTriggered = false;
 
+    // Exposto para que gerenciadores (ex.: CheckpointManager) possam ler o offset do ponto.
+    public Vector3 GetCheckpointOffset() => checkpointOffset;
+
     private void OnTriggerEnter(Collider other) {
-        // 1. Condição de guarda: se já foi ativado ou se não é o jogador, não faz mais nada.
+        // 1. Condiï¿½ï¿½o de guarda: se jï¿½ foi ativado ou se nï¿½o ï¿½ o jogador, nï¿½o faz mais nada.
         if (_hasBeenTriggered || !other.CompareTag("Player")) {
             return;
         }
         
-        // Se chegou até aqui, é a primeira vez que o jogador entra.
+        // Se chegou atï¿½ aqui, ï¿½ a primeira vez que o jogador entra.
         
-        // Marca que o checkpoint foi ativado para não repetir a lógica.
+        // Marca que o checkpoint foi ativado para nï¿½o repetir a lï¿½gica.
         _hasBeenTriggered = true; 
 
-        // Dispara o evento customizável
+        // Dispara o evento customizï¿½vel
         onFirstTriggerEnter.Invoke();
         
-        // Calcula a posição final do checkpoint aplicando o offset
+        // Calcula a posiï¿½ï¿½o final do checkpoint aplicando o offset
         Vector3 checkpointPosition = transform.position + checkpointOffset;
 
-        // Acessa a instância do GameManager (Singleton) e atualiza o checkpoint
+        // Acessa a instï¿½ncia do GameManager (Singleton) e atualiza o checkpoint
         if (GameManager.Instance != null) {
             GameManager.Instance.UpdateCheckpoint(checkpointPosition);
         } else {
-            Debug.LogWarning("GameManager.Instance não encontrado! O checkpoint não foi salvo.");
+            Debug.LogWarning("GameManager.Instance nï¿½o encontrado! O checkpoint nï¿½o foi salvo.");
         }
         
-        // Log para confirmar que o checkpoint foi ativado, se a opção estiver habilitada
+        // Log para confirmar que o checkpoint foi ativado, se a opï¿½ï¿½o estiver habilitada
         if (enableDebugLogs) {
-            Debug.Log($"Checkpoint ativado em {gameObject.name}. Nova posição de respawn: {checkpointPosition}");
+            Debug.Log($"Checkpoint ativado em {gameObject.name}. Nova posiï¿½ï¿½o de respawn: {checkpointPosition}");
         }
 
-        // 2. A MUDANÇA PRINCIPAL: Desativa este componente de script para que o OnTriggerEnter não seja mais chamado.
-        // O GameObject e seu Collider continuarão ativos.
+        // 2. A MUDANï¿½A PRINCIPAL: Desativa este componente de script para que o OnTriggerEnter nï¿½o seja mais chamado.
+        // O GameObject e seu Collider continuarï¿½o ativos.
         this.enabled = false; 
     }
 
     /// <summary>
-    /// A função OnDrawGizmosSelected é chamada pelo Unity no editor sempre que o objeto é selecionado.
-    /// Usamos isso para desenhar ajudas visuais (gizmos) na cena para facilitar o design de níveis.
+    /// A funï¿½ï¿½o OnDrawGizmosSelected ï¿½ chamada pelo Unity no editor sempre que o objeto ï¿½ selecionado.
+    /// Usamos isso para desenhar ajudas visuais (gizmos) na cena para facilitar o design de nï¿½veis.
     /// </summary>
     private void OnDrawGizmosSelected() {
-        // Calcula a posição final do checkpoint para visualização
+        // Calcula a posiï¿½ï¿½o final do checkpoint para visualizaï¿½ï¿½o
         Vector3 targetPosition = transform.position + checkpointOffset;
 
         // Define a cor do gizmo
         Gizmos.color = Color.cyan;
 
-        // Desenha uma linha do centro do trigger até o ponto final de respawn
+        // Desenha uma linha do centro do trigger atï¿½ o ponto final de respawn
         Gizmos.DrawLine(transform.position, targetPosition);
 
-        // Desenha uma esfera de arame no ponto exato do respawn para melhor visualização
+        // Desenha uma esfera de arame no ponto exato do respawn para melhor visualizaï¿½ï¿½o
         Gizmos.DrawWireSphere(targetPosition, 0.5f);
         
         // Escreve um texto informativo acima do ponto de respawn

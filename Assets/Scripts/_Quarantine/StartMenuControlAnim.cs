@@ -66,8 +66,7 @@ public class StartMenuControlAnim : MonoBehaviour
     private void OnEnable()
     {
         Managers.GameManager.Instance?.SetStartMenuActive(true);
-        // Não assina automaticamente o OnUiSubmit aqui.
-        // O avanço provisório deve ser habilitado explicitamente via animação (EnableProvisionalAdvance).
+        
     }
 
     private void OnDisable()

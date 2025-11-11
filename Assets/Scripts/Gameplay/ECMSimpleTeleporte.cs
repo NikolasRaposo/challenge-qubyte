@@ -1,6 +1,7 @@
 using UnityEngine;
 using Player;
 using System.Collections;
+// PlayerControlGate centraliza pausa/freeze do ECM
 
 // Teleportador simples: ao detectar o jogador, move-o instantaneamente para um destino.
 // Compatível com ECM (ECMSaciController), evitando conflitos comuns de runtime.
@@ -101,6 +102,7 @@ public class ECMSimpleTeleporte : MonoBehaviour
 
     private IEnumerator TeleportFlow(GameObject playerObject, ECMSaciController saci)
     {
+        var gate = (saci != null ? saci.GetComponent<PlayerControlGate>() : playerObject.GetComponent<PlayerControlGate>());
         // Antes de qualquer coisa: se estiver sob controle da spline, force detach
         // para impedir que o controller ajuste a posição a cada frame.
         if (saci != null)
@@ -117,12 +119,20 @@ public class ECMSimpleTeleporte : MonoBehaviour
                 // Fallback: se não houver controller na hierarquia, apenas desparenteia
                 if (saci.transform.parent != null)
                     saci.transform.SetParent(null, true);
-
-                // Garante que o ECM não tente restaurar velocidade antiga ao retomar
-                saci.restoreVelocityOnResume = false;
-                saci.pause = false;
+                // Retoma ECM via Gate (evita dependência direta de flags)
+                if (gate != null)
+                    gate.ResumeECM(restoreVelocityOnResume: false);
+                else
+                {
+                    saci.restoreVelocityOnResume = false;
+                    saci.pause = false;
+                }
             }
         }
+
+        // Pausa e congela física antes do teleporte, se Gate disponível
+        if (gate != null)
+            gate.FreezePhysicsAndPauseECM(restoreVelocityOnResume: false);
 
         // Garanta teleporte prioritário (ponto crítico) — acontece imediatamente
         bool teleported = TeleportPlayer(playerObject, saci);
@@ -155,9 +165,14 @@ public class ECMSimpleTeleporte : MonoBehaviour
         // Se solicitado, manter o jogador travado por holdDuration e liberar ao final (apenas se teleporte ocorreu)
         if (holdAfterTeleport && saci != null && teleported)
         {
-            // Evita restaurar velocidades antigas ao sair de pausa
-            saci.restoreVelocityOnResume = false;
-            saci.pause = true;
+            // Mantém pausa via Gate durante o hold
+            if (gate != null)
+                gate.PauseECM(restoreVelocityOnResume: false);
+            else
+            {
+                saci.restoreVelocityOnResume = false;
+                saci.pause = true;
+            }
 
             // Garante posição exata no destino ao iniciar o hold
             if (applyDestinationRotation)
@@ -166,7 +181,10 @@ public class ECMSimpleTeleporte : MonoBehaviour
                 saci.transform.position = destination.position;
 
             yield return new WaitForSeconds(Mathf.Max(0f, holdDuration));
-            saci.pause = false;
+            if (gate != null)
+                gate.ResumeECM(restoreVelocityOnResume: false);
+            else
+                saci.pause = false;
             if (verboseLogs)
                 Debug.Log($"[ECMSimpleTeleporte] Hold ECM concluído ({holdDuration:F2}s). pause=false.", this);
         }
@@ -221,27 +239,25 @@ public class ECMSimpleTeleporte : MonoBehaviour
         // não bloqueie ou atrase a mudança de posição.
         if (saci != null && saci.movement != null)
         {
-            if (resetVelocity)
+            var gate = saci.GetComponent<PlayerControlGate>();
+            if (gate != null)
             {
-                var rb = saci.movement.cachedRigidbody;
-                if (rb != null && rb.isKinematic)
-                {
-                    // Evita erro ao tentar setar velocidade em corpo cinemático
-                    saci.restoreVelocityOnResume = false;
-                    if (verboseLogs)
-                        Debug.Log("[ECMSimpleTeleporte] ECM Rigidbody está kinematic; pulando resetVelocity para evitar erro.", this);
-                }
-                else
-                {
-                    saci.movement.velocity = Vector3.zero;
-                }
+                if (resetVelocity)
+                    gate.ResetVelocity();
+                if (clearJumpBuffer)
+                    gate.ClearJumpBuffer();
+                if (disableGroundingAfterTeleport)
+                    gate.DisableGroundingOnce();
             }
-
-            if (clearJumpBuffer)
-                saci.ClearJumpBufferAndConsumeInput();
-
-            if (disableGroundingAfterTeleport)
-                saci.movement.DisableGrounding();
+            else
+            {
+                if (resetVelocity)
+                    saci.movement.velocity = Vector3.zero;
+                if (clearJumpBuffer)
+                    saci.ClearJumpBufferAndConsumeInput();
+                if (disableGroundingAfterTeleport)
+                    saci.movement.DisableGrounding();
+            }
         }
 
         Debug.Log($"[ECMSimpleTeleporte] Teleportando '{playerObject.name}' de {fromPos} para {destination.position}", this);

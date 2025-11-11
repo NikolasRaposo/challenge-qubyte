@@ -1,9 +1,8 @@
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(PlayerControlGate), true)]
-[CanEditMultipleObjects]
-public class PlayerControlGateEditor : Editor
+[CustomEditor(typeof(Managers.GameManager))]
+public class GameManagerEditor : Editor
 {
     private bool showActivators = false;
     private bool showDeepScan = false;
@@ -19,32 +18,35 @@ public class PlayerControlGateEditor : Editor
 
     private System.Collections.Generic.List<ActivatorEntry> _activators; // cache
     private GUIStyle _linkStyle;
+    private System.Collections.Generic.List<DeepCallScanner.CallSite> _deepResults;
 
     public override void OnInspectorGUI()
     {
-        // Inspector padrão do Unity
-        DrawDefaultInspector();
+        serializedObject.Update();
+
+        // Desenha o inspector padrão (compatível com multi-seleção)
+        Editor.DrawPropertiesExcluding(serializedObject, new string[] { "m_Script" });
 
         EditorGUILayout.Space(6);
-        showActivators = EditorGUILayout.BeginFoldoutHeaderGroup(showActivators, "Ativadores do Gate (UnityEvents)");
+        showActivators = EditorGUILayout.BeginFoldoutHeaderGroup(showActivators, "Ativadores do GameManager (UnityEvents)");
         if (showActivators)
         {
             EnsureLinkStyle();
 
-            var gate = (PlayerControlGate)target;
+            var mgr = (Managers.GameManager)target;
             if (_activators == null)
             {
                 if (GUILayout.Button("Varrer UnityEvents na cena", GUILayout.Height(22)))
                 {
-                    _activators = ScanForActivators(gate);
+                    _activators = ScanForActivators(mgr);
                 }
-                EditorGUILayout.HelpBox("Procura UnityEvents na cena que chamam métodos públicos do PlayerControlGate (FreezePhysics, UnfreezePhysics, DisableController, EnableController).", MessageType.Info);
+                EditorGUILayout.HelpBox("Procura UnityEvents na cena que chamam métodos públicos do GameManager (ex.: TogglePause, AddCoin, RespawnPlayer, CompleteLevel, QuitGame).", MessageType.Info);
             }
             else
             {
                 if (_activators.Count == 0)
                 {
-                    EditorGUILayout.HelpBox("Nenhum ativador encontrado. Configure componentes com UnityEvents apontando para métodos do PlayerControlGate quando necessário.", MessageType.Warning);
+                    EditorGUILayout.HelpBox("Nenhum ativador encontrado. Configure componentes com UnityEvents apontando para métodos do GameManager quando necessário.", MessageType.Warning);
                 }
                 else
                 {
@@ -85,7 +87,7 @@ public class PlayerControlGateEditor : Editor
                 EditorGUILayout.Space(4);
                 if (GUILayout.Button("Revarrer", GUILayout.Width(100)))
                 {
-                    _activators = ScanForActivators(gate);
+                    _activators = ScanForActivators(mgr);
                 }
             }
         }
@@ -95,14 +97,27 @@ public class PlayerControlGateEditor : Editor
         showDeepScan = EditorGUILayout.BeginFoldoutHeaderGroup(showDeepScan, "Varredura Profunda (código)");
         if (showDeepScan)
         {
-            EditorGUILayout.HelpBox("Procura chamadas em código para métodos do PlayerControlGate (padrão genérico por nome). Pode conter falsos positivos.", MessageType.Info);
+            EditorGUILayout.HelpBox("Procura chamadas em código para métodos do GameManager via Singleton (GameManager.Instance.*).", MessageType.Info);
             if (GUILayout.Button("Varrer chamadas em código", GUILayout.Height(22)))
             {
-                _deepResults = DeepCallScanner.ScanMethodNameUsage(
-                    nameof(PlayerControlGate.FreezePhysics),
-                    nameof(PlayerControlGate.UnfreezePhysics),
-                    nameof(PlayerControlGate.DisableController),
-                    nameof(PlayerControlGate.EnableController)
+                _deepResults = DeepCallScanner.ScanSingletonCalls(
+                    typeName: nameof(Managers.GameManager),
+                    methodNames: new[]
+                    {
+                        nameof(Managers.GameManager.TogglePause),
+                        nameof(Managers.GameManager.SetStartMenuActive),
+                        nameof(Managers.GameManager.NotifyPlayerDied),
+                        nameof(Managers.GameManager.AddCoin),
+                        nameof(Managers.GameManager.AddLife),
+                        nameof(Managers.GameManager.IncrementDefeatedEnemies),
+                        nameof(Managers.GameManager.RespawnPlayer),
+                        nameof(Managers.GameManager.UpdateCheckpoint),
+                        nameof(Managers.GameManager.CompleteLevel),
+                        nameof(Managers.GameManager.RestartLevel),
+                        nameof(Managers.GameManager.GoToMainMenu),
+                        nameof(Managers.GameManager.QuitGame),
+                        nameof(Managers.GameManager.ActivateHUDFromCinematicEnd)
+                    }
                 );
             }
             if (_deepResults != null)
@@ -133,17 +148,7 @@ public class PlayerControlGateEditor : Editor
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
 
-        // Texto funcional: o que o Gate FAZ
-        EditorGUILayout.Space(4);
-        EditorGUILayout.HelpBox(
-            "PlayerControlGate: utilitário para controle do jogador em fluxos.\n" +
-            "Ações principais:\n" +
-            "- FreezePhysics: zera velocidades e torna o Rigidbody cinemático.\n" +
-            "- UnfreezePhysics: restaura o Rigidbody para dinâmico.\n" +
-            "- DisableController: desativa o controlador ECM do personagem.\n" +
-            "- EnableController: reativa o controlador ECM do personagem.\n\n" +
-            "Sem configuração no Inspector; utilize os métodos acima via código.",
-            MessageType.Info);
+        serializedObject.ApplyModifiedProperties();
     }
 
     private void EnsureLinkStyle()
@@ -160,7 +165,7 @@ public class PlayerControlGateEditor : Editor
         };
     }
 
-    private System.Collections.Generic.List<ActivatorEntry> ScanForActivators(PlayerControlGate gate)
+    private System.Collections.Generic.List<ActivatorEntry> ScanForActivators(Managers.GameManager mgr)
     {
         var list = new System.Collections.Generic.List<ActivatorEntry>();
         var behaviours = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -181,7 +186,7 @@ public class PlayerControlGateEditor : Editor
                     var ueb = value as UnityEngine.Events.UnityEventBase;
                     if (ueb != null)
                     {
-                        TryCollectActivator(ueb, mb, type, f.Name, gate, list);
+                        TryCollectActivator(ueb, mb, type, f.Name, mgr, list);
                         continue;
                     }
                 }
@@ -204,7 +209,7 @@ public class PlayerControlGateEditor : Editor
                                 try { innerVal = onEventField.GetValue(item) as UnityEngine.Events.UnityEventBase; } catch { innerVal = null; }
                                 if (innerVal != null)
                                 {
-                                    TryCollectActivator(innerVal, mb, type, f.Name + ".onEvent", gate, list);
+                                    TryCollectActivator(innerVal, mb, type, f.Name + ".onEvent", mgr, list);
                                 }
                             }
                         }
@@ -216,7 +221,7 @@ public class PlayerControlGateEditor : Editor
         return list;
     }
 
-    private static void TryCollectActivator(UnityEngine.Events.UnityEventBase ev, MonoBehaviour mb, System.Type compType, string fieldName, PlayerControlGate gate, System.Collections.Generic.List<ActivatorEntry> acc)
+    private static void TryCollectActivator(UnityEngine.Events.UnityEventBase ev, MonoBehaviour mb, System.Type compType, string fieldName, Managers.GameManager mgr, System.Collections.Generic.List<ActivatorEntry> acc)
     {
         if (ev == null) return;
         int count = 0;
@@ -232,7 +237,7 @@ public class PlayerControlGateEditor : Editor
             }
             catch { targetObj = null; method = null; }
 
-            if (targetObj == gate && !string.IsNullOrEmpty(method))
+            if (targetObj == mgr && !string.IsNullOrEmpty(method))
             {
                 acc.Add(new ActivatorEntry
                 {
@@ -245,6 +250,4 @@ public class PlayerControlGateEditor : Editor
             }
         }
     }
-
-    private System.Collections.Generic.List<DeepCallScanner.CallSite> _deepResults;
 }

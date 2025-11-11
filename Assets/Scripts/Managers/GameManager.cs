@@ -27,9 +27,6 @@ namespace Managers {
         [Tooltip("A reference to the player's GameObject.")]
         public GameObject player;
         
-        [Header("UI")]
-        [Tooltip("The UI panel that is shown when the level is completed.")]
-        public GameObject levelCompletePanel;
         
         [Header("Boss Battle")]
         [Tooltip("A reference to the boss controller script in the scene.")]
@@ -41,7 +38,7 @@ namespace Managers {
         private int _collectedCoins;
         private int _enemiesDefeated;
         private bool _isInStartMenu; // bloqueia pausa enquanto menu inicial ativo
-        private bool _pauseDisabled = true; // desabilita completamente o pause
+        private bool _pauseDisabled = false; // pausa habilitado por padrão
 
         // The Awake method is called before any Start methods.
         private void Awake() {
@@ -50,9 +47,6 @@ namespace Managers {
             // Persiste o GameManager entre cenas para manter contadores e eventos.
             DontDestroyOnLoad(gameObject);
             
-            if (levelCompletePanel != null) {
-                levelCompletePanel.SetActive(false);
-            }
         }
         private void Start() {
             Time.timeScale = 1f;
@@ -88,10 +82,12 @@ namespace Managers {
             _isPaused = !_isPaused;
             UIManager.Instance.TogglePauseMenu(_isPaused);
             if (_isPaused) {
+                Time.timeScale = 0f;
                 InputContextCoordinator.Instance.SetUiContext(true);
                 // Failsafe: garante que qualquer vibração seja interrompida ao pausar
                 RumbleManager.Instance?.StopAllRumble();
             } else {
+                Time.timeScale = 1f;
                 InputContextCoordinator.Instance.SetPlayerContext();
             }
         }
@@ -203,10 +199,8 @@ namespace Managers {
             Debug.Log("Level Completed!");
             // Failsafe: garante silêncio haptico ao completar nível
             RumbleManager.Instance?.StopAllRumble();
-            // Show the level complete UI panel
-            if (levelCompletePanel != null) {
-                levelCompletePanel.SetActive(true);
-            }
+            // Exibe a tela de Level Complete pela UI centralizada
+            UIManager.Instance?.ShowLevelCompleteScreen();
             // Freeze the game
             Time.timeScale = 0f;
             InputContextCoordinator.Instance.SetUiContext(true);

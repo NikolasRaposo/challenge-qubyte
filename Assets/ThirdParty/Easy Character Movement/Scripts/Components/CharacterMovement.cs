@@ -444,7 +444,14 @@ namespace ECM.Components
         public Vector3 velocity
         {
             get { return cachedRigidbody.linearVelocity - platformVelocity; }
-            set { cachedRigidbody.linearVelocity = value + platformVelocity; }
+            set
+            {
+                // Evita escrever velocidade em bodies cinemáticos (eg: durante teleporte / freeze externo)
+                if (cachedRigidbody == null || cachedRigidbody.isKinematic)
+                    return;
+
+                cachedRigidbody.linearVelocity = value + platformVelocity;
+            }
         }
 
         /// <summary>
@@ -1415,6 +1422,10 @@ namespace ECM.Components
         public void Move(Vector3 desiredVelocity, float maxDesiredSpeed, float acceleration, float deceleration,
             float friction, float brakingFriction, bool onlyLateral = true)
         {
+            // Se o rigidbody está cinemático (pausado ou congelado externamente), não aplicar movimento
+            if (cachedRigidbody != null && cachedRigidbody.isKinematic)
+                return;
+
             // Perform ground detection
 
             DetectGround();

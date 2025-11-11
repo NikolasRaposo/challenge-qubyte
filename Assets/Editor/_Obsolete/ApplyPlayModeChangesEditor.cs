@@ -5,6 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
+[Obsolete("Obsolete")]
 public class ApplyPlayModeChangesEditor : EditorWindow
 {
     public PlayModeChangesData changesData;

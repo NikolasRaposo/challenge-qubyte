@@ -120,9 +120,23 @@ namespace Gameplay
             if (spawnItem && itemPrefab != null)
                 SpawnItemsWithEffect();
 
-            // Apply trampoline effect if configured.
+            // Apply trampoline effect only for stomp interactions
             if (isTrampoline && interactor != null)
-                ApplyTrampolineEffect(interactor);
+            {
+                bool canApplyTrampoline = false;
+
+                // Allow if interactor is on the PlayerStomp layer
+                int stompLayer = LayerMask.NameToLayer("PlayerStomp");
+                if (stompLayer != -1 && interactor.gameObject.layer == stompLayer)
+                    canApplyTrampoline = true;
+
+                // Or if it has the PlayerStomp component
+                if (!canApplyTrampoline && interactor.GetComponent<Player.PlayerStomp>() != null)
+                    canApplyTrampoline = true;
+
+                if (canApplyTrampoline)
+                    ApplyTrampolineEffect(interactor);
+            }
 
             // Handle the box's destruction or disappearance.
             if (explodeOnBreak)
@@ -179,7 +193,8 @@ namespace Gameplay
         private void ApplyTrampolineEffect(Transform target)
         {
             // 1) ECM controller (preferido no projeto atual)
-            if (target.TryGetComponent(out ECMSaciController saci))
+            var saci = target.GetComponentInParent<ECMSaciController>();
+            if (saci != null)
             {
                 saci.movement.ApplyVerticalImpulse(trampolineForce);
                 saci.ResetGroundJumpCooldown();
@@ -187,15 +202,21 @@ namespace Gameplay
             }
 
             // 2) Starter Assets (fallback)
-            if (target.TryGetComponent(out ThirdPersonController player))
+            var player = target.GetComponentInParent<ThirdPersonController>();
+            if (player != null)
             {
                 player.ApplyUpwardForce(trampolineForce);
                 return;
             }
 
             // 3) Rigidbody (fallback genérico)
-            if (target.TryGetComponent(out Rigidbody rb))
+            var rb = target.GetComponentInParent<Rigidbody>();
+            if (rb != null)
             {
+                // Evitar o warning de kinematic bodies: não escrever linearVelocity em corpos cinemáticos
+                if (rb.isKinematic)
+                    return;
+
                 // Reset vertical velocity to ensure a consistent jump height.
                 var v = rb.linearVelocity;
                 rb.linearVelocity = new Vector3(v.x, 0f, v.z);

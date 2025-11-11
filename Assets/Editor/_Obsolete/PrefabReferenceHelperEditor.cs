@@ -1,29 +1,32 @@
-// Localização: Por exemplo, Assets/Editor/PrefabReferenceHelperEditor.cs
+// Localizaï¿½ï¿½o: Por exemplo, Assets/Editor/PrefabReferenceHelperEditor.cs
 using UnityEditor;
 using UnityEngine;
+using System;
+
+[Obsolete("Obsolete")]
 
 // CustomEditor para o componente PrefabReferenceHelper
 [CustomEditor(typeof(PrefabReferenceHelper))]
 public class PrefabReferenceHelperEditor : Editor
 {
-    // Este método é chamado quando o Inspector do PrefabReferenceHelper é desenhado
+    // Este mï¿½todo ï¿½ chamado quando o Inspector do PrefabReferenceHelper ï¿½ desenhado
     public override void OnInspectorGUI()
     {
-        // Desenha o Inspector padrão para as variáveis públicas
+        // Desenha o Inspector padrï¿½o para as variï¿½veis pï¿½blicas
         DrawDefaultInspector();
 
         PrefabReferenceHelper myScript = (PrefabReferenceHelper)target;
 
-        // Se o objeto inspecionado é um asset de prefab (não uma instância na cena)
+        // Se o objeto inspecionado ï¿½ um asset de prefab (nï¿½o uma instï¿½ncia na cena)
         if (PrefabUtility.IsPartOfPrefabAsset(myScript.gameObject))
         {
-            // Obtém o caminho do asset do prefab
+            // Obtï¿½m o caminho do asset do prefab
             string currentAssetPath = AssetDatabase.GetAssetPath(myScript.gameObject);
 
             // Verifica se o caminho no campo precisa ser atualizado
             if (myScript.prefabAssetPath != currentAssetPath)
             {
-                // Registra a mudança para permitir Undo
+                // Registra a mudanï¿½a para permitir Undo
                 Undo.RecordObject(myScript, "Update Prefab Asset Path");
                 myScript.prefabAssetPath = currentAssetPath;
                 // Marca o asset como modificado para que seja salvo
@@ -33,12 +36,12 @@ public class PrefabReferenceHelperEditor : Editor
         }
         else
         {
-            EditorGUILayout.HelpBox("Este componente funciona melhor em assets de Prefab. O caminho será preenchido automaticamente ao salvar o prefab.", MessageType.Warning);
+            EditorGUILayout.HelpBox("Este componente funciona melhor em assets de Prefab. O caminho serï¿½ preenchido automaticamente ao salvar o prefab.", MessageType.Warning);
         }
     }
 
     // Opcional: Para garantir que o caminho seja preenchido ao salvar o asset de prefab, mesmo sem abrir o Inspector.
-    // Isso é mais robusto.
+    // Isso ï¿½ mais robusto.
     [InitializeOnLoadMethod]
     private static void OnProjectLoadedInEditor()
     {
@@ -47,17 +50,17 @@ public class PrefabReferenceHelperEditor : Editor
 
     private static void CheckAllPrefabReferenceHelpers()
     {
-        // Esta função pode ser pesada se executada com muita frequência, então seja cauteloso.
-        // É melhor usar um AssetPostprocessor para quando assets são importados/salvos.
-        // A função DrawDefaultInspector + EditorUtility.SetDirty já cobre a maioria dos casos.
+        // Esta funï¿½ï¿½o pode ser pesada se executada com muita frequï¿½ncia, entï¿½o seja cauteloso.
+        // ï¿½ melhor usar um AssetPostprocessor para quando assets sï¿½o importados/salvos.
+        // A funï¿½ï¿½o DrawDefaultInspector + EditorUtility.SetDirty jï¿½ cobre a maioria dos casos.
     }
 
-    // Usaremos um AssetPostprocessor para maior eficiência e para capturar a criação/modificação do asset de prefab
+    // Usaremos um AssetPostprocessor para maior eficiï¿½ncia e para capturar a criaï¿½ï¿½o/modificaï¿½ï¿½o do asset de prefab
     class PrefabReferencePostprocessor : AssetPostprocessor
     {
         void OnPostprocessGameObjectWithUserProperties(GameObject g, string[] propNames, System.Object[] values)
         {
-            // Este método é chamado quando um GameObject com propriedades de usuário é importado/reimportado,
+            // Este mï¿½todo ï¿½ chamado quando um GameObject com propriedades de usuï¿½rio ï¿½ importado/reimportado,
             // que inclui prefabs salvos.
             PrefabReferenceHelper helper = g.GetComponent<PrefabReferenceHelper>();
             if (helper != null)
@@ -65,11 +68,11 @@ public class PrefabReferenceHelperEditor : Editor
                 string assetPath = AssetDatabase.GetAssetPath(g);
                 if (helper.prefabAssetPath != assetPath)
                 {
-                    // Não podemos usar Undo.RecordObject aqui diretamente no asset,
+                    // Nï¿½o podemos usar Undo.RecordObject aqui diretamente no asset,
                     // mas podemos marcar o asset como sujo para ser salvo.
                     helper.prefabAssetPath = assetPath;
                     EditorUtility.SetDirty(helper); // Marca o componente como dirty
-                    AssetDatabase.SaveAssets(); // Força o salvamento do asset
+                    AssetDatabase.SaveAssets(); // Forï¿½a o salvamento do asset
                     Debug.Log($"[PrefabReferenceHelper] Caminho do prefab '{g.name}' atualizado para: {assetPath}");
                 }
             }

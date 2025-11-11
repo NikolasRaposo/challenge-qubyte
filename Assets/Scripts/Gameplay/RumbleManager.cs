@@ -177,7 +177,7 @@ namespace Gameplay
         {
             if (_playerInput != null) return _playerInput;
             // Tenta encontrar um PlayerInput na cena
-            _playerInput = FindObjectOfType<PlayerInput>();
+            _playerInput = FindFirstObjectByType<PlayerInput>();
             return _playerInput;
         }
 

@@ -46,19 +46,20 @@ namespace Managers
         private void EnsureUiRefs()
         {
             if (_eventSystem == null)
-                _eventSystem = FindObjectOfType<EventSystem>();
+                _eventSystem = FindFirstObjectByType<EventSystem>();
             if (_uiModule == null)
             {
                 if (_eventSystem != null)
                     _uiModule = _eventSystem.GetComponent<InputSystemUIInputModule>();
                 if (_uiModule == null)
-                    _uiModule = FindObjectOfType<InputSystemUIInputModule>();
+                    _uiModule = FindFirstObjectByType<InputSystemUIInputModule>();
             }
         }
 
         /// <summary>
         /// Entra em contexto de UI. Por padrão, controla interações do módulo de UI.
         /// </summary>
+        [Qubyte.Tracking.TrackableCall]
         public void SetUiContext(bool enableUiInteractions = true, GameObject defaultFocus = null)
         {
             InputManager.Instance?.SetUiContext();
@@ -79,6 +80,7 @@ namespace Managers
         /// <summary>
         /// Entra em contexto de gameplay e desabilita interações de UI.
         /// </summary>
+        [Qubyte.Tracking.TrackableCall]
         public void SetPlayerContext()
         {
             InputManager.Instance?.SetPlayerContext();
@@ -97,6 +99,7 @@ namespace Managers
         /// <summary>
         /// Bloqueia todo input e desabilita interações de UI.
         /// </summary>
+        [Qubyte.Tracking.TrackableCall]
         public void SetBlockInputContext()
         {
             InputManager.Instance?.SetBlockInputContext();
@@ -115,6 +118,7 @@ namespace Managers
         /// <summary>
         /// Apenas habilita/desabilita interações de UI (sem trocar contextos de mapa).
         /// </summary>
+        [Qubyte.Tracking.TrackableCall]
         public void EnableUiInteractions(GameObject defaultFocus = null)
         {
             EnsureUiRefs();
@@ -127,6 +131,7 @@ namespace Managers
             Cursor.visible = false;
         }
 
+        [Qubyte.Tracking.TrackableCall]
         public void DisableUiInteractions()
         {
             EnsureUiRefs();
@@ -222,7 +227,7 @@ namespace Managers
                     }
                     else
                     {
-                        var anySelectable = FindObjectOfType<Selectable>();
+                        var anySelectable = FindFirstObjectByType<Selectable>();
                         if (anySelectable != null)
                         {
                             _eventSystem.SetSelectedGameObject(anySelectable.gameObject);

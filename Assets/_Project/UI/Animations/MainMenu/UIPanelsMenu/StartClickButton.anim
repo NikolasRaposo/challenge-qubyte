@@ -114,7 +114,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_SizeDelta.x
-    path: Panel01
+    path: DecorAsset
     classID: 224
     script: {fileID: 0}
     flags: 0
@@ -135,7 +135,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_SizeDelta.y
-    path: Panel01
+    path: DecorAsset
     classID: 224
     script: {fileID: 0}
     flags: 0
@@ -175,7 +175,7 @@ AnimationClip:
       isIntCurve: 0
       isSerializeReferenceCurve: 0
     - serializedVersion: 2
-      path: 2562597030
+      path: 34848412
       attribute: 1967290853
       script: {fileID: 0}
       typeID: 224
@@ -184,7 +184,7 @@ AnimationClip:
       isIntCurve: 0
       isSerializeReferenceCurve: 0
     - serializedVersion: 2
-      path: 2562597030
+      path: 34848412
       attribute: 38095219
       script: {fileID: 0}
       typeID: 224
@@ -441,7 +441,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_SizeDelta.x
-    path: Panel01
+    path: DecorAsset
     classID: 224
     script: {fileID: 0}
     flags: 0
@@ -462,7 +462,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_SizeDelta.y
-    path: Panel01
+    path: DecorAsset
     classID: 224
     script: {fileID: 0}
     flags: 0

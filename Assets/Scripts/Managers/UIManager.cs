@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using UI.HUD;
 using Gameplay;
+using Qubyte.Tracking;
 
 namespace Managers {
     /// <summary>
@@ -20,6 +21,11 @@ namespace Managers {
         [SerializeField] private GameObject pauseMenuPanel;
         [SerializeField] private GameObject respawnPanel;
         [SerializeField] private GameObject gameOverPanel;
+        [SerializeField] private GameObject levelCompletePanel;
+
+        [Header("Main Menu")]
+        [Tooltip("Raiz do UMainMenu que contém MenuPanel, Loading e tela de abertura.")]
+        [SerializeField] private GameObject mainMenuRoot;
 
         [Header("HUD Elements")]
         [SerializeField] private TextMeshProUGUI coinsText;
@@ -64,8 +70,16 @@ namespace Managers {
 
             // Ensure the initial state of the UI is correct
             pauseMenuPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "PauseMenu.SetActive(false)", target: pauseMenuPanel, details: "Estado inicial");
             respawnPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "RespawnPanel.SetActive(false)", target: respawnPanel, details: "Estado inicial");
             gameOverPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "GameOverPanel.SetActive(false)", target: gameOverPanel, details: "Estado inicial");
+            if (levelCompletePanel != null)
+            {
+                levelCompletePanel.SetActive(false);
+                NotifyUiChange(source: nameof(UIManager), action: "LevelCompletePanel.SetActive(false)", target: levelCompletePanel, details: "Estado inicial");
+            }
             
             //ShowPanel(coinsPanel);
             //ShowPanel(livesPanel);
@@ -199,13 +213,38 @@ namespace Managers {
             }
 
             pauseMenuPanel.SetActive(isPaused);
+            NotifyUiChange(source: nameof(UIManager), action: $"PauseMenu.SetActive({isPaused})", target: pauseMenuPanel);
             coinsPanel.SetActive(!isPaused);
             livesPanel.SetActive(!isPaused);
+            NotifyUiChange(source: nameof(UIManager), action: $"HUD.SetActive({!isPaused})", target: coinsPanel, details: "TogglePauseMenu");
             if (isPaused)
             {
                 // Failsafe: interrompe qualquer vibração quando o menu de pausa é exibido
                 RumbleManager.Instance?.StopAllRumble();
+                NotifyUiChange(source: nameof(UIManager), action: "Rumble.StopAll", details: "Failsafe ao abrir Pause");
             }
+        }
+
+        /// <summary>
+        /// Handler para o botão "Voltar ao Jogo". Delegue sempre ao GameManager
+        /// para garantir retomada de timeScale e contexto de input corretos.
+        /// </summary>
+        public void ResumeGame()
+        {
+            NotifyUiChange(source: nameof(UIManager), action: "ResumeGame.ButtonClicked");
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.TogglePause();
+                return;
+            }
+
+            // Fallback defensivo: se GameManager não existir por algum motivo,
+            // fecha o menu e retoma o jogo.
+            pauseMenuPanel?.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "PauseMenu.SetActive(false)", target: pauseMenuPanel, details: "Fallback ResumeGame");
+            Time.timeScale = 1f;
+            InputContextCoordinator.Instance?.SetPlayerContext();
         }
         /// <summary>
         /// Shows the Game Over screen.
@@ -217,9 +256,41 @@ namespace Managers {
 
             coinsPanel.SetActive(false);
             livesPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "HUD.SetActive(false)", target: coinsPanel, details: "ShowGameOver");
             gameOverPanel.SetActive(true);
+            NotifyUiChange(source: nameof(UIManager), action: "GameOverPanel.SetActive(true)", target: gameOverPanel);
             // Failsafe: garante silêncio haptico ao mostrar Game Over
             RumbleManager.Instance?.StopAllRumble();
+            NotifyUiChange(source: nameof(UIManager), action: "Rumble.StopAll", details: "Failsafe ao mostrar GameOver");
+        }
+
+        /// <summary>
+        /// Exibe a tela de Level Complete garantindo visibilidade e interações corretas.
+        /// </summary>
+        public void ShowLevelCompleteScreen()
+        {
+            if (levelCompletePanel == null)
+            {
+                Debug.LogWarning("[UIManager] levelCompletePanel não está configurado. Associe o painel no inspector.");
+                return;
+            }
+
+            // Garante cadeia de pais ativa e CanvasGroups visíveis
+            EnsureParentsActive(levelCompletePanel);
+            EnsureCanvasGroupsVisible(levelCompletePanel);
+
+            // Oculta HUD
+            coinsPanel.SetActive(false);
+            livesPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "HUD.SetActive(false)", target: coinsPanel, details: "ShowLevelComplete");
+
+            // Ativa painel de Level Complete
+            levelCompletePanel.SetActive(true);
+            NotifyUiChange(source: nameof(UIManager), action: "LevelCompletePanel.SetActive(true)", target: levelCompletePanel);
+
+            // Failsafe: interrompe vibração ao exibir Level Complete
+            RumbleManager.Instance?.StopAllRumble();
+            NotifyUiChange(source: nameof(UIManager), action: "Rumble.StopAll", details: "Failsafe ao mostrar LevelComplete");
         }
         /// <summary>
         /// Starts the respawn countdown visual sequence.
@@ -232,10 +303,13 @@ namespace Managers {
 
             coinsPanel.SetActive(false);
             livesPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "HUD.SetActive(false)", target: coinsPanel, details: "StartRespawnCountdown");
             respawnPanel.SetActive(true);
+            NotifyUiChange(source: nameof(UIManager), action: "RespawnPanel.SetActive(true)", target: respawnPanel, details: $"countdown={countdownDuration:F1}s");
 
             // Failsafe: interrompe vibração ao iniciar o countdown de respawn
             RumbleManager.Instance?.StopAllRumble();
+            NotifyUiChange(source: nameof(UIManager), action: "Rumble.StopAll", details: "Failsafe ao iniciar RespawnCountdown");
 
             float timer = countdownDuration;
             while (timer > 0) {
@@ -245,14 +319,56 @@ namespace Managers {
             }
 
             respawnPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "RespawnPanel.SetActive(false)", target: respawnPanel);
             coinsPanel.SetActive(true);
             livesPanel.SetActive(true);
+            NotifyUiChange(source: nameof(UIManager), action: "HUD.SetActive(true)", target: coinsPanel, details: "Fim RespawnCountdown");
         }
         
         private void OnDestroy() {
             // Failsafe: ao destruir a UI, garante que qualquer rumble ativo seja interrompido
             RumbleManager.Instance?.StopAllRumble();
         }
+
+        // --- Notificações de mudanças de UI (organização/telemetria) ---
+        public struct UiChangeNotification
+        {
+            public string source;        // Componente que notificou (ex.: SceneEntryFlowCoordinator)
+            public string action;        // Ação realizada (ex.: SetHUDVisible true)
+            public GameObject target;    // Objeto alvo (se houver)
+            public string details;       // Detalhes adicionais (opcional)
+            public float time;           // Time.unscaledTime
+        }
+
+        private const int MaxRecentUiChanges = 50;
+        private readonly System.Collections.Generic.List<UiChangeNotification> _recentUiChanges = new System.Collections.Generic.List<UiChangeNotification>();
+        [SerializeField] private bool logUiNotifications = true;
+
+        [TrackableCall]
+        public void NotifyUiChange(string source, string action, GameObject target = null, string details = null)
+        {
+            var entry = new UiChangeNotification
+            {
+                source = source,
+                action = action,
+                target = target,
+                details = details,
+                time = Time.unscaledTime
+            };
+            _recentUiChanges.Add(entry);
+            if (_recentUiChanges.Count > MaxRecentUiChanges)
+            {
+                _recentUiChanges.RemoveAt(0);
+            }
+            if (logUiNotifications)
+            {
+                var targetName = target != null ? target.name : "<none>";
+                var extra = string.IsNullOrEmpty(details) ? "" : $" | {details}";
+                Debug.Log($"[UIManager] UI change: {source} → {action} (target: {targetName}){extra}");
+            }
+        }
+
+        public System.Collections.Generic.IReadOnlyList<UiChangeNotification> GetRecentUiChanges() => _recentUiChanges;
 
         // --- API pública para cinemática / sinais ---
         /// <summary>
@@ -279,6 +395,7 @@ namespace Managers {
             // Mostra painéis sem acionar temporizadores de ocultação
             coinsPanel.SetActive(true);
             livesPanel.SetActive(true);
+            NotifyUiChange(source: nameof(UIManager), action: "HUD.ShowImmediate", target: coinsPanel, details: "Sincroniza textos e habilita animações");
 
             // Ativa animações da HUD e desabilita auto-hide
             HudAnimationsEnabled = true;
@@ -303,6 +420,7 @@ namespace Managers {
 
             coinsPanel.SetActive(false);
             livesPanel.SetActive(false);
+            NotifyUiChange(source: nameof(UIManager), action: "HUD.HideImmediate", target: coinsPanel);
 
             // Desativa animações da HUD até próxima ativação explícita
             HudAnimationsEnabled = false;
@@ -315,6 +433,29 @@ namespace Managers {
         {
             coinsPanel.SetActive(visible);
             livesPanel.SetActive(visible);
+            NotifyUiChange(source: nameof(UIManager), action: $"HUD.SetActive({visible})", target: coinsPanel, details: "UIManager.SetHUDVisible");
+        }
+
+        /// <summary>
+        /// Controla a visibilidade do UMainMenu (Entry UI). Quando ativado, garante que a cadeia de pais
+        /// e quaisquer CanvasGroups estejam visíveis e interagíveis.
+        /// </summary>
+        public void SetMainMenuVisible(bool visible)
+        {
+            if (mainMenuRoot == null)
+            {
+                Debug.LogWarning("[UIManager] mainMenuRoot não está configurado. Configure o UMainMenu no inspector.");
+                return;
+            }
+
+            if (visible)
+            {
+                EnsureParentsActive(mainMenuRoot);
+                EnsureCanvasGroupsVisible(mainMenuRoot);
+            }
+
+            mainMenuRoot.SetActive(visible);
+            NotifyUiChange(source: nameof(UIManager), action: $"MainMenu.SetActive({visible})", target: mainMenuRoot);
         }
         /// <summary>
         /// Controla se os painéis coins/lives devem se auto-ocultar ao aparecer.
