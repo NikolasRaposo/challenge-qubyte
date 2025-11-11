@@ -34,6 +34,12 @@ public class SceneEntryFlowCoordinatorEditor : Editor
     SerializedProperty cinematicController;
     SerializedProperty playerGate;
 
+    // Runtime status (somente leitura no editor)
+    SerializedProperty currentPhase;
+    SerializedProperty isLoading;
+    SerializedProperty isCinematicPlaying;
+    SerializedProperty hasHandoffHappened;
+
     bool showUiSection = true;
     bool showLoadingSection = true;
     bool showCinematicSection = true;
@@ -85,6 +91,12 @@ public class SceneEntryFlowCoordinatorEditor : Editor
         loadingController = serializedObject.FindProperty("loadingController");
         cinematicController = serializedObject.FindProperty("cinematicController");
         playerGate = serializedObject.FindProperty("playerGate");
+
+        // Runtime status
+        currentPhase = serializedObject.FindProperty("currentPhase");
+        isLoading = serializedObject.FindProperty("isLoading");
+        isCinematicPlaying = serializedObject.FindProperty("isCinematicPlaying");
+        hasHandoffHappened = serializedObject.FindProperty("hasHandoffHappened");
     }
 
     public override void OnInspectorGUI()
@@ -108,6 +120,30 @@ public class SceneEntryFlowCoordinatorEditor : Editor
                 MessageType.Info);
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
+
+        // Status em Runtime
+        EditorGUILayout.Space(6);
+        EditorGUILayout.LabelField("Status em Runtime", EditorStyles.boldLabel);
+        if (Application.isPlaying)
+        {
+            var style = new GUIStyle(EditorStyles.helpBox) { richText = true };
+            // Exibe fase atual em verde
+            string phaseName = currentPhase.enumDisplayNames[currentPhase.enumValueIndex];
+            EditorGUILayout.LabelField($"<color=#2ecc71><b>Fase Atual:</b> {phaseName}</color>", style);
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("isLoading:", GUILayout.Width(130));
+            EditorGUILayout.LabelField(isLoading.boolValue ? "true" : "false");
+            EditorGUILayout.LabelField("isCinematicPlaying:", GUILayout.Width(160));
+            EditorGUILayout.LabelField(isCinematicPlaying.boolValue ? "true" : "false");
+            EditorGUILayout.LabelField("hasHandoffHappened:", GUILayout.Width(180));
+            EditorGUILayout.LabelField(hasHandoffHappened.boolValue ? "true" : "false");
+            EditorGUILayout.EndHorizontal();
+        }
+        else
+        {
+            EditorGUILayout.HelpBox("Este painel aparece durante Play Mode para facilitar QA.", MessageType.Info);
+        }
 
         // Ativadores do fluxo: varre UnityEvents e mostra links
         showActivators = EditorGUILayout.BeginFoldoutHeaderGroup(showActivators, "Ativadores do fluxo");
@@ -141,6 +177,30 @@ public class SceneEntryFlowCoordinatorEditor : Editor
                         }
                         EditorGUILayout.LabelField($"— {a.componentType}.{a.eventFieldName} → {a.methodName}");
                         EditorGUILayout.EndHorizontal();
+                    }
+
+                    // Denúncia de duplicidades por método de entrada do fluxo
+                    var counts = new System.Collections.Generic.Dictionary<string, int>();
+                    foreach (var x in _activators)
+                    {
+                        if (!counts.ContainsKey(x.methodName)) counts[x.methodName] = 0;
+                        counts[x.methodName]++;
+                    }
+                    int dupTotal = 0;
+                    foreach (var kv in counts)
+                    {
+                        if (kv.Value > 1) dupTotal++;
+                    }
+                    if (dupTotal > 0)
+                    {
+                        var sb = new System.Text.StringBuilder();
+                        sb.AppendLine("Foram detectados ativadores duplicados para:");
+                        foreach (var kv in counts)
+                        {
+                            if (kv.Value > 1)
+                                sb.AppendLine($"- {kv.Key}: {kv.Value} referências");
+                        }
+                        EditorGUILayout.HelpBox(sb.ToString(), MessageType.Warning);
                     }
                 }
                 EditorGUILayout.Space(4);
@@ -362,13 +422,16 @@ public class SceneEntryFlowCoordinatorEditor : Editor
     {
         // Lista de métodos considerados pontos de entrada do fluxo
         string[] names = {
+            "OnStartingGameFinished",
             "EnterUiContextWithFocus",
             "ActivateLoadingUI",
             "DeactivateLoadingUI",
             "OnLoadingFinished",
             "OnCinematicFinished",
             "EnterPlayerContext",
-            "EnterBlockInputContext"
+            "EnterBlockInputContext",
+            "ActivateAndPlayCinematic",
+            "RequestTransitionTo"
         };
         foreach (var n in names)
         {

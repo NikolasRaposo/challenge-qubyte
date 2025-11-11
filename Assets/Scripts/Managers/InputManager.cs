@@ -75,7 +75,8 @@ namespace Managers {
                     // Desabilita ambos os mapas e libera o cursor
                     _controls.Player.Disable();
                     _controls.UI.Disable();
-                    UnlockCursor();
+                    // Em bloqueio, mantenha cursor escondido e travado
+                    LockCursor();
                     // Failsafe: ao bloquear input, interrompe vibração
                     RumbleManager.Instance?.StopAllRumble();
                     _pauseInputLockUntil = Time.unscaledTime + 0.15f;

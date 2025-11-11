@@ -13,8 +13,16 @@ public class LoadingPhaseController : MonoBehaviour
     public UnityEvent OnLoadingFinishedEvent;
     public event Action OnLoadingFinished; // retrocompatibilidade para código
 
+    private bool _isLoading;
+
     public void StartLoading(Managers.InputContextCoordinator icc)
     {
+        if (_isLoading)
+        {
+            Debug.LogWarning("[LoadingPhaseController] StartLoading duplicado ignorado.");
+            return;
+        }
+        _isLoading = true;
         var coordinator = icc ?? Managers.InputContextCoordinator.Instance;
         coordinator?.SetBlockInputContext();
         coordinator?.DisableUiInteractions();
@@ -36,16 +44,23 @@ public class LoadingPhaseController : MonoBehaviour
 
     public void StopLoading()
     {
+        if (!_isLoading)
+        {
+            Debug.LogWarning("[LoadingPhaseController] StopLoading chamado sem loading ativo.");
+            return;
+        }
         if (loadingAnimator != null)
         {
             if (HasAnimatorTrigger(loadingAnimator, stopTrigger))
                 loadingAnimator.SetTrigger(stopTrigger);
             OnStoppedLoading?.Invoke();
         }
+        _isLoading = false;
     }
 
     public void NotifyFinished()
     {
+        _isLoading = false;
         OnLoadingFinishedEvent?.Invoke();
         OnLoadingFinished?.Invoke();
     }

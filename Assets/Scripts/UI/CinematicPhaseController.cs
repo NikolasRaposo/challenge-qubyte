@@ -11,15 +11,28 @@ public class CinematicPhaseController : MonoBehaviour
     public UnityEvent OnCinematicFinishedEvent;
     public event Action OnCinematicFinished; // retrocompatibilidade
 
+    [SerializeField] private float playCooldownMs = 200f;
+    private bool _isPlaying;
+    private float _lastPlayUnscaledMs;
+
     public void Play()
     {
+        var nowMs = Time.unscaledTime * 1000f;
+        if (_isPlaying && (nowMs - _lastPlayUnscaledMs) < playCooldownMs)
+        {
+            Debug.LogWarning("[CinematicPhaseController] Play ignorado (cooldown/idempotência).");
+            return;
+        }
+
         if (director == null)
             director = GetComponent<PlayableDirector>();
         if (director != null)
         {
             director.enabled = true;
-            director.time = 0;
+            try { director.time = 0; } catch { /* alguns diretors podem não permitir set */ }
             director.Play();
+            _isPlaying = true;
+            _lastPlayUnscaledMs = nowMs;
             OnPlay?.Invoke();
         }
         else
@@ -30,6 +43,7 @@ public class CinematicPhaseController : MonoBehaviour
 
     public void NotifyEnd()
     {
+        _isPlaying = false;
         OnCinematicFinishedEvent?.Invoke();
         OnCinematicFinished?.Invoke();
     }

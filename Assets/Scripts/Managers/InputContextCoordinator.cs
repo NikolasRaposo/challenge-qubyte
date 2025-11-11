@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace Managers
 {
@@ -15,6 +17,14 @@ namespace Managers
 
         private EventSystem _eventSystem;
         private InputSystemUIInputModule _uiModule;
+        private InputContext _currentContext = InputContext.Player;
+        private bool _uiInteractionsEnabled;
+        private GameObject _defaultFocus;
+        private GameObject _lastSelected;
+
+        private float _lastMouseActivityTime;
+        private float _lastGamepadActivityTime;
+        private const float ActivityWindow = 1.25f; // segundos
 
         private void Awake()
         {
@@ -53,11 +63,16 @@ namespace Managers
         {
             InputManager.Instance?.SetUiContext();
             EnsureUiRefs();
-            if (_uiModule != null)
-                _uiModule.enabled = enableUiInteractions;
-            if (enableUiInteractions && defaultFocus != null && _eventSystem != null)
+            _currentContext = InputContext.UI;
+            _uiInteractionsEnabled = enableUiInteractions;
+            _defaultFocus = defaultFocus != null ? defaultFocus : _defaultFocus;
+            if (_uiModule != null) _uiModule.enabled = enableUiInteractions;
+            // Por padrão mantenha cursor escondido ao entrar em UI; será mostrado ao detectar atividade de mouse
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            if (enableUiInteractions)
             {
-                _eventSystem.SetSelectedGameObject(defaultFocus);
+                GuaranteeUiFocus();
             }
         }
 
@@ -72,6 +87,11 @@ namespace Managers
                 _uiModule.enabled = false;
             if (_eventSystem != null)
                 _eventSystem.SetSelectedGameObject(null);
+            _currentContext = InputContext.Player;
+            _uiInteractionsEnabled = false;
+            // Em gameplay, cursor escondido e travado
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         /// <summary>
@@ -85,6 +105,11 @@ namespace Managers
                 _uiModule.enabled = false;
             if (_eventSystem != null)
                 _eventSystem.SetSelectedGameObject(null);
+            _currentContext = InputContext.BlockInput;
+            _uiInteractionsEnabled = false;
+            // Em bloqueio, garanta cursor escondido e travado
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         /// <summary>
@@ -93,19 +118,153 @@ namespace Managers
         public void EnableUiInteractions(GameObject defaultFocus = null)
         {
             EnsureUiRefs();
-            if (_uiModule != null)
-                _uiModule.enabled = true;
-            if (defaultFocus != null && _eventSystem != null)
-                _eventSystem.SetSelectedGameObject(defaultFocus);
+            _uiInteractionsEnabled = true;
+            _defaultFocus = defaultFocus != null ? defaultFocus : _defaultFocus;
+            if (_uiModule != null) _uiModule.enabled = true;
+            GuaranteeUiFocus();
+            // Ao habilitar UI, mantemos o cursor escondido até atividade de mouse
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         public void DisableUiInteractions()
         {
             EnsureUiRefs();
-            if (_uiModule != null)
-                _uiModule.enabled = false;
-            if (_eventSystem != null)
-                _eventSystem.SetSelectedGameObject(null);
+            _uiInteractionsEnabled = false;
+            if (_uiModule != null) _uiModule.enabled = false;
+            if (_eventSystem != null) _eventSystem.SetSelectedGameObject(null);
+            // Cursor escondido em UI desabilitada
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        private void Update()
+        {
+            // Somente gerenciamos cursor/foco dinamicamente no contexto de UI com interações habilitadas
+            if (_currentContext != InputContext.UI || !_uiInteractionsEnabled)
+                return;
+
+            TrackDeviceActivity();
+            bool mouseActive = Time.unscaledTime - _lastMouseActivityTime < ActivityWindow;
+            bool gamepadActive = Time.unscaledTime - _lastGamepadActivityTime < ActivityWindow;
+
+            if (mouseActive && (!gamepadActive || _lastMouseActivityTime >= _lastGamepadActivityTime))
+            {
+                // Mouse domina: mostra cursor e foca elemento sob ponteiro
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                FocusUiUnderPointerOrDefault();
+            }
+            else if (gamepadActive)
+            {
+                // Gamepad domina: oculta cursor e garante um foco navegável
+                // Para garantir ocultação também no Editor, travamos o cursor
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                GuaranteeUiFocus();
+            }
+            else
+            {
+                // Sem atividade recente: mantenha foco atual ou padrão
+                GuaranteeUiFocus();
+            }
+        }
+
+        private void TrackDeviceActivity()
+        {
+            var mouse = Mouse.current;
+            if (mouse != null)
+            {
+                var delta = mouse.delta.ReadValue();
+                if (delta.sqrMagnitude > 0.0001f || mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame || mouse.scroll.ReadValue().sqrMagnitude > 0.0001f)
+                {
+                    _lastMouseActivityTime = Time.unscaledTime;
+                }
+            }
+
+            var gamepad = Gamepad.current;
+            if (gamepad != null)
+            {
+                bool sticksMoved = gamepad.leftStick.ReadValue().sqrMagnitude > 0.0001f || gamepad.rightStick.ReadValue().sqrMagnitude > 0.0001f;
+                bool dpadMoved = gamepad.dpad.ReadValue().sqrMagnitude > 0.0001f;
+                bool triggersMoved = gamepad.leftTrigger.ReadValue() > 0.2f || gamepad.rightTrigger.ReadValue() > 0.2f;
+                bool buttonsPressed =
+                    gamepad.buttonSouth.wasPressedThisFrame ||
+                    gamepad.buttonEast.wasPressedThisFrame ||
+                    gamepad.buttonWest.wasPressedThisFrame ||
+                    gamepad.buttonNorth.wasPressedThisFrame ||
+                    gamepad.leftShoulder.wasPressedThisFrame ||
+                    gamepad.rightShoulder.wasPressedThisFrame ||
+                    gamepad.leftStickButton.wasPressedThisFrame ||
+                    gamepad.rightStickButton.wasPressedThisFrame ||
+                    gamepad.startButton.wasPressedThisFrame ||
+                    gamepad.selectButton.wasPressedThisFrame;
+                if (sticksMoved || dpadMoved || triggersMoved || buttonsPressed || gamepad.wasUpdatedThisFrame)
+                {
+                    _lastGamepadActivityTime = Time.unscaledTime;
+                }
+            }
+        }
+
+        private void GuaranteeUiFocus()
+        {
+            if (_eventSystem == null) return;
+            var current = _eventSystem.currentSelectedGameObject;
+            if (current == null)
+            {
+                // Tenta foco sob ponteiro; se não houver, usa padrão; se não houver, primeiro Selectable
+                if (!FocusUiUnderPointerOrDefault())
+                {
+                    if (_defaultFocus != null)
+                    {
+                        _eventSystem.SetSelectedGameObject(_defaultFocus);
+                        _lastSelected = _defaultFocus;
+                    }
+                    else
+                    {
+                        var anySelectable = FindObjectOfType<Selectable>();
+                        if (anySelectable != null)
+                        {
+                            _eventSystem.SetSelectedGameObject(anySelectable.gameObject);
+                            _lastSelected = anySelectable.gameObject;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                _lastSelected = current;
+            }
+        }
+
+        private bool FocusUiUnderPointerOrDefault()
+        {
+            if (_eventSystem == null) return false;
+            var mouse = Mouse.current;
+            if (mouse == null) return false;
+            var pos = mouse.position.ReadValue();
+            var ped = new PointerEventData(_eventSystem) { position = pos };
+            var results = new System.Collections.Generic.List<RaycastResult>();
+            _eventSystem.RaycastAll(ped, results);
+            for (int i = 0; i < results.Count; i++)
+            {
+                var go = results[i].gameObject;
+                var selectable = go.GetComponent<Selectable>();
+                if (selectable != null && selectable.IsInteractable())
+                {
+                    _eventSystem.SetSelectedGameObject(go);
+                    _lastSelected = go;
+                    return true;
+                }
+            }
+            // Se não encontrou nada sob ponteiro, tenta padrão
+            if (_defaultFocus != null)
+            {
+                _eventSystem.SetSelectedGameObject(_defaultFocus);
+                _lastSelected = _defaultFocus;
+                return true;
+            }
+            return false;
         }
     }
 }

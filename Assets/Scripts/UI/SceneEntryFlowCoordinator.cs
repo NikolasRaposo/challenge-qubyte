@@ -12,6 +12,17 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
 {
     public enum StartInputContext { None, Gameplay, UI }
 
+    public enum Phase { StartingGame, EntryUI, Loading, Cinematic, Gameplay }
+
+    [Header("Estado (Runtime)")]
+    [SerializeField] private Phase currentPhase = Phase.EntryUI;
+    [SerializeField] private bool isLoading;
+    [SerializeField] private bool isCinematicPlaying;
+    [SerializeField] private bool hasHandoffHappened;
+    [Tooltip("Cooldown interno para evitar toque duplicado da cinemática em milissegundos.")]
+    [SerializeField] private float cinematicPlayCooldownMs = 200f;
+    private float _lastCinematicPlayTimeUnscaled;
+
     [Header("Configuração de Fases")]
     [Tooltip("Alterar o contexto de input ao iniciar.")]
     [SerializeField] private bool changeInputContextOnStart = true;
@@ -166,12 +177,25 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
 
         // Dispara eventos de início
         onStart?.Invoke();
+
+        // Fase inicial: quando não for gameplay direto, iniciamos em StartingGame
+        switch (startInputContext)
+        {
+            case StartInputContext.Gameplay:
+                currentPhase = Phase.Gameplay;
+                break;
+            case StartInputContext.UI:
+            case StartInputContext.None:
+            default:
+                currentPhase = Phase.StartingGame;
+                break;
+        }
     }
 
     // Chamado pelo sistema de loading quando terminar
     public void OnLoadingFinished()
     {
-        Debug.Log("[SceneEntryFlowCoordinator] Loading finalizado");
+        LogWithContext("Loading finalizado");
         DeactivateLoadingUI();
         
         // Se configurado, ativa e toca a cinemática como uma única operação
@@ -179,12 +203,23 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         {
             ActivateAndPlayCinematic();
         }
+        else
+        {
+            // Sem autoplay, permanecemos em EntryUI para permitir interação
+            if (!isCinematicPlaying)
+            {
+                currentPhase = Phase.EntryUI;
+            }
+        }
     }
 
     // Chamado pelo SignalReceiver/SMB ao fim da cinematica
     public void OnCinematicFinished()
     {
-        Debug.Log("[SceneEntryFlowCoordinator] Cinemática finalizada");
+        LogWithContext("Cinemática finalizada");
+        isCinematicPlaying = false;
+        hasHandoffHappened = true;
+        currentPhase = Phase.Gameplay;
 
         // Entrega o controle ao jogador
         Managers.InputContextCoordinator.Instance?.SetPlayerContext();
@@ -210,9 +245,30 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         }
     }
 
+    // Chamado ao fim da animação inicial (logo/intro) para habilitar o Main Menu
+    public void OnStartingGameFinished()
+    {
+        LogWithContext("StartingGame finalizado, entrando em EntryUI");
+        EnterUiContextWithFocus(defaultUiButton);
+        currentPhase = Phase.EntryUI;
+    }
+
     // Ativa a raiz da cinemática (garantindo pais ativos) e dispara o Play
     public void ActivateAndPlayCinematic()
     {
+        // Idempotência e debouncing
+        var nowMs = Time.unscaledTime * 1000f;
+        if (isCinematicPlaying)
+        {
+            Debug.LogWarning("[SceneEntryFlowCoordinator] Tentativa duplicada de iniciar cinemática ignorada: já tocando.");
+            return;
+        }
+        if ((nowMs - _lastCinematicPlayTimeUnscaled) < cinematicPlayCooldownMs)
+        {
+            Debug.LogWarning("[SceneEntryFlowCoordinator] Tentativa muito próxima de iniciar cinemática ignorada (cooldown).");
+            return;
+        }
+
         if (cinematicRoot == null && cinematicController == null && cinematicDirector == null)
         {
             Debug.LogWarning("[SceneEntryFlowCoordinator] Nenhuma cinemática configurada para ativar/tocar.");
@@ -222,8 +278,15 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
         if (cinematicRoot != null)
         {
             EnsureParentsActive(cinematicRoot);
-            cinematicRoot.SetActive(true);
+            if (!cinematicRoot.activeSelf)
+                cinematicRoot.SetActive(true);
         }
+
+        // Marca estado e fase atual
+        isCinematicPlaying = true;
+        currentPhase = Phase.Cinematic;
+        _lastCinematicPlayTimeUnscaled = nowMs;
+        LogWithContext("Iniciando cinemática.");
 
         if (cinematicController != null)
         {
@@ -242,6 +305,15 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
     // Ações de Loading
     public void ActivateLoadingUI()
     {
+        if (isLoading)
+        {
+            Debug.LogWarning("[SceneEntryFlowCoordinator] Loading já ativo, chamada duplicada ignorada.");
+            return;
+        }
+        isLoading = true;
+        currentPhase = Phase.Loading;
+        LogWithContext("Ativando Loading UI");
+
         if (loadingController != null)
         {
             loadingController.StartLoading(Managers.InputContextCoordinator.Instance);
@@ -261,6 +333,14 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
 
     public void DeactivateLoadingUI()
     {
+        if (!isLoading)
+        {
+            Debug.LogWarning("[SceneEntryFlowCoordinator] Loading já desativado, chamada duplicada ignorada.");
+            return;
+        }
+        isLoading = false;
+        LogWithContext("Desativando Loading UI");
+
         if (loadingController != null)
         {
             loadingController.StopLoading();
@@ -404,5 +484,45 @@ public class SceneEntryFlowCoordinator : MonoBehaviour
             // Alguns animators podem não expor parâmetros em runtime
         }
         return false;
+    }
+
+    public Phase GetCurrentPhase() => currentPhase;
+
+    private void LogWithContext(string message)
+    {
+        Debug.Log($"[SceneEntryFlowCoordinator][{currentPhase}] {message}");
+    }
+
+    // Centralizador de transições de fase: use este método como ponto único
+    public void RequestTransitionTo(Phase target)
+    {
+        switch (target)
+        {
+            case Phase.StartingGame:
+                LogWithContext("RequestTransitionTo → StartingGame");
+                // Entra em contexto de UI sem habilitar interações; animações de abertura decidem quando finalizar
+                Managers.InputContextCoordinator.Instance?.SetUiContext(enableUiInteractions: false);
+                currentPhase = Phase.StartingGame;
+                break;
+            case Phase.EntryUI:
+                LogWithContext("RequestTransitionTo → EntryUI");
+                EnterUiContextWithFocus(defaultUiButton);
+                currentPhase = Phase.EntryUI;
+                break;
+            case Phase.Loading:
+                LogWithContext("RequestTransitionTo → Loading");
+                ActivateLoadingUI();
+                break;
+            case Phase.Cinematic:
+                LogWithContext("RequestTransitionTo → Cinematic");
+                ActivateAndPlayCinematic();
+                break;
+            case Phase.Gameplay:
+                LogWithContext("RequestTransitionTo → Gameplay");
+                Managers.InputContextCoordinator.Instance?.SetPlayerContext();
+                Managers.InputContextCoordinator.Instance?.DisableUiInteractions();
+                currentPhase = Phase.Gameplay;
+                break;
+        }
     }
 }
