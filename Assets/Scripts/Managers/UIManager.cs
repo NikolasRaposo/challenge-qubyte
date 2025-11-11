@@ -292,6 +292,23 @@ namespace Managers {
         }
 
         /// <summary>
+        /// Oculta imediatamente a HUD (coins/lives) sem efeitos ou temporizadores.
+        /// Para voltar a mostrar com sincronização, use <see cref="ShowHUDImmediate"/>.
+        /// </summary>
+        public void HideHUDImmediate()
+        {
+            // Interrompe quaisquer temporizadores de ocultação ainda pendentes
+            if (_coinsCoroutine != null) { try { StopCoroutine(_coinsCoroutine); } catch { } _coinsCoroutine = null; }
+            if (_livesCoroutine != null) { try { StopCoroutine(_livesCoroutine); } catch { } _livesCoroutine = null; }
+
+            coinsPanel.SetActive(false);
+            livesPanel.SetActive(false);
+
+            // Desativa animações da HUD até próxima ativação explícita
+            HudAnimationsEnabled = false;
+        }
+
+        /// <summary>
         /// Controla visibilidade bruta da HUD (coins/lives) sem efeitos ou temporizadores.
         /// </summary>
         public void SetHUDVisible(bool visible)
